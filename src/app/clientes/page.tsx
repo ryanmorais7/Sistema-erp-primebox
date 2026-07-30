@@ -12,6 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Lista clientes ao vivo do banco; nunca deve ser pré-renderizada no build.
+export const dynamic = "force-dynamic";
+
 function formatarDocumento(cnpj: string | null, cpf: string | null) {
   if (cnpj) return `CNPJ ${cnpj}`;
   if (cpf) return `CPF ${cpf}`;

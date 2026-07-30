@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { ClienteForm } from "@/components/clientes/cliente-form";
 import type { ClienteFormValues } from "@/lib/validations/cliente";
 
+// Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
+export const dynamic = "force-dynamic";
+
 type PageProps = {
   params: Promise<{ id: string }>;
 };
