@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoCliente } from "./actions";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,12 +29,14 @@ export default async function ClientesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Clientes</h1>
-        <Button render={<Link href="/clientes/novo" />} nativeButton={false}>
-          Novo cliente
-        </Button>
-      </div>
+      <PageHeader
+        title="Clientes"
+        action={
+          <Button render={<Link href="/clientes/novo" />} nativeButton={false}>
+            Novo cliente
+          </Button>
+        }
+      />
 
       {clientes.length === 0 ? (
         <p className="text-muted-foreground">Nenhum cliente cadastrado ainda.</p>

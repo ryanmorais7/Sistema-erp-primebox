@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoProduto } from "./actions";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,12 +30,14 @@ export default async function ProdutosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Produtos</h1>
-        <Button render={<Link href="/produtos/novo" />} nativeButton={false}>
-          Novo produto
-        </Button>
-      </div>
+      <PageHeader
+        title="Produtos"
+        action={
+          <Button render={<Link href="/produtos/novo" />} nativeButton={false}>
+            Novo produto
+          </Button>
+        }
+      />
 
       {produtos.length === 0 ? (
         <p className="text-muted-foreground">Nenhum produto cadastrado ainda.</p>

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ProdutoForm } from "@/components/produtos/produto-form";
+import { PageHeader } from "@/components/layout/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function NovoProdutoPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Novo produto</h1>
+      <PageHeader title="Novo produto" />
       <ProdutoForm medidas={medidas} />
     </div>
   );

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ClienteForm } from "@/components/clientes/cliente-form";
+import { PageHeader } from "@/components/layout/page-header";
 import type { ClienteFormValues } from "@/lib/validations/cliente";
 
 // Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
@@ -36,7 +37,7 @@ export default async function EditarClientePage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Editar cliente</h1>
+      <PageHeader title="Editar cliente" />
       <ClienteForm clienteId={cliente.id} valoresIniciais={valoresIniciais} />
     </div>
   );

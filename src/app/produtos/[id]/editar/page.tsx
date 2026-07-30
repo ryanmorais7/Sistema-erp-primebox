@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ProdutoForm } from "@/components/produtos/produto-form";
+import { PageHeader } from "@/components/layout/page-header";
 import type { ProdutoFormValues } from "@/lib/validations/produto";
 
 // Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
@@ -37,7 +38,7 @@ export default async function EditarProdutoPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Editar produto</h1>
+      <PageHeader title="Editar produto" />
       <ProdutoForm produtoId={produto.id} medidas={medidas} valoresIniciais={valoresIniciais} />
     </div>
   );
