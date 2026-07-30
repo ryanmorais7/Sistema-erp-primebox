@@ -18,8 +18,8 @@ ser implementado.
 
 | Item | Status | Observações |
 |---|---|---|
-| Cadastro de Clientes | Implementado | Listagem (`/clientes`), criação (`/clientes/novo`) e edição (`/clientes/[id]/editar`), com ativar/desativar (soft delete). Validação com Zod (exige CNPJ ou CPF, formatos de telefone/CEP/UF) e React Hook Form |
-| Cadastro de Produtos | Em andamento | Modelo de dados definido e migrado (ADR-002), incluindo tabela `Medida` já semeada com as 5 medidas padrão; telas ainda não implementadas |
+| Cadastro de Clientes | Implementado e validado em produção | Listagem (`/clientes`), criação (`/clientes/novo`) e edição (`/clientes/[id]/editar`), com ativar/desativar (soft delete). Validação com Zod (exige CNPJ ou CPF, formatos de telefone/CEP/UF) e React Hook Form |
+| Cadastro de Produtos | Implementado (aguardando validação em produção) | Listagem (`/produtos`), criação (`/produtos/novo`) e edição (`/produtos/[id]/editar`), com ativar/desativar. Tipo e medida via seleção (medida vem da tabela `Medida`); preço aceita formato brasileiro (ex: 1.899,90) |
 | Pedido | Não iniciado | |
 | Impressão de pedido | Não iniciado | |
 

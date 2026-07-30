@@ -1,0 +1,44 @@
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { ProdutoForm } from "@/components/produtos/produto-form";
+import type { ProdutoFormValues } from "@/lib/validations/produto";
+
+// Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
+export const dynamic = "force-dynamic";
+
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function EditarProdutoPage({ params }: PageProps) {
+  const { id } = await params;
+
+  const [produto, medidas] = await Promise.all([
+    prisma.produto.findUnique({ where: { id } }),
+    prisma.medida.findMany({
+      where: { ativo: true },
+      orderBy: { ordem: "asc" },
+      select: { id: true, nome: true },
+    }),
+  ]);
+
+  if (!produto) {
+    notFound();
+  }
+
+  const valoresIniciais: ProdutoFormValues = {
+    nome: produto.nome,
+    tipo: produto.tipo,
+    medidaId: produto.medidaId,
+    tecido: produto.tecido ?? "",
+    cor: produto.cor ?? "",
+    preco: Number(produto.preco).toFixed(2).replace(".", ","),
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Editar produto</h1>
+      <ProdutoForm produtoId={produto.id} medidas={medidas} valoresIniciais={valoresIniciais} />
+    </div>
+  );
+}
