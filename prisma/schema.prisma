@@ -1,0 +1,65 @@
+// PrimeBox ERP — schema de dados
+// Ver /docs/decisoes/ADR-002-modelo-cliente-produto.md para o racional
+// de cada decisão de modelagem.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Cliente {
+  id           String   @id @default(cuid())
+  razaoSocial  String
+  nomeFantasia String?
+  cnpj         String?  @unique
+  cpf          String?  @unique
+  telefone     String
+  email        String?
+  contatoNome  String?
+
+  endereco     String?
+  numero       String?
+  bairro       String?
+  cidade       String?
+  estado       String?
+  cep          String?
+
+  ativo        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum TipoProduto {
+  BASE
+  COLCHAO
+  CONJUNTO_BOX
+}
+
+model Medida {
+  id        String    @id @default(cuid())
+  nome      String    @unique
+  ordem     Int       @default(0)
+  ativo     Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  produtos  Produto[]
+}
+
+model Produto {
+  id        String      @id @default(cuid())
+  nome      String
+  tipo      TipoProduto
+  medidaId  String
+  medida    Medida      @relation(fields: [medidaId], references: [id])
+  tecido    String?
+  cor       String?
+  preco     Decimal     @db.Decimal(10, 2)
+  ativo     Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
