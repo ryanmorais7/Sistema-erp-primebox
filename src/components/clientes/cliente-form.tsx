@@ -1,0 +1,171 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { atualizarCliente, criarCliente } from "@/app/clientes/actions";
+import { clienteSchema, type ClienteFormValues } from "@/lib/validations/cliente";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const valoresPadrao: ClienteFormValues = {
+  razaoSocial: "",
+  nomeFantasia: "",
+  cnpj: "",
+  cpf: "",
+  telefone: "",
+  email: "",
+  contatoNome: "",
+  endereco: "",
+  numero: "",
+  bairro: "",
+  cidade: "",
+  estado: "",
+  cep: "",
+};
+
+type ClienteFormProps = {
+  clienteId?: string;
+  valoresIniciais?: ClienteFormValues;
+};
+
+export function ClienteForm({ clienteId, valoresIniciais }: ClienteFormProps) {
+  const router = useRouter();
+  const [erroGeral, setErroGeral] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<ClienteFormValues>({
+    resolver: zodResolver(clienteSchema),
+    defaultValues: valoresIniciais ?? valoresPadrao,
+  });
+
+  async function aoSubmeter(dados: ClienteFormValues) {
+    setErroGeral(null);
+    const resultado = clienteId
+      ? await atualizarCliente(clienteId, dados)
+      : await criarCliente(dados);
+
+    if (!resultado.success) {
+      setErroGeral(resultado.error);
+      for (const [campo, mensagem] of Object.entries(resultado.camposComErro ?? {})) {
+        setError(campo as keyof ClienteFormValues, { message: mensagem });
+      }
+      return;
+    }
+
+    router.push("/clientes");
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={handleSubmit(aoSubmeter)} className="flex flex-col gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados da empresa</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label htmlFor="razaoSocial">Razão social *</Label>
+            <Input id="razaoSocial" {...register("razaoSocial")} />
+            {errors.razaoSocial && (
+              <p className="text-sm text-destructive">{errors.razaoSocial.message}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label htmlFor="nomeFantasia">Nome fantasia</Label>
+            <Input id="nomeFantasia" {...register("nomeFantasia")} />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="cnpj">CNPJ</Label>
+            <Input id="cnpj" {...register("cnpj")} placeholder="00.000.000/0000-00" />
+            {errors.cnpj && <p className="text-sm text-destructive">{errors.cnpj.message}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="cpf">CPF</Label>
+            <Input id="cpf" {...register("cpf")} placeholder="000.000.000-00" />
+            {errors.cpf && <p className="text-sm text-destructive">{errors.cpf.message}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="telefone">Telefone *</Label>
+            <Input id="telefone" {...register("telefone")} placeholder="(00) 00000-0000" />
+            {errors.telefone && (
+              <p className="text-sm text-destructive">{errors.telefone.message}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email">E-mail</Label>
+            <Input id="email" type="email" {...register("email")} />
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label htmlFor="contatoNome">Nome do contato</Label>
+            <Input id="contatoNome" {...register("contatoNome")} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Endereço</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-4">
+          <div className="flex flex-col gap-2 sm:col-span-3">
+            <Label htmlFor="endereco">Endereço</Label>
+            <Input id="endereco" {...register("endereco")} />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="numero">Número</Label>
+            <Input id="numero" {...register("numero")} />
+          </div>
+
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label htmlFor="bairro">Bairro</Label>
+            <Input id="bairro" {...register("bairro")} />
+          </div>
+
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label htmlFor="cidade">Cidade</Label>
+            <Input id="cidade" {...register("cidade")} />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="estado">UF</Label>
+            <Input id="estado" maxLength={2} {...register("estado")} />
+            {errors.estado && <p className="text-sm text-destructive">{errors.estado.message}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="cep">CEP</Label>
+            <Input id="cep" {...register("cep")} placeholder="00000-000" />
+            {errors.cep && <p className="text-sm text-destructive">{errors.cep.message}</p>}
+          </div>
+        </CardContent>
+      </Card>
+
+      {erroGeral && <p className="text-sm text-destructive">{erroGeral}</p>}
+
+      <div className="flex justify-end gap-3">
+        <Button type="button" variant="outline" onClick={() => router.push("/clientes")}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Salvando..." : "Salvar"}
+        </Button>
+      </div>
+    </form>
+  );
+}
