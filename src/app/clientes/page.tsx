@@ -27,7 +27,9 @@ export default async function ClientesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Clientes</h1>
-        <Button render={<Link href="/clientes/novo" />}>Novo cliente</Button>
+        <Button render={<Link href="/clientes/novo" />} nativeButton={false}>
+          Novo cliente
+        </Button>
       </div>
 
       {clientes.length === 0 ? (
@@ -64,6 +66,7 @@ export default async function ClientesPage() {
                   <TableCell className="flex justify-end gap-2">
                     <Button
                       render={<Link href={`/clientes/${cliente.id}/editar`} />}
+                      nativeButton={false}
                       variant="outline"
                       size="sm"
                     >
