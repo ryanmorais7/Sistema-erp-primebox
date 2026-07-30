@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Pencil, Check, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoCliente } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -65,18 +66,22 @@ export default async function ClientesPage() {
                     {cliente.cidade ? `${cliente.cidade}/${cliente.estado ?? ""}` : "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={cliente.ativo ? "default" : "secondary"}>
-                      {cliente.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
+                    {cliente.ativo ? (
+                      <Badge className="bg-positive-soft text-positive">Ativo</Badge>
+                    ) : (
+                      <Badge variant="secondary">Inativo</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="flex justify-end gap-2">
                     <Button
                       render={<Link href={`/clientes/${cliente.id}/editar`} />}
                       nativeButton={false}
                       variant="outline"
-                      size="sm"
+                      size="icon-sm"
+                      aria-label="Editar cliente"
+                      title="Editar"
                     >
-                      Editar
+                      <Pencil />
                     </Button>
                     <form
                       action={async () => {
@@ -84,8 +89,14 @@ export default async function ClientesPage() {
                         await alternarAtivoCliente(cliente.id, !cliente.ativo);
                       }}
                     >
-                      <Button type="submit" variant="ghost" size="sm">
-                        {cliente.ativo ? "Desativar" : "Ativar"}
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label={cliente.ativo ? "Desativar cliente" : "Ativar cliente"}
+                        title={cliente.ativo ? "Desativar" : "Ativar"}
+                      >
+                        {cliente.ativo ? <X /> : <Check />}
                       </Button>
                     </form>
                   </TableCell>

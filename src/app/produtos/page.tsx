@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Pencil, Check, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoProduto } from "./actions";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
@@ -66,18 +67,22 @@ export default async function ProdutosPage() {
                   </TableCell>
                   <TableCell>{formatadorMoeda.format(Number(produto.preco))}</TableCell>
                   <TableCell>
-                    <Badge variant={produto.ativo ? "default" : "secondary"}>
-                      {produto.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
+                    {produto.ativo ? (
+                      <Badge className="bg-positive-soft text-positive">Ativo</Badge>
+                    ) : (
+                      <Badge variant="secondary">Inativo</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="flex justify-end gap-2">
                     <Button
                       render={<Link href={`/produtos/${produto.id}/editar`} />}
                       nativeButton={false}
                       variant="outline"
-                      size="sm"
+                      size="icon-sm"
+                      aria-label="Editar produto"
+                      title="Editar"
                     >
-                      Editar
+                      <Pencil />
                     </Button>
                     <form
                       action={async () => {
@@ -85,8 +90,14 @@ export default async function ProdutosPage() {
                         await alternarAtivoProduto(produto.id, !produto.ativo);
                       }}
                     >
-                      <Button type="submit" variant="ghost" size="sm">
-                        {produto.ativo ? "Desativar" : "Ativar"}
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label={produto.ativo ? "Desativar produto" : "Ativar produto"}
+                        title={produto.ativo ? "Desativar" : "Ativar"}
+                      >
+                        {produto.ativo ? <X /> : <Check />}
                       </Button>
                     </form>
                   </TableCell>

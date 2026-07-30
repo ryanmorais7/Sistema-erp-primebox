@@ -52,8 +52,10 @@ export function AppSidebar() {
             <Box className="size-4.5" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-sidebar-foreground">PrimeBox</span>
-            <span className="text-[0.65rem] tracking-wider text-sidebar-foreground/60 uppercase">
+            <span className="font-heading text-sm font-semibold text-sidebar-foreground">
+              PrimeBox
+            </span>
+            <span className="font-mono text-[0.65rem] tracking-wider text-sidebar-foreground/60 uppercase">
               Sistema de gestão
             </span>
           </div>
@@ -61,7 +63,9 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Operação</SidebarGroupLabel>
+          <SidebarGroupLabel className="font-mono tracking-wider uppercase">
+            Operação
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {itensOperacao.map((item) => (
@@ -87,7 +91,9 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Próximas fases</SidebarGroupLabel>
+          <SidebarGroupLabel className="font-mono tracking-wider uppercase">
+            Próximas fases
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {proximasFases.map((item) => (
@@ -103,7 +109,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="px-4 py-3 text-[0.7rem] text-sidebar-foreground/50">
+      <SidebarFooter className="border-t border-dashed border-sidebar-border px-4 py-3 font-mono text-[0.65rem] text-sidebar-foreground/50">
         <p>v0.1 · MVP</p>
         <p>PrimeBox · uso interno</p>
       </SidebarFooter>
