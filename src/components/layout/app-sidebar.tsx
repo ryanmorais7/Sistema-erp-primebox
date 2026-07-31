@@ -31,9 +31,8 @@ const itensOperacao = [
   { href: "/", label: "Painel", icon: LayoutDashboard },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/produtos", label: "Produtos", icon: Package },
+  { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
 ];
-
-const itemPedidos = { label: "Pedidos", icon: ClipboardList };
 
 const proximasFases = [
   { label: "Produção", icon: Factory },
@@ -79,13 +78,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled>
-                  <itemPedidos.icon />
-                  <span>{itemPedidos.label}</span>
-                </SidebarMenuButton>
-                <SidebarMenuBadge>em breve</SidebarMenuBadge>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -37,6 +37,16 @@ PostgreSQL, React Hook Form + Zod. Ver
 
    Acesse [http://localhost:3000](http://localhost:3000).
 
+## Atenção ao mudar o `schema.prisma`
+
+Depois de rodar `npm run db:migrate` com o servidor de desenvolvimento já
+aberto, **reinicie o `npm run dev`** (pare e rode de novo). O cliente do
+Prisma é reaproveitado entre recarregamentos automáticos (hot reload)
+para não recriar conexões toda hora — mas isso significa que, se o
+schema mudou, o servidor antigo continua com o cliente antigo em
+memória e passa a dar erro do tipo `Cannot read properties of undefined
+(reading 'findMany')` nos modelos novos. Reiniciar resolve.
+
 ## Scripts úteis
 
 - `npm run db:migrate` — aplica migrations do Prisma em desenvolvimento.

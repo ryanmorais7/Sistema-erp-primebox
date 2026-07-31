@@ -31,6 +31,8 @@ model Cliente {
   ativo        Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  pedidos      Pedido[]
 }
 
 enum TipoProduto {
@@ -62,4 +64,33 @@ model Produto {
   ativo     Boolean     @default(true)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+
+  itensPedido ItemPedido[]
+}
+
+enum StatusPedido {
+  EM_CARTEIRA
+  FATURADO
+}
+
+model Pedido {
+  id         String       @id @default(cuid())
+  numero     Int          @unique @default(autoincrement())
+  clienteId  String
+  cliente    Cliente      @relation(fields: [clienteId], references: [id])
+  status     StatusPedido @default(EM_CARTEIRA)
+  valorTotal Decimal      @db.Decimal(10, 2)
+  itens      ItemPedido[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model ItemPedido {
+  id            String  @id @default(cuid())
+  pedidoId      String
+  pedido        Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produtoId     String
+  produto       Produto @relation(fields: [produtoId], references: [id])
+  quantidade    Int
+  precoUnitario Decimal @db.Decimal(10, 2)
 }
