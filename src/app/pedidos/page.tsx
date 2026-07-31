@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, Check, Trash2 } from "lucide-react";
+import { Eye, Pencil, Check, Trash2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { excluirPedido, faturarPedido } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -69,6 +69,16 @@ export default async function PedidosPage() {
                     )}
                   </TableCell>
                   <TableCell className="flex justify-end gap-2">
+                    <Button
+                      render={<Link href={`/pedidos/${pedido.id}`} />}
+                      nativeButton={false}
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label="Ver/imprimir pedido"
+                      title="Ver/imprimir"
+                    >
+                      <Eye />
+                    </Button>
                     {pedido.status === "EM_CARTEIRA" && (
                       <>
                         <Button
