@@ -92,7 +92,7 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
               control={control}
               name="tipo"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select items={tipoProdutoLabels} value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
@@ -115,7 +115,11 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
               control={control}
               name="medidaId"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select
+                  items={Object.fromEntries(medidas.map((medida) => [medida.id, medida.nome]))}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione a medida" />
                   </SelectTrigger>

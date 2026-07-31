@@ -55,6 +55,10 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
   const itensObservados = useWatch({ control, name: "itens" });
 
   const produtosPorId = new Map(produtos.map((produto) => [produto.id, produto]));
+  const clientesItems = Object.fromEntries(
+    clientes.map((cliente) => [cliente.id, cliente.nomeFantasia || cliente.razaoSocial]),
+  );
+  const produtosItems = Object.fromEntries(produtos.map((produto) => [produto.id, produto.nome]));
   const valorTotalEstimado = (itensObservados ?? []).reduce((total, item) => {
     const produto = item?.produtoId ? produtosPorId.get(item.produtoId) : undefined;
     const quantidade = Number(item?.quantidade) || 0;
@@ -90,7 +94,7 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
               control={control}
               name="clienteId"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select items={clientesItems} value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o cliente" />
                   </SelectTrigger>
@@ -141,7 +145,11 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
                     control={control}
                     name={`itens.${index}.produtoId`}
                     render={({ field: selectField }) => (
-                      <Select value={selectField.value} onValueChange={selectField.onChange}>
+                      <Select
+                        items={produtosItems}
+                        value={selectField.value}
+                        onValueChange={selectField.onChange}
+                      >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione o produto" />
                         </SelectTrigger>
