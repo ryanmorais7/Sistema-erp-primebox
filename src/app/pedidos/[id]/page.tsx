@@ -1,8 +1,10 @@
+import { FileDown, MessageCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -69,7 +71,23 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
           </p>
           <h1 className="text-2xl font-semibold tracking-tight">Pedido #{pedido.numero}</h1>
         </div>
-        <ImprimirButton />
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" disabled>
+            <FileDown />
+            Baixar PDF
+            <Badge variant="secondary" className="ml-1">
+              em breve
+            </Badge>
+          </Button>
+          <Button type="button" variant="outline" disabled>
+            <MessageCircle />
+            Enviar WhatsApp
+            <Badge variant="secondary" className="ml-1">
+              em breve
+            </Badge>
+          </Button>
+          <ImprimirButton />
+        </div>
       </div>
 
       <div className="rounded-lg border p-6 print:border-none print:p-0">

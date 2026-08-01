@@ -10,7 +10,8 @@ import {
   ClipboardList,
   Factory,
   Warehouse,
-  Wallet,
+  Receipt,
+  Truck,
 } from "lucide-react";
 
 import {
@@ -27,17 +28,21 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const itensOperacao = [
+const itensComercial = [
   { href: "/", label: "Painel", icon: LayoutDashboard },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/produtos", label: "Produtos", icon: Package },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
 ];
 
-const proximasFases = [
+const itensFabrica = [
   { label: "Produção", icon: Factory },
   { label: "Estoque", icon: Warehouse },
-  { label: "Financeiro", icon: Wallet },
+];
+
+const itensFinanceiro = [
+  { label: "Faturamento", icon: Receipt },
+  { label: "Expedição", icon: Truck },
 ];
 
 export function AppSidebar() {
@@ -63,11 +68,11 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="font-mono tracking-wider uppercase">
-            Operação
+            Comercial
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {itensOperacao.map((item) => (
+              {itensComercial.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
@@ -84,11 +89,30 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="font-mono tracking-wider uppercase">
-            Próximas fases
+            Fábrica
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {proximasFases.map((item) => (
+              {itensFabrica.map((item) => (
+                <SidebarMenuItem key={item.label}>
+                  <SidebarMenuButton disabled>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                  <SidebarMenuBadge>em breve</SidebarMenuBadge>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="font-mono tracking-wider uppercase">
+            Financeiro
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {itensFinanceiro.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton disabled>
                     <item.icon />

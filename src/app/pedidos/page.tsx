@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { StatusPedido } from "@/generated/prisma/enums";
 
 // Lista pedidos ao vivo do banco; nunca deve ser pré-renderizada no build.
 export const dynamic = "force-dynamic";
@@ -20,8 +21,23 @@ export const dynamic = "force-dynamic";
 const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const formatadorData = new Intl.DateTimeFormat("pt-BR");
 
-export default async function PedidosPage() {
+const abas: { label: string; status?: StatusPedido }[] = [
+  { label: "Todos" },
+  { label: "Em carteira", status: "EM_CARTEIRA" },
+  { label: "Faturados", status: "FATURADO" },
+];
+
+type PageProps = {
+  searchParams: Promise<{ status?: string }>;
+};
+
+export default async function PedidosPage({ searchParams }: PageProps) {
+  const { status } = await searchParams;
+  const statusValido: StatusPedido | undefined =
+    status === "EM_CARTEIRA" || status === "FATURADO" ? status : undefined;
+
   const pedidos = await prisma.pedido.findMany({
+    where: statusValido ? { status: statusValido } : undefined,
     include: { cliente: true },
     orderBy: { numero: "desc" },
   });
@@ -37,8 +53,26 @@ export default async function PedidosPage() {
         }
       />
 
+      <div className="flex gap-1 self-start rounded-lg bg-muted p-1">
+        {abas.map((aba) => {
+          const ativa = aba.status === statusValido;
+          const href = aba.status ? `/pedidos?status=${aba.status}` : "/pedidos";
+          return (
+            <Button
+              key={aba.label}
+              render={<Link href={href} />}
+              nativeButton={false}
+              variant={ativa ? "default" : "ghost"}
+              size="sm"
+            >
+              {aba.label}
+            </Button>
+          );
+        })}
+      </div>
+
       {pedidos.length === 0 ? (
-        <p className="text-muted-foreground">Nenhum pedido cadastrado ainda.</p>
+        <p className="text-muted-foreground">Nenhum pedido encontrado.</p>
       ) : (
         <div className="rounded-lg border">
           <Table>

@@ -22,7 +22,7 @@ ser implementado.
 | Cadastro de Produtos | Implementado e validado localmente | Listagem (`/produtos`), criação (`/produtos/novo`) e edição (`/produtos/[id]/editar`), com ativar/desativar. Tipo e medida via seleção (medida vem da tabela `Medida`); preço aceita formato brasileiro (ex: 1.899,90) |
 | Pedido | Implementado e validado em produção | Listagem (`/pedidos`), criação (`/pedidos/novo`) e edição (`/pedidos/[id]/editar`) com itens dinâmicos (cliente + produto + quantidade). Ações de faturar e excluir (só para pedidos em carteira); pedido faturado redireciona para a visualização. Valor total e preço unitário calculados e travados no servidor |
 | Impressão de pedido | Implementado | Tela de visualização (`/pedidos/[id]`) com botão "Imprimir" (CSS de impressão do navegador, sem geração de PDF no servidor) |
-| Identidade visual (sidebar + paleta) | Implementado | Sidebar de navegação com selos "em breve" para itens fora de escopo; Painel (`/`) com números reais de clientes/produtos ativos; paleta creme/cobre/verde-azulado e tipografia Space Grotesk/Inter/IBM Plex Mono |
+| Identidade visual (sidebar + paleta) | Implementado | Sidebar em grupos Comercial/Fábrica/Financeiro com selos "em breve" para itens fora de escopo; Painel (`/`) com dados reais de pedidos/clientes e tabela de pedidos recentes; filtro por abas em Pedidos; paleta creme/cobre/verde-azulado e tipografia Space Grotesk/Inter/IBM Plex Mono |
 
 ## Decisões de modelagem relevantes
 
@@ -33,5 +33,6 @@ ser implementado.
 - Ver [ADR-005](../decisoes/ADR-005-refinamento-paleta-tipografia.md) — refinamento de paleta e tipografia.
 - Ver [ADR-006](../decisoes/ADR-006-modelo-pedido.md) — modelo de Pedido e ItemPedido.
 - Ver [ADR-007](../decisoes/ADR-007-impressao-pedido.md) — impressão de pedido.
+- Ver [ADR-008](../decisoes/ADR-008-ajustes-visuais-prototipo.md) — ajustes visuais a partir do protótipo de referência.
 
 Com isso, os 4 itens do escopo do MVP (Fase 1) estão implementados.
