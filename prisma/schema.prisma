@@ -53,19 +53,21 @@ model Medida {
 }
 
 model Produto {
-  id        String      @id @default(cuid())
-  nome      String
-  tipo      TipoProduto
-  medidaId  String
-  medida    Medida      @relation(fields: [medidaId], references: [id])
-  tecido    String?
-  cor       String?
-  preco     Decimal     @db.Decimal(10, 2)
-  ativo     Boolean     @default(true)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  nome          String
+  tipo          TipoProduto
+  medidaId      String
+  medida        Medida      @relation(fields: [medidaId], references: [id])
+  tecido        String?
+  cor           String?
+  preco         Decimal     @db.Decimal(10, 2)
+  estoqueMinimo Decimal     @default(0) @db.Decimal(10, 2)
+  ativo         Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  itensPedido ItemPedido[]
+  itensPedido       ItemPedido[]
+  movimentosEstoque MovimentoEstoqueProduto[]
 }
 
 enum StatusPedido {
@@ -112,4 +114,41 @@ model OrdemProducao {
   status       StatusOrdemProducao @default(AGUARDANDO)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
+}
+
+enum TipoMovimentoEstoque {
+  ENTRADA
+  SAIDA
+}
+
+model MateriaPrima {
+  id            String   @id @default(cuid())
+  nome          String
+  unidade       String
+  estoqueMinimo Decimal  @default(0) @db.Decimal(10, 2)
+  ativo         Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  movimentos MovimentoEstoqueMateriaPrima[]
+}
+
+model MovimentoEstoqueProduto {
+  id         String               @id @default(cuid())
+  produtoId  String
+  produto    Produto              @relation(fields: [produtoId], references: [id])
+  tipo       TipoMovimentoEstoque
+  quantidade Decimal              @db.Decimal(10, 2)
+  observacao String?
+  createdAt  DateTime             @default(now())
+}
+
+model MovimentoEstoqueMateriaPrima {
+  id             String               @id @default(cuid())
+  materiaPrimaId String
+  materiaPrima   MateriaPrima         @relation(fields: [materiaPrimaId], references: [id])
+  tipo           TipoMovimentoEstoque
+  quantidade     Decimal              @db.Decimal(10, 2)
+  observacao     String?
+  createdAt      DateTime             @default(now())
 }

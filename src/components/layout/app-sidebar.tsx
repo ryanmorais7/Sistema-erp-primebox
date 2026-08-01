@@ -42,9 +42,10 @@ const itensRelatorios = [
   { href: "/relatorios/faturamento", label: "Faturamento do dia", icon: CalendarDays },
 ];
 
-const itensFabrica = [{ href: "/producao", label: "Produção", icon: Factory }];
-
-const itensFabricaFutura = [{ label: "Estoque", icon: Warehouse }];
+const itensFabrica = [
+  { href: "/producao", label: "Produção", icon: Factory },
+  { href: "/estoque", label: "Estoque", icon: Warehouse },
+];
 
 const itensFinanceiro = [
   { label: "Faturamento", icon: Receipt },
@@ -129,15 +130,6 @@ export function AppSidebar() {
                     <item.icon />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              {itensFabricaFutura.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton disabled>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                  <SidebarMenuBadge>em breve</SidebarMenuBadge>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
