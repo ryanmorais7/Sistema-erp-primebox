@@ -17,14 +17,14 @@ export default async function EditarPedidoPage({ params }: PageProps) {
 
   const pedido = await prisma.pedido.findUnique({
     where: { id },
-    include: { cliente: true, itens: true },
+    include: { cliente: true, itens: { include: { ordemProducao: true } } },
   });
 
   if (!pedido) {
     notFound();
   }
 
-  if (pedido.status === "FATURADO") {
+  if (pedido.status === "FATURADO" || pedido.itens.some((item) => item.ordemProducao)) {
     redirect(`/pedidos/${pedido.id}`);
   }
 

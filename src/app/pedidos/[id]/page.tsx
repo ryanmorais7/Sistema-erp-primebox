@@ -1,10 +1,17 @@
-import { FileDown, MessageCircle } from "lucide-react";
+import { FileDown, MessageCircle, Factory } from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
+import { gerarOrdemProducao } from "@/app/producao/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
+const statusOrdemProducaoLabels = {
+  AGUARDANDO: "Aguardando",
+  EM_PRODUCAO: "Em produção",
+  CONCLUIDO: "Concluído",
+} as const;
 import {
   Table,
   TableBody,
@@ -52,7 +59,10 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
 
   const pedido = await prisma.pedido.findUnique({
     where: { id },
-    include: { cliente: true, itens: { include: { produto: { include: { medida: true } } } } },
+    include: {
+      cliente: true,
+      itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
+    },
   });
 
   if (!pedido) {
@@ -135,6 +145,7 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
                 <TableHead className="text-right">Qtd.</TableHead>
                 <TableHead className="text-right">Preço unit.</TableHead>
                 <TableHead className="text-right">Subtotal</TableHead>
+                <TableHead className="text-right print:hidden">Produção</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -156,6 +167,26 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     {formatadorMoeda.format(Number(item.precoUnitario) * item.quantidade)}
+                  </TableCell>
+                  <TableCell className="text-right print:hidden">
+                    {item.ordemProducao ? (
+                      <Badge variant="secondary">
+                        OP #{item.ordemProducao.numero} ·{" "}
+                        {statusOrdemProducaoLabels[item.ordemProducao.status]}
+                      </Badge>
+                    ) : (
+                      <form
+                        action={async () => {
+                          "use server";
+                          await gerarOrdemProducao(item.id);
+                        }}
+                      >
+                        <Button type="submit" variant="outline" size="sm">
+                          <Factory />
+                          Gerar OP
+                        </Button>
+                      </form>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

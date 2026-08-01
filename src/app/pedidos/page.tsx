@@ -38,7 +38,7 @@ export default async function PedidosPage({ searchParams }: PageProps) {
 
   const pedidos = await prisma.pedido.findMany({
     where: statusValido ? { status: statusValido } : undefined,
-    include: { cliente: true },
+    include: { cliente: true, itens: { include: { ordemProducao: true } } },
     orderBy: { numero: "desc" },
   });
 
@@ -115,16 +115,36 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                     </Button>
                     {pedido.status === "EM_CARTEIRA" && (
                       <>
-                        <Button
-                          render={<Link href={`/pedidos/${pedido.id}/editar`} />}
-                          nativeButton={false}
-                          variant="outline"
-                          size="icon-sm"
-                          aria-label="Editar pedido"
-                          title="Editar"
-                        >
-                          <Pencil />
-                        </Button>
+                        {!pedido.itens.some((item) => item.ordemProducao) && (
+                          <>
+                            <Button
+                              render={<Link href={`/pedidos/${pedido.id}/editar`} />}
+                              nativeButton={false}
+                              variant="outline"
+                              size="icon-sm"
+                              aria-label="Editar pedido"
+                              title="Editar"
+                            >
+                              <Pencil />
+                            </Button>
+                            <form
+                              action={async () => {
+                                "use server";
+                                await excluirPedido(pedido.id);
+                              }}
+                            >
+                              <Button
+                                type="submit"
+                                variant="outline"
+                                size="icon-sm"
+                                aria-label="Excluir pedido"
+                                title="Excluir"
+                              >
+                                <Trash2 />
+                              </Button>
+                            </form>
+                          </>
+                        )}
                         <form
                           action={async () => {
                             "use server";
@@ -139,22 +159,6 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                             title="Faturar"
                           >
                             <Check />
-                          </Button>
-                        </form>
-                        <form
-                          action={async () => {
-                            "use server";
-                            await excluirPedido(pedido.id);
-                          }}
-                        >
-                          <Button
-                            type="submit"
-                            variant="outline"
-                            size="icon-sm"
-                            aria-label="Excluir pedido"
-                            title="Excluir"
-                          >
-                            <Trash2 />
                           </Button>
                         </form>
                       </>

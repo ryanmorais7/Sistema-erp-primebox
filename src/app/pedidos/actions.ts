@@ -79,12 +79,21 @@ export async function atualizarPedido(
   id: string,
   dadosBrutos: PedidoFormValues,
 ): Promise<ResultadoAcao> {
-  const pedidoAtual = await prisma.pedido.findUnique({ where: { id } });
+  const pedidoAtual = await prisma.pedido.findUnique({
+    where: { id },
+    include: { itens: { include: { ordemProducao: true } } },
+  });
   if (!pedidoAtual) {
     return { success: false, error: "Pedido não encontrado." };
   }
   if (pedidoAtual.status === "FATURADO") {
     return { success: false, error: "Pedido faturado não pode ser editado." };
+  }
+  if (pedidoAtual.itens.some((item) => item.ordemProducao)) {
+    return {
+      success: false,
+      error: "Este pedido já tem item em produção e não pode mais ser editado.",
+    };
   }
 
   const resultado = pedidoSchema.safeParse(dadosBrutos);
@@ -121,8 +130,14 @@ export async function faturarPedido(id: string) {
 }
 
 export async function excluirPedido(id: string) {
-  const pedido = await prisma.pedido.findUnique({ where: { id } });
+  const pedido = await prisma.pedido.findUnique({
+    where: { id },
+    include: { itens: { include: { ordemProducao: true } } },
+  });
   if (!pedido || pedido.status === "FATURADO") {
+    return;
+  }
+  if (pedido.itens.some((item) => item.ordemProducao)) {
     return;
   }
   await prisma.pedido.delete({ where: { id } });

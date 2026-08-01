@@ -42,10 +42,9 @@ const itensRelatorios = [
   { href: "/relatorios/faturamento", label: "Faturamento do dia", icon: CalendarDays },
 ];
 
-const itensFabrica = [
-  { label: "Produção", icon: Factory },
-  { label: "Estoque", icon: Warehouse },
-];
+const itensFabrica = [{ href: "/producao", label: "Produção", icon: Factory }];
+
+const itensFabricaFutura = [{ label: "Estoque", icon: Warehouse }];
 
 const itensFinanceiro = [
   { label: "Faturamento", icon: Receipt },
@@ -122,6 +121,17 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {itensFabrica.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    render={<Link href={item.href} />}
+                    isActive={pathname === item.href}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              {itensFabricaFutura.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton disabled>
                     <item.icon />

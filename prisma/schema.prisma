@@ -94,4 +94,22 @@ model ItemPedido {
   produto       Produto @relation(fields: [produtoId], references: [id])
   quantidade    Int
   precoUnitario Decimal @db.Decimal(10, 2)
+
+  ordemProducao OrdemProducao?
+}
+
+enum StatusOrdemProducao {
+  AGUARDANDO
+  EM_PRODUCAO
+  CONCLUIDO
+}
+
+model OrdemProducao {
+  id           String              @id @default(cuid())
+  numero       Int                 @unique @default(autoincrement())
+  itemPedidoId String              @unique
+  itemPedido   ItemPedido          @relation(fields: [itemPedidoId], references: [id], onDelete: Cascade)
+  status       StatusOrdemProducao @default(AGUARDANDO)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 }
