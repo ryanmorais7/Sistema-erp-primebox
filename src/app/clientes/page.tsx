@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, Check, X } from "lucide-react";
+import { ClipboardList, Pencil, Check, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoCliente } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -73,6 +73,16 @@ export default async function ClientesPage() {
                     )}
                   </TableCell>
                   <TableCell className="flex justify-end gap-2">
+                    <Button
+                      render={<Link href={`/relatorios/clientes?clienteId=${cliente.id}`} />}
+                      nativeButton={false}
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label="Ver pedidos do cliente"
+                      title="Ver pedidos"
+                    >
+                      <ClipboardList />
+                    </Button>
                     <Button
                       render={<Link href={`/clientes/${cliente.id}/editar`} />}
                       nativeButton={false}

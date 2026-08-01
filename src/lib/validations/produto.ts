@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { precoSchema } from "./moeda";
 
 export const TIPOS_PRODUTO = ["BASE", "COLCHAO", "CONJUNTO_BOX"] as const;
 
@@ -14,18 +15,9 @@ export const produtoSchema = z.object({
   medidaId: z.string().trim().min(1, "Selecione a medida"),
   tecido: z.string().trim().optional(),
   cor: z.string().trim().optional(),
-  preco: z
-    .string()
-    .trim()
-    .min(1, "Informe o preço")
-    .refine((valor) => {
-      const numero = precoParaNumero(valor);
-      return Number.isFinite(numero) && numero > 0;
-    }, "Informe um preço válido (ex: 1500,00 ou 1.500,00)"),
+  preco: precoSchema,
 });
 
 export type ProdutoFormValues = z.infer<typeof produtoSchema>;
 
-export function precoParaNumero(preco: string): number {
-  return Number(preco.replace(/\./g, "").replace(",", "."));
-}
+export { precoParaNumero, formatarPrecoBr } from "./moeda";

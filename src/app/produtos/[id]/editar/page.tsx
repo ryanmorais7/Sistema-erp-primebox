@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ProdutoForm } from "@/components/produtos/produto-form";
 import { PageHeader } from "@/components/layout/page-header";
 import type { ProdutoFormValues } from "@/lib/validations/produto";
+import { formatarPrecoBr } from "@/lib/validations/moeda";
 
 // Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export default async function EditarProdutoPage({ params }: PageProps) {
     medidaId: produto.medidaId,
     tecido: produto.tecido ?? "",
     cor: produto.cor ?? "",
-    preco: Number(produto.preco).toFixed(2).replace(".", ","),
+    preco: formatarPrecoBr(Number(produto.preco)),
   };
 
   return (

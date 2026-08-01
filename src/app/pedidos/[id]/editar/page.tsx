@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { PedidoForm } from "@/components/pedidos/pedido-form";
 import { PageHeader } from "@/components/layout/page-header";
 import type { PedidoFormValues } from "@/lib/validations/pedido";
+import { formatarPrecoBr } from "@/lib/validations/moeda";
 
 // Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
 export const dynamic = "force-dynamic";
@@ -70,9 +71,11 @@ export default async function EditarPedidoPage({ params }: PageProps) {
 
   const valoresIniciais: PedidoFormValues = {
     clienteId: pedido.clienteId,
+    observacoes: pedido.observacoes ?? "",
     itens: pedido.itens.map((item) => ({
       produtoId: item.produtoId,
       quantidade: item.quantidade,
+      precoUnitario: formatarPrecoBr(Number(item.precoUnitario)),
     })),
   };
 

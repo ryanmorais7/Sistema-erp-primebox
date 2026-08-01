@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { pedidoSchema, type PedidoFormValues } from "@/lib/validations/pedido";
+import { precoParaNumero } from "@/lib/validations/moeda";
 
 type ResultadoAcao =
   | { success: true; pedidoId?: string }
@@ -19,26 +20,30 @@ function extrairErrosDeCampo(issues: { path: PropertyKey[]; message: string }[])
   return campos;
 }
 
-async function montarItensComPreco(itens: { produtoId: string; quantidade: number }[]) {
-  const produtos = await prisma.produto.findMany({
+// O preço unitário vem do formulário (o vendedor pode negociar por pedido),
+// não do cadastro do produto — só confirmamos que o produto ainda existe.
+async function montarItensComPreco(
+  itens: { produtoId: string; quantidade: number; precoUnitario: string }[],
+) {
+  const produtosExistentes = await prisma.produto.findMany({
     where: { id: { in: itens.map((item) => item.produtoId) } },
+    select: { id: true },
   });
-  const produtosPorId = new Map(produtos.map((produto) => [produto.id, produto]));
+  const idsExistentes = new Set(produtosExistentes.map((produto) => produto.id));
 
   const itensComPreco = itens.map((item) => {
-    const produto = produtosPorId.get(item.produtoId);
-    if (!produto) {
+    if (!idsExistentes.has(item.produtoId)) {
       throw new Error("Produto selecionado não existe mais.");
     }
     return {
       produtoId: item.produtoId,
       quantidade: item.quantidade,
-      precoUnitario: produto.preco,
+      precoUnitario: precoParaNumero(item.precoUnitario),
     };
   });
 
   const valorTotal = itensComPreco.reduce(
-    (total, item) => total + Number(item.precoUnitario) * item.quantidade,
+    (total, item) => total + item.precoUnitario * item.quantidade,
     0,
   );
 
@@ -60,6 +65,7 @@ export async function criarPedido(dadosBrutos: PedidoFormValues): Promise<Result
   const pedido = await prisma.pedido.create({
     data: {
       clienteId: resultado.data.clienteId,
+      observacoes: resultado.data.observacoes || null,
       valorTotal,
       itens: { create: itensComPreco },
     },
@@ -96,6 +102,7 @@ export async function atualizarPedido(
     where: { id },
     data: {
       clienteId: resultado.data.clienteId,
+      observacoes: resultado.data.observacoes || null,
       valorTotal,
       itens: {
         deleteMany: {},

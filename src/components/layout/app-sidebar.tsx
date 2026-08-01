@@ -12,6 +12,8 @@ import {
   Warehouse,
   Receipt,
   Truck,
+  Search,
+  CalendarDays,
 } from "lucide-react";
 
 import {
@@ -33,6 +35,11 @@ const itensComercial = [
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/produtos", label: "Produtos", icon: Package },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
+];
+
+const itensRelatorios = [
+  { href: "/relatorios/clientes", label: "Por cliente", icon: Search },
+  { href: "/relatorios/faturamento", label: "Faturamento do dia", icon: CalendarDays },
 ];
 
 const itensFabrica = [
@@ -73,6 +80,27 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {itensComercial.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    render={<Link href={item.href} />}
+                    isActive={pathname === item.href}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="font-mono tracking-wider uppercase">
+            Relatórios
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {itensRelatorios.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}

@@ -169,6 +169,15 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
           </p>
         </div>
       </div>
+
+      {pedido.observacoes && (
+        <div className="rounded-lg border p-4 print:hidden">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Observações (uso interno — não aparece na impressão)
+          </p>
+          <p className="mt-1 text-sm whitespace-pre-wrap">{pedido.observacoes}</p>
+        </div>
+      )}
     </div>
   );
 }
