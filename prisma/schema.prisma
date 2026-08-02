@@ -85,6 +85,7 @@ model Pedido {
   observacoes String?
   itens       ItemPedido[]
   cobranca    Cobranca?
+  expedicao   Expedicao?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
@@ -168,4 +169,21 @@ model Cobranca {
   status     StatusCobranca @default(PENDENTE)
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
+}
+
+enum StatusExpedicao {
+  AGUARDANDO
+  EM_ROTA
+  ENTREGUE
+}
+
+model Expedicao {
+  id             String          @id @default(cuid())
+  numero         Int             @unique @default(autoincrement())
+  pedidoId       String          @unique
+  pedido         Pedido          @relation(fields: [pedidoId], references: [id])
+  transportadora String?
+  status         StatusExpedicao @default(AGUARDANDO)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 }

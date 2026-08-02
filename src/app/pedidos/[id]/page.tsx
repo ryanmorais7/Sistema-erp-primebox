@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileDown, MessageCircle, Factory, Receipt } from "lucide-react";
+import { FileDown, MessageCircle, Factory, Receipt, Truck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
@@ -13,6 +13,12 @@ const statusOrdemProducaoLabels = {
   AGUARDANDO: "Aguardando",
   EM_PRODUCAO: "Em produção",
   CONCLUIDO: "Concluído",
+} as const;
+
+const statusExpedicaoLabels = {
+  AGUARDANDO: "Aguardando",
+  EM_ROTA: "Em rota",
+  ENTREGUE: "Entregue",
 } as const;
 import {
   Table,
@@ -65,6 +71,7 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
       cliente: true,
       itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
       cobranca: true,
+      expedicao: true,
     },
   });
 
@@ -242,6 +249,33 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
           )}
         </div>
       )}
+
+      <div className="flex items-center justify-between rounded-lg border p-4 print:hidden">
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          Expedição
+        </p>
+        {pedido.expedicao ? (
+          <Button
+            render={<Link href="/expedicao" />}
+            nativeButton={false}
+            variant="outline"
+            size="sm"
+          >
+            <Truck />
+            Exp. #{pedido.expedicao.numero} · {statusExpedicaoLabels[pedido.expedicao.status]}
+          </Button>
+        ) : (
+          <Button
+            render={<Link href={`/pedidos/${pedido.id}/expedicao/nova`} />}
+            nativeButton={false}
+            variant="outline"
+            size="sm"
+          >
+            <Truck />
+            Gerar expedição
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

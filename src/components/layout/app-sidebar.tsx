@@ -25,7 +25,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
@@ -47,9 +46,10 @@ const itensFabrica = [
   { href: "/estoque", label: "Estoque", icon: Warehouse },
 ];
 
-const itensFinanceiro = [{ href: "/faturamento", label: "Faturamento", icon: Receipt }];
-
-const itensFinanceiroFutura = [{ label: "Expedição", icon: Truck }];
+const itensFinanceiro = [
+  { href: "/faturamento", label: "Faturamento", icon: Receipt },
+  { href: "/expedicao", label: "Expedição", icon: Truck },
+];
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -150,15 +150,6 @@ export function AppSidebar() {
                     <item.icon />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              {itensFinanceiroFutura.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton disabled>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                  <SidebarMenuBadge>em breve</SidebarMenuBadge>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
