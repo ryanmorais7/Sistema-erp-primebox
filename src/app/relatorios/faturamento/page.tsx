@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { limitesDoDiaBr, hojeBr } from "@/lib/data";
 import { PageHeader } from "@/components/layout/page-header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,19 +17,6 @@ import {
 export const dynamic = "force-dynamic";
 
 const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-
-// PrimeBox opera no horário do Brasil; usamos -03:00 fixo (sem horário de
-// verão desde 2019) para os limites do dia, em vez do UTC do servidor.
-function limitesDoDiaBr(data: string) {
-  const inicio = new Date(`${data}T00:00:00-03:00`);
-  const fim = new Date(inicio);
-  fim.setUTCDate(fim.getUTCDate() + 1);
-  return { inicio, fim };
-}
-
-function hojeBr(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
-}
 
 type PageProps = {
   searchParams: Promise<{ data?: string }>;

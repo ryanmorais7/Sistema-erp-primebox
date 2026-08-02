@@ -1,9 +1,11 @@
-import { FileDown, MessageCircle, Factory } from "lucide-react";
+import Link from "next/link";
+import { FileDown, MessageCircle, Factory, Receipt } from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
 import { gerarOrdemProducao } from "@/app/producao/actions";
+import { statusExibicaoCobranca, statusExibicaoLabels } from "@/lib/cobranca";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -62,6 +64,7 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
     include: {
       cliente: true,
       itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
+      cobranca: true,
     },
   });
 
@@ -207,6 +210,36 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
             Observações (uso interno — não aparece na impressão)
           </p>
           <p className="mt-1 text-sm whitespace-pre-wrap">{pedido.observacoes}</p>
+        </div>
+      )}
+
+      {pedido.status === "FATURADO" && (
+        <div className="flex items-center justify-between rounded-lg border p-4 print:hidden">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Cobrança
+          </p>
+          {pedido.cobranca ? (
+            <Button
+              render={<Link href={`/cobrancas/${pedido.cobranca.id}`} />}
+              nativeButton={false}
+              variant="outline"
+              size="sm"
+            >
+              <Receipt />
+              Ver recibo #{pedido.cobranca.numero} ·{" "}
+              {statusExibicaoLabels[statusExibicaoCobranca(pedido.cobranca)]}
+            </Button>
+          ) : (
+            <Button
+              render={<Link href={`/pedidos/${pedido.id}/cobranca/nova`} />}
+              nativeButton={false}
+              variant="outline"
+              size="sm"
+            >
+              <Receipt />
+              Gerar cobrança
+            </Button>
+          )}
         </div>
       )}
     </div>

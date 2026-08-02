@@ -47,10 +47,9 @@ const itensFabrica = [
   { href: "/estoque", label: "Estoque", icon: Warehouse },
 ];
 
-const itensFinanceiro = [
-  { label: "Faturamento", icon: Receipt },
-  { label: "Expedição", icon: Truck },
-];
+const itensFinanceiro = [{ href: "/faturamento", label: "Faturamento", icon: Receipt }];
+
+const itensFinanceiroFutura = [{ label: "Expedição", icon: Truck }];
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -143,6 +142,17 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {itensFinanceiro.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    render={<Link href={item.href} />}
+                    isActive={pathname === item.href}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              {itensFinanceiroFutura.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton disabled>
                     <item.icon />
