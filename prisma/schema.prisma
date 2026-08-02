@@ -37,8 +37,8 @@ model Cliente {
 
 enum TipoProduto {
   BASE
-  COLCHAO
-  CONJUNTO_BOX
+  UNIBOX
+  BAU
 }
 
 model Medida {

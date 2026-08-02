@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { precoSchema, custoSchema } from "./moeda";
 
-export const TIPOS_PRODUTO = ["BASE", "COLCHAO", "CONJUNTO_BOX"] as const;
+export const TIPOS_PRODUTO = ["BASE", "UNIBOX", "BAU"] as const;
 
 export const tipoProdutoLabels: Record<(typeof TIPOS_PRODUTO)[number], string> = {
   BASE: "Base",
-  COLCHAO: "Colchão",
-  CONJUNTO_BOX: "Conjunto Box",
+  UNIBOX: "Unibox",
+  BAU: "Baú",
 };
 
 export const produtoSchema = z.object({

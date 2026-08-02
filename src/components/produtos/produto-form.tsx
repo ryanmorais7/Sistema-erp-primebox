@@ -94,7 +94,7 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="nome">Nome *</Label>
-            <Input id="nome" placeholder="Ex: Colchão Espuma D33" {...register("nome")} />
+            <Input id="nome" placeholder="Ex: Unibox Molas Ensacadas Casal" {...register("nome")} />
             {errors.nome && <p className="text-sm text-destructive">{errors.nome.message}</p>}
           </div>
 
