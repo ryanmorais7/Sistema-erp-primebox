@@ -29,8 +29,10 @@ export async function criarProduto(dadosBrutos: ProdutoFormValues): Promise<Resu
     };
   }
 
-  const { preco, ...dados } = resultado.data;
-  await prisma.produto.create({ data: { ...dados, preco: precoParaNumero(preco) } });
+  const { preco, custo, ...dados } = resultado.data;
+  await prisma.produto.create({
+    data: { ...dados, preco: precoParaNumero(preco), custo: precoParaNumero(custo) },
+  });
 
   revalidatePath("/produtos");
   return { success: true };
@@ -49,10 +51,10 @@ export async function atualizarProduto(
     };
   }
 
-  const { preco, ...dados } = resultado.data;
+  const { preco, custo, ...dados } = resultado.data;
   await prisma.produto.update({
     where: { id },
-    data: { ...dados, preco: precoParaNumero(preco) },
+    data: { ...dados, preco: precoParaNumero(preco), custo: precoParaNumero(custo) },
   });
 
   revalidatePath("/produtos");

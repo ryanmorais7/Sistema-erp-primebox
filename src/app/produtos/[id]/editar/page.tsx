@@ -35,6 +35,7 @@ export default async function EditarProdutoPage({ params }: PageProps) {
     tecido: produto.tecido ?? "",
     cor: produto.cor ?? "",
     preco: formatarPrecoBr(Number(produto.preco)),
+    custo: formatarPrecoBr(Number(produto.custo)),
   };
 
   return (

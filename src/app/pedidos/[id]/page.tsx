@@ -82,6 +82,14 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
   const endereco = formatarEndereco(pedido.cliente);
   const documento = formatarDocumento(pedido.cliente.cnpj, pedido.cliente.cpf);
 
+  const custoTotal = pedido.itens.reduce(
+    (total, item) => total + Number(item.custoUnitario) * item.quantidade,
+    0,
+  );
+  const valorTotal = Number(pedido.valorTotal);
+  const margemTotal = valorTotal - custoTotal;
+  const margemPercentual = valorTotal > 0 ? (margemTotal / valorTotal) * 100 : 0;
+
   return (
     <div className="flex flex-col gap-6 print:gap-4">
       <div className="flex items-start justify-between print:hidden">
@@ -154,7 +162,9 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
                 <TableHead>Tecido/Cor</TableHead>
                 <TableHead className="text-right">Qtd.</TableHead>
                 <TableHead className="text-right">Preço unit.</TableHead>
+                <TableHead className="text-right print:hidden">Custo unit.</TableHead>
                 <TableHead className="text-right">Subtotal</TableHead>
+                <TableHead className="text-right print:hidden">Margem</TableHead>
                 <TableHead className="text-right print:hidden">Produção</TableHead>
               </TableRow>
             </TableHeader>
@@ -175,8 +185,16 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
                   <TableCell className="text-right">
                     {formatadorMoeda.format(Number(item.precoUnitario))}
                   </TableCell>
+                  <TableCell className="text-right text-muted-foreground print:hidden">
+                    {formatadorMoeda.format(Number(item.custoUnitario))}
+                  </TableCell>
                   <TableCell className="text-right">
                     {formatadorMoeda.format(Number(item.precoUnitario) * item.quantidade)}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground print:hidden">
+                    {formatadorMoeda.format(
+                      (Number(item.precoUnitario) - Number(item.custoUnitario)) * item.quantidade,
+                    )}
                   </TableCell>
                   <TableCell className="text-right print:hidden">
                     {item.ordemProducao ? (
@@ -208,6 +226,28 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
           <p className="text-lg font-semibold">
             Total: {formatadorMoeda.format(Number(pedido.valorTotal))}
           </p>
+        </div>
+      </div>
+
+      <div className="rounded-lg border p-4 print:hidden">
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          Rentabilidade (uso interno — não aparece na impressão)
+        </p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-3">
+          <div>
+            <p className="text-xs text-muted-foreground">Custo total</p>
+            <p className="font-medium">{formatadorMoeda.format(custoTotal)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Receita total</p>
+            <p className="font-medium">{formatadorMoeda.format(valorTotal)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Margem</p>
+            <p className="font-medium">
+              {formatadorMoeda.format(margemTotal)} ({margemPercentual.toFixed(1)}%)
+            </p>
+          </div>
         </div>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { atualizarProduto, criarProduto } from "@/app/produtos/actions";
@@ -10,6 +10,7 @@ import {
   produtoSchema,
   tipoProdutoLabels,
   TIPOS_PRODUTO,
+  precoParaNumero,
   type ProdutoFormValues,
 } from "@/lib/validations/produto";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,10 @@ const valoresPadrao: ProdutoFormValues = {
   tecido: "",
   cor: "",
   preco: "",
+  custo: "0",
 };
+
+const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoFormProps) {
   const router = useRouter();
@@ -54,6 +58,14 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
     resolver: zodResolver(produtoSchema),
     defaultValues: valoresIniciais ?? valoresPadrao,
   });
+
+  const preco = useWatch({ control, name: "preco" });
+  const custo = useWatch({ control, name: "custo" });
+  const precoNumero = preco ? precoParaNumero(preco) : 0;
+  const custoNumero = custo ? precoParaNumero(custo) : 0;
+  const margemValida = Number.isFinite(precoNumero) && Number.isFinite(custoNumero) && precoNumero > 0;
+  const margemReais = margemValida ? precoNumero - custoNumero : 0;
+  const margemPercentual = margemValida ? (margemReais / precoNumero) * 100 : 0;
 
   async function aoSubmeter(dados: ProdutoFormValues) {
     setErroGeral(null);
@@ -149,9 +161,24 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="preco">Preço (R$) *</Label>
+            <Label htmlFor="preco">Preço de venda (R$) *</Label>
             <Input id="preco" placeholder="0,00" {...register("preco")} />
             {errors.preco && <p className="text-sm text-destructive">{errors.preco.message}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="custo">Custo de produção (R$) *</Label>
+            <Input id="custo" placeholder="0,00" {...register("custo")} />
+            {errors.custo && <p className="text-sm text-destructive">{errors.custo.message}</p>}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label>Margem estimada</Label>
+            <p className="flex h-8 items-center text-sm text-muted-foreground">
+              {margemValida
+                ? `${formatadorMoeda.format(margemReais)} (${margemPercentual.toFixed(1)}%)`
+                : "—"}
+            </p>
           </div>
         </CardContent>
       </Card>

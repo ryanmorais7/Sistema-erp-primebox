@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { precoSchema } from "./moeda";
+import { precoSchema, custoSchema } from "./moeda";
 
 export const itemPedidoSchema = z.object({
   produtoId: z.string().trim().min(1, "Selecione um produto"),
@@ -8,6 +8,7 @@ export const itemPedidoSchema = z.object({
     .int("Quantidade deve ser um número inteiro")
     .positive("Quantidade deve ser maior que zero"),
   precoUnitario: precoSchema,
+  custoUnitario: custoSchema,
 });
 
 export const pedidoSchema = z.object({

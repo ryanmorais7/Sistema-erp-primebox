@@ -61,6 +61,7 @@ model Produto {
   tecido        String?
   cor           String?
   preco         Decimal     @db.Decimal(10, 2)
+  custo         Decimal     @default(0) @db.Decimal(10, 2)
   estoqueMinimo Decimal     @default(0) @db.Decimal(10, 2)
   ativo         Boolean     @default(true)
   createdAt     DateTime    @default(now())
@@ -98,6 +99,7 @@ model ItemPedido {
   produto       Produto @relation(fields: [produtoId], references: [id])
   quantidade    Int
   precoUnitario Decimal @db.Decimal(10, 2)
+  custoUnitario Decimal @default(0) @db.Decimal(10, 2)
 
   ordemProducao OrdemProducao?
 }

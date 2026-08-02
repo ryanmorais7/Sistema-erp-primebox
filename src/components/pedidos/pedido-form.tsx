@@ -32,7 +32,7 @@ import {
 
 type Cliente = { id: string; razaoSocial: string; nomeFantasia: string | null };
 type ClienteOption = { value: string; label: string };
-type Produto = { id: string; nome: string; preco: number };
+type Produto = { id: string; nome: string; preco: number; custo: number };
 
 type PedidoFormProps = {
   pedidoId?: string;
@@ -46,7 +46,7 @@ const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", curr
 const valoresPadrao: PedidoFormValues = {
   clienteId: "",
   observacoes: "",
-  itens: [{ produtoId: "", quantidade: 1, precoUnitario: "" }],
+  itens: [{ produtoId: "", quantidade: 1, precoUnitario: "", custoUnitario: "0" }],
 };
 
 export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: PedidoFormProps) {
@@ -74,16 +74,34 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
   }));
   const produtosItems = Object.fromEntries(produtos.map((produto) => [produto.id, produto.nome]));
 
-  function calcularSubtotal(item: { precoUnitario?: string; quantidade?: number } | undefined) {
+  type ItemObservado =
+    | { precoUnitario?: string; custoUnitario?: string; quantidade?: number }
+    | undefined;
+
+  function calcularSubtotal(item: ItemObservado) {
     const preco = item?.precoUnitario ? precoParaNumero(item.precoUnitario) : 0;
     const quantidade = Number(item?.quantidade) || 0;
     return Number.isFinite(preco) ? preco * quantidade : 0;
+  }
+
+  function calcularMargemItem(item: ItemObservado) {
+    const preco = item?.precoUnitario ? precoParaNumero(item.precoUnitario) : 0;
+    const custo = item?.custoUnitario ? precoParaNumero(item.custoUnitario) : 0;
+    const quantidade = Number(item?.quantidade) || 0;
+    if (!Number.isFinite(preco) || !Number.isFinite(custo)) return 0;
+    return (preco - custo) * quantidade;
   }
 
   const valorTotalEstimado = (itensObservados ?? []).reduce(
     (total, item) => total + calcularSubtotal(item),
     0,
   );
+  const margemTotalEstimada = (itensObservados ?? []).reduce(
+    (total, item) => total + calcularMargemItem(item),
+    0,
+  );
+  const margemPercentualEstimada =
+    valorTotalEstimado > 0 ? (margemTotalEstimada / valorTotalEstimado) * 100 : 0;
 
   async function aoSubmeter(dados: PedidoFormValues) {
     setErroGeral(null);
@@ -154,95 +172,118 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
 
           {fields.map((field, index) => {
             const subtotal = calcularSubtotal(itensObservados?.[index]);
+            const margemItem = calcularMargemItem(itensObservados?.[index]);
 
             return (
-              <div
-                key={field.id}
-                className="grid gap-3 border-b pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[1fr_5rem_7rem_7rem_auto] sm:items-end"
-              >
-                <div className="flex flex-col gap-2">
-                  <Label>Produto *</Label>
-                  <Controller
-                    control={control}
-                    name={`itens.${index}.produtoId`}
-                    render={({ field: selectField }) => (
-                      <Select
-                        items={produtosItems}
-                        value={selectField.value}
-                        onValueChange={(value) => {
-                          selectField.onChange(value);
-                          const produto = produtosPorId.get(value ?? "");
-                          if (produto) {
-                            setValue(
-                              `itens.${index}.precoUnitario`,
-                              formatarPrecoBr(produto.preco),
-                            );
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione o produto" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {produtos.map((produto) => (
-                            <SelectItem key={produto.id} value={produto.id}>
-                              {produto.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+              <div key={field.id} className="flex flex-col gap-3 border-b pb-4 last:border-b-0 last:pb-0">
+                <div className="grid gap-3 sm:grid-cols-[1fr_5rem_auto] sm:items-end">
+                  <div className="flex flex-col gap-2">
+                    <Label>Produto *</Label>
+                    <Controller
+                      control={control}
+                      name={`itens.${index}.produtoId`}
+                      render={({ field: selectField }) => (
+                        <Select
+                          items={produtosItems}
+                          value={selectField.value}
+                          onValueChange={(value) => {
+                            selectField.onChange(value);
+                            const produto = produtosPorId.get(value ?? "");
+                            if (produto) {
+                              setValue(
+                                `itens.${index}.precoUnitario`,
+                                formatarPrecoBr(produto.preco),
+                              );
+                              setValue(
+                                `itens.${index}.custoUnitario`,
+                                formatarPrecoBr(produto.custo),
+                              );
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione o produto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {produtos.map((produto) => (
+                              <SelectItem key={produto.id} value={produto.id}>
+                                {produto.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.itens?.[index]?.produtoId && (
+                      <p className="text-sm text-destructive">
+                        {errors.itens[index]?.produtoId?.message}
+                      </p>
                     )}
-                  />
-                  {errors.itens?.[index]?.produtoId && (
-                    <p className="text-sm text-destructive">
-                      {errors.itens[index]?.produtoId?.message}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Qtd. *</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      step={1}
+                      {...register(`itens.${index}.quantidade`, { valueAsNumber: true })}
+                    />
+                    {errors.itens?.[index]?.quantidade && (
+                      <p className="text-sm text-destructive">
+                        {errors.itens[index]?.quantidade?.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    disabled={fields.length === 1}
+                    onClick={() => remove(index)}
+                    aria-label="Remover item"
+                    title="Remover item"
+                  >
+                    <Trash2 />
+                  </Button>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <div className="flex flex-col gap-2">
+                    <Label>Preço unit. *</Label>
+                    <Input placeholder="0,00" {...register(`itens.${index}.precoUnitario`)} />
+                    {errors.itens?.[index]?.precoUnitario && (
+                      <p className="text-sm text-destructive">
+                        {errors.itens[index]?.precoUnitario?.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Custo unit. *</Label>
+                    <Input placeholder="0,00" {...register(`itens.${index}.custoUnitario`)} />
+                    {errors.itens?.[index]?.custoUnitario && (
+                      <p className="text-sm text-destructive">
+                        {errors.itens[index]?.custoUnitario?.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Subtotal</Label>
+                    <p className="flex h-8 items-center text-sm text-muted-foreground">
+                      {formatadorMoeda.format(subtotal)}
                     </p>
-                  )}
-                </div>
+                  </div>
 
-                <div className="flex flex-col gap-2">
-                  <Label>Qtd. *</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    step={1}
-                    {...register(`itens.${index}.quantidade`, { valueAsNumber: true })}
-                  />
-                  {errors.itens?.[index]?.quantidade && (
-                    <p className="text-sm text-destructive">
-                      {errors.itens[index]?.quantidade?.message}
+                  <div className="flex flex-col gap-2">
+                    <Label>Margem</Label>
+                    <p className="flex h-8 items-center text-sm text-muted-foreground">
+                      {formatadorMoeda.format(margemItem)}
                     </p>
-                  )}
+                  </div>
                 </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label>Preço unit. *</Label>
-                  <Input placeholder="0,00" {...register(`itens.${index}.precoUnitario`)} />
-                  {errors.itens?.[index]?.precoUnitario && (
-                    <p className="text-sm text-destructive">
-                      {errors.itens[index]?.precoUnitario?.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label>Subtotal</Label>
-                  <p className="flex h-8 items-center text-sm text-muted-foreground">
-                    {formatadorMoeda.format(subtotal)}
-                  </p>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  disabled={fields.length === 1}
-                  onClick={() => remove(index)}
-                  aria-label="Remover item"
-                  title="Remover item"
-                >
-                  <Trash2 />
-                </Button>
               </div>
             );
           })}
@@ -252,15 +293,21 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
             variant="outline"
             size="sm"
             className="self-start"
-            onClick={() => append({ produtoId: "", quantidade: 1, precoUnitario: "" })}
+            onClick={() =>
+              append({ produtoId: "", quantidade: 1, precoUnitario: "", custoUnitario: "0" })
+            }
           >
             <Plus />
             Adicionar item
           </Button>
 
-          <div className="flex justify-end border-t pt-4">
+          <div className="flex flex-col items-end gap-1 border-t pt-4">
             <p className="text-sm font-medium">
               Total: <span className="text-lg">{formatadorMoeda.format(valorTotalEstimado)}</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Margem estimada: {formatadorMoeda.format(margemTotalEstimada)} (
+              {margemPercentualEstimada.toFixed(1)}%)
             </p>
           </div>
         </CardContent>

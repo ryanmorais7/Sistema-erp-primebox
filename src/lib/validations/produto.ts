@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { precoSchema } from "./moeda";
+import { precoSchema, custoSchema } from "./moeda";
 
 export const TIPOS_PRODUTO = ["BASE", "COLCHAO", "CONJUNTO_BOX"] as const;
 
@@ -16,6 +16,7 @@ export const produtoSchema = z.object({
   tecido: z.string().trim().optional(),
   cor: z.string().trim().optional(),
   preco: precoSchema,
+  custo: custoSchema,
 });
 
 export type ProdutoFormValues = z.infer<typeof produtoSchema>;

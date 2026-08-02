@@ -20,10 +20,16 @@ function extrairErrosDeCampo(issues: { path: PropertyKey[]; message: string }[])
   return campos;
 }
 
-// O preço unitário vem do formulário (o vendedor pode negociar por pedido),
-// não do cadastro do produto — só confirmamos que o produto ainda existe.
+// Preço e custo unitários vêm do formulário (o vendedor pode negociar
+// preço e o custo pode variar por lote), não do cadastro do produto —
+// só confirmamos que o produto ainda existe.
 async function montarItensComPreco(
-  itens: { produtoId: string; quantidade: number; precoUnitario: string }[],
+  itens: {
+    produtoId: string;
+    quantidade: number;
+    precoUnitario: string;
+    custoUnitario: string;
+  }[],
 ) {
   const produtosExistentes = await prisma.produto.findMany({
     where: { id: { in: itens.map((item) => item.produtoId) } },
@@ -39,6 +45,7 @@ async function montarItensComPreco(
       produtoId: item.produtoId,
       quantidade: item.quantidade,
       precoUnitario: precoParaNumero(item.precoUnitario),
+      custoUnitario: precoParaNumero(item.custoUnitario),
     };
   });
 

@@ -23,6 +23,13 @@ const formatadorMoeda = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
 });
 
+function calcularMargem(preco: number, custo: number) {
+  if (!(preco > 0)) return null;
+  const margemReais = preco - custo;
+  const margemPercentual = (margemReais / preco) * 100;
+  return { margemReais, margemPercentual };
+}
+
 export default async function ProdutosPage() {
   const produtos = await prisma.produto.findMany({
     include: { medida: true },
@@ -52,12 +59,15 @@ export default async function ProdutosPage() {
                 <TableHead>Medida</TableHead>
                 <TableHead>Tecido/Cor</TableHead>
                 <TableHead>Preço</TableHead>
+                <TableHead>Margem</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {produtos.map((produto) => (
+              {produtos.map((produto) => {
+                const margem = calcularMargem(Number(produto.preco), Number(produto.custo));
+                return (
                 <TableRow key={produto.id}>
                   <TableCell className="font-medium">{produto.nome}</TableCell>
                   <TableCell>{tipoProdutoLabels[produto.tipo]}</TableCell>
@@ -66,6 +76,11 @@ export default async function ProdutosPage() {
                     {[produto.tecido, produto.cor].filter(Boolean).join(" / ") || "—"}
                   </TableCell>
                   <TableCell>{formatadorMoeda.format(Number(produto.preco))}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {margem
+                      ? `${formatadorMoeda.format(margem.margemReais)} (${margem.margemPercentual.toFixed(1)}%)`
+                      : "—"}
+                  </TableCell>
                   <TableCell>
                     {produto.ativo ? (
                       <Badge className="bg-positive-soft text-positive">Ativo</Badge>
@@ -102,7 +117,8 @@ export default async function ProdutosPage() {
                     </form>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>

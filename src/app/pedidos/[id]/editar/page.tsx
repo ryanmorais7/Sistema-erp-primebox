@@ -37,7 +37,7 @@ export default async function EditarPedidoPage({ params }: PageProps) {
     prisma.produto.findMany({
       where: { ativo: true },
       orderBy: { nome: "asc" },
-      select: { id: true, nome: true, preco: true },
+      select: { id: true, nome: true, preco: true, custo: true },
     }),
   ]);
 
@@ -60,13 +60,14 @@ export default async function EditarPedidoPage({ params }: PageProps) {
     produtosDosItensFaltantes.length > 0
       ? await prisma.produto.findMany({
           where: { id: { in: produtosDosItensFaltantes.map((item) => item.produtoId) } },
-          select: { id: true, nome: true, preco: true },
+          select: { id: true, nome: true, preco: true, custo: true },
         })
       : [];
 
   const produtos = [...produtosAtivos, ...produtosFaltantes].map((produto) => ({
     ...produto,
     preco: Number(produto.preco),
+    custo: Number(produto.custo),
   }));
 
   const valoresIniciais: PedidoFormValues = {
@@ -76,6 +77,7 @@ export default async function EditarPedidoPage({ params }: PageProps) {
       produtoId: item.produtoId,
       quantidade: item.quantidade,
       precoUnitario: formatarPrecoBr(Number(item.precoUnitario)),
+      custoUnitario: formatarPrecoBr(Number(item.custoUnitario)),
     })),
   };
 

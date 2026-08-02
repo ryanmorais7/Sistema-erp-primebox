@@ -14,13 +14,14 @@ export default async function NovoPedidoPage() {
     prisma.produto.findMany({
       where: { ativo: true },
       orderBy: { nome: "asc" },
-      select: { id: true, nome: true, preco: true },
+      select: { id: true, nome: true, preco: true, custo: true },
     }),
   ]);
 
   const produtosComPrecoNumero = produtos.map((produto) => ({
     ...produto,
     preco: Number(produto.preco),
+    custo: Number(produto.custo),
   }));
 
   return (
