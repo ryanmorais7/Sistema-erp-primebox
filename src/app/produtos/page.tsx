@@ -59,7 +59,7 @@ export default async function ProdutosPage() {
                 <TableHead>Medida</TableHead>
                 <TableHead>Tecido/Cor</TableHead>
                 <TableHead>Preço</TableHead>
-                <TableHead>Margem</TableHead>
+                <TableHead>Margem/Lucro</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>

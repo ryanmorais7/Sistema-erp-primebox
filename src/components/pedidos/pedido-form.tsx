@@ -278,7 +278,7 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Label>Margem</Label>
+                    <Label>Margem/Lucro</Label>
                     <p className="flex h-8 items-center text-sm text-muted-foreground">
                       {formatadorMoeda.format(margemItem)}
                     </p>
@@ -306,7 +306,7 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
               Total: <span className="text-lg">{formatadorMoeda.format(valorTotalEstimado)}</span>
             </p>
             <p className="text-sm text-muted-foreground">
-              Margem estimada: {formatadorMoeda.format(margemTotalEstimada)} (
+              Margem/Lucro estimada: {formatadorMoeda.format(margemTotalEstimada)} (
               {margemPercentualEstimada.toFixed(1)}%)
             </p>
           </div>

@@ -173,7 +173,7 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
           </div>
 
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label>Margem estimada</Label>
+            <Label>Margem/Lucro estimada</Label>
             <p className="flex h-8 items-center text-sm text-muted-foreground">
               {margemValida
                 ? `${formatadorMoeda.format(margemReais)} (${margemPercentual.toFixed(1)}%)`

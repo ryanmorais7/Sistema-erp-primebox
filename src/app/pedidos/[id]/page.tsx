@@ -164,7 +164,7 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
                 <TableHead className="text-right">Preço unit.</TableHead>
                 <TableHead className="text-right print:hidden">Custo unit.</TableHead>
                 <TableHead className="text-right">Subtotal</TableHead>
-                <TableHead className="text-right print:hidden">Margem</TableHead>
+                <TableHead className="text-right print:hidden">Margem/Lucro</TableHead>
                 <TableHead className="text-right print:hidden">Produção</TableHead>
               </TableRow>
             </TableHeader>
@@ -243,7 +243,7 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
             <p className="font-medium">{formatadorMoeda.format(valorTotal)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Margem</p>
+            <p className="text-xs text-muted-foreground">Margem/Lucro</p>
             <p className="font-medium">
               {formatadorMoeda.format(margemTotal)} ({margemPercentual.toFixed(1)}%)
             </p>
