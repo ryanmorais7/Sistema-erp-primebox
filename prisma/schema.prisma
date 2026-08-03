@@ -69,6 +69,7 @@ model Produto {
 
   itensPedido       ItemPedido[]
   movimentosEstoque MovimentoEstoqueProduto[]
+  fichaTecnica      ConsumoMateriaPrima[]
 }
 
 enum StatusPedido {
@@ -135,6 +136,50 @@ model MateriaPrima {
   updatedAt     DateTime @updatedAt
 
   movimentos MovimentoEstoqueMateriaPrima[]
+  precos     PrecoMateriaPrima[]
+  consumos   ConsumoMateriaPrima[]
+}
+
+model Fornecedor {
+  id        String   @id @default(cuid())
+  nome      String
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  precos PrecoMateriaPrima[]
+}
+
+// Preço de uma matéria-prima cotado por um fornecedor específico, na
+// unidade de medida já cadastrada na MateriaPrima (ex: R$/m, R$/placa).
+// Uma matéria-prima pode ter vários fornecedores, para comparação.
+model PrecoMateriaPrima {
+  id             String       @id @default(cuid())
+  materiaPrimaId String
+  materiaPrima   MateriaPrima @relation(fields: [materiaPrimaId], references: [id])
+  fornecedorId   String
+  fornecedor     Fornecedor   @relation(fields: [fornecedorId], references: [id])
+  valor          Decimal      @db.Decimal(10, 2)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([materiaPrimaId, fornecedorId])
+}
+
+// Ficha técnica: quanto de uma matéria-prima um produto consome por
+// unidade produzida. Usado para dar saída automática no estoque de
+// matéria-prima quando uma Ordem de Produção é concluída.
+model ConsumoMateriaPrima {
+  id             String       @id @default(cuid())
+  produtoId      String
+  produto        Produto      @relation(fields: [produtoId], references: [id])
+  materiaPrimaId String
+  materiaPrima   MateriaPrima @relation(fields: [materiaPrimaId], references: [id])
+  quantidade     Decimal      @db.Decimal(10, 2)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([produtoId, materiaPrimaId])
 }
 
 model MovimentoEstoqueProduto {

@@ -9,6 +9,12 @@ import {
 } from "@/lib/validations/movimentoEstoque";
 import { precoParaNumero as valorParaNumero } from "@/lib/validations/moeda";
 import { calcularSaldoProduto, calcularSaldoMateriaPrima } from "@/lib/estoque";
+import {
+  fornecedorSchema,
+  precoMateriaPrimaSchema,
+  type FornecedorFormValues,
+  type PrecoMateriaPrimaFormValues,
+} from "@/lib/validations/fornecedor";
 
 type ResultadoAcao =
   | { success: true }
@@ -146,4 +152,85 @@ export async function registrarMovimentoMateriaPrima(
 
   revalidatePath("/estoque");
   return { success: true };
+}
+
+export async function criarFornecedor(dadosBrutos: FornecedorFormValues): Promise<ResultadoAcao> {
+  const resultado = fornecedorSchema.safeParse(dadosBrutos);
+  if (!resultado.success) {
+    return {
+      success: false,
+      error: "Verifique os campos destacados.",
+      camposComErro: extrairErrosDeCampo(resultado.error.issues),
+    };
+  }
+
+  await prisma.fornecedor.create({ data: { nome: resultado.data.nome } });
+
+  revalidatePath("/estoque/fornecedores");
+  return { success: true };
+}
+
+export async function atualizarFornecedor(
+  id: string,
+  dadosBrutos: FornecedorFormValues,
+): Promise<ResultadoAcao> {
+  const resultado = fornecedorSchema.safeParse(dadosBrutos);
+  if (!resultado.success) {
+    return {
+      success: false,
+      error: "Verifique os campos destacados.",
+      camposComErro: extrairErrosDeCampo(resultado.error.issues),
+    };
+  }
+
+  await prisma.fornecedor.update({ where: { id }, data: { nome: resultado.data.nome } });
+
+  revalidatePath("/estoque/fornecedores");
+  return { success: true };
+}
+
+export async function alternarAtivoFornecedor(id: string, ativo: boolean) {
+  await prisma.fornecedor.update({ where: { id }, data: { ativo } });
+  revalidatePath("/estoque/fornecedores");
+}
+
+export async function salvarPrecoMateriaPrima(
+  materiaPrimaId: string,
+  dadosBrutos: PrecoMateriaPrimaFormValues,
+): Promise<ResultadoAcao> {
+  const resultado = precoMateriaPrimaSchema.safeParse(dadosBrutos);
+  if (!resultado.success) {
+    return {
+      success: false,
+      error: "Verifique os campos destacados.",
+      camposComErro: extrairErrosDeCampo(resultado.error.issues),
+    };
+  }
+
+  await prisma.precoMateriaPrima.upsert({
+    where: {
+      materiaPrimaId_fornecedorId: {
+        materiaPrimaId,
+        fornecedorId: resultado.data.fornecedorId,
+      },
+    },
+    create: {
+      materiaPrimaId,
+      fornecedorId: resultado.data.fornecedorId,
+      valor: valorParaNumero(resultado.data.valor),
+    },
+    update: {
+      valor: valorParaNumero(resultado.data.valor),
+    },
+  });
+
+  revalidatePath(`/estoque/materia-prima/${materiaPrimaId}/editar`);
+  revalidatePath("/estoque");
+  return { success: true };
+}
+
+export async function excluirPrecoMateriaPrima(id: string, materiaPrimaId: string) {
+  await prisma.precoMateriaPrima.delete({ where: { id } });
+  revalidatePath(`/estoque/materia-prima/${materiaPrimaId}/editar`);
+  revalidatePath("/estoque");
 }

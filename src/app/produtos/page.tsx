@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, Check, X } from "lucide-react";
+import { Pencil, Check, X, Layers } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoProduto } from "./actions";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
@@ -89,6 +89,16 @@ export default async function ProdutosPage() {
                     )}
                   </TableCell>
                   <TableCell className="flex justify-end gap-2">
+                    <Button
+                      render={<Link href={`/produtos/${produto.id}/ficha-tecnica`} />}
+                      nativeButton={false}
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label="Ficha técnica"
+                      title="Ficha técnica"
+                    >
+                      <Layers />
+                    </Button>
                     <Button
                       render={<Link href={`/produtos/${produto.id}/editar`} />}
                       nativeButton={false}

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { MateriaPrimaForm } from "@/components/estoque/materia-prima-form";
+import { PrecosMateriaPrima } from "@/components/estoque/precos-materia-prima";
 import { PageHeader } from "@/components/layout/page-header";
 import { formatarPrecoBr } from "@/lib/validations/moeda";
 import type { MateriaPrimaFormValues } from "@/lib/validations/materiaPrima";
@@ -15,7 +16,15 @@ type PageProps = {
 export default async function EditarMateriaPrimaPage({ params }: PageProps) {
   const { id } = await params;
 
-  const materiaPrima = await prisma.materiaPrima.findUnique({ where: { id } });
+  const [materiaPrima, fornecedoresAtivos, precos] = await Promise.all([
+    prisma.materiaPrima.findUnique({ where: { id } }),
+    prisma.fornecedor.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
+    prisma.precoMateriaPrima.findMany({
+      where: { materiaPrimaId: id },
+      include: { fornecedor: true },
+      orderBy: { valor: "asc" },
+    }),
+  ]);
 
   if (!materiaPrima) {
     notFound();
@@ -27,10 +36,23 @@ export default async function EditarMateriaPrimaPage({ params }: PageProps) {
     estoqueMinimo: formatarPrecoBr(Number(materiaPrima.estoqueMinimo)),
   };
 
+  const precosFormatados = precos.map((preco) => ({
+    id: preco.id,
+    fornecedorId: preco.fornecedorId,
+    fornecedorNome: preco.fornecedor.nome,
+    valor: Number(preco.valor),
+  }));
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Editar matéria-prima" />
       <MateriaPrimaForm materiaPrimaId={materiaPrima.id} valoresIniciais={valoresIniciais} />
+      <PrecosMateriaPrima
+        materiaPrimaId={materiaPrima.id}
+        unidade={materiaPrima.unidade}
+        fornecedores={fornecedoresAtivos}
+        precosIniciais={precosFormatados}
+      />
     </div>
   );
 }

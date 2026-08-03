@@ -25,22 +25,47 @@ function NivelBadge({ saldo, minimo }: { saldo: number; minimo: number }) {
   );
 }
 
+const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
 export default async function EstoquePage() {
-  const [produtos, materiasPrimas, saldosProdutos, saldosMateriasPrimas] = await Promise.all([
-    prisma.produto.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
-    prisma.materiaPrima.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
-    calcularSaldosProdutos(),
-    calcularSaldosMateriasPrimas(),
-  ]);
+  const [produtos, materiasPrimas, saldosProdutos, saldosMateriasPrimas, precos] =
+    await Promise.all([
+      prisma.produto.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
+      prisma.materiaPrima.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
+      calcularSaldosProdutos(),
+      calcularSaldosMateriasPrimas(),
+      prisma.precoMateriaPrima.findMany({ include: { fornecedor: true } }),
+    ]);
+
+  const melhorPrecoPorMateriaPrima = new Map<string, { valor: number; fornecedor: string }>();
+  for (const preco of precos) {
+    const valor = Number(preco.valor);
+    const atual = melhorPrecoPorMateriaPrima.get(preco.materiaPrimaId);
+    if (!atual || valor < atual.valor) {
+      melhorPrecoPorMateriaPrima.set(preco.materiaPrimaId, {
+        valor,
+        fornecedor: preco.fornecedor.nome,
+      });
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Estoque"
         action={
-          <Button render={<Link href="/estoque/materia-prima/novo" />} nativeButton={false}>
-            Nova matéria-prima
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              render={<Link href="/estoque/fornecedores" />}
+              nativeButton={false}
+              variant="outline"
+            >
+              Fornecedores
+            </Button>
+            <Button render={<Link href="/estoque/materia-prima/novo" />} nativeButton={false}>
+              Nova matéria-prima
+            </Button>
+          </div>
         }
       />
 
@@ -103,8 +128,8 @@ export default async function EstoquePage() {
               <TableRow>
                 <TableHead>Item</TableHead>
                 <TableHead className="text-right">Saldo</TableHead>
-                <TableHead className="text-right">Mínimo</TableHead>
                 <TableHead>Nível</TableHead>
+                <TableHead className="text-right">Melhor preço</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -112,6 +137,7 @@ export default async function EstoquePage() {
               {materiasPrimas.map((materiaPrima) => {
                 const saldo = saldosMateriasPrimas.get(materiaPrima.id) ?? 0;
                 const minimo = Number(materiaPrima.estoqueMinimo);
+                const melhorPreco = melhorPrecoPorMateriaPrima.get(materiaPrima.id);
                 return (
                   <TableRow key={materiaPrima.id}>
                     <TableCell className="font-medium">
@@ -123,11 +149,20 @@ export default async function EstoquePage() {
                     <TableCell className="text-right">
                       {saldo} {materiaPrima.unidade}
                     </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {minimo} {materiaPrima.unidade}
-                    </TableCell>
                     <TableCell>
                       <NivelBadge saldo={saldo} minimo={minimo} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {melhorPreco ? (
+                        <>
+                          {formatadorMoeda.format(melhorPreco.valor)}
+                          <span className="block text-xs text-muted-foreground">
+                            {melhorPreco.fornecedor}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="flex justify-end gap-2">
                       <Button

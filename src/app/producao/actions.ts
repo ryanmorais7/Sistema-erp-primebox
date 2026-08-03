@@ -44,6 +44,27 @@ export async function concluirProducao(id: string) {
     },
   });
 
+  // E dá saída automática das matérias-primas cadastradas na ficha
+  // técnica do produto (ver ADR-016) — quantidade da ficha multiplicada
+  // pela quantidade produzida. Não bloqueia a conclusão se o saldo for
+  // insuficiente: o estoque de matéria-prima é lançado manualmente e
+  // pode estar desatualizado, então preferimos deixar o saldo ficar
+  // negativo (sinal visível de que precisa corrigir uma entrada) a
+  // impedir a fábrica de concluir a produção.
+  const fichaTecnica = await prisma.consumoMateriaPrima.findMany({
+    where: { produtoId: ordem.itemPedido.produtoId },
+  });
+  for (const consumo of fichaTecnica) {
+    await prisma.movimentoEstoqueMateriaPrima.create({
+      data: {
+        materiaPrimaId: consumo.materiaPrimaId,
+        tipo: "SAIDA",
+        quantidade: Number(consumo.quantidade) * ordem.itemPedido.quantidade,
+        observacao: `Consumo da produção — OP #${ordem.numero}`,
+      },
+    });
+  }
+
   revalidatePath("/producao");
   revalidatePath("/estoque");
 }

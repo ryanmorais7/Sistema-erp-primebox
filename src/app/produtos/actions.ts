@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { produtoSchema, precoParaNumero, type ProdutoFormValues } from "@/lib/validations/produto";
+import {
+  consumoMateriaPrimaSchema,
+  precoParaNumero as quantidadeParaNumero,
+  type ConsumoMateriaPrimaFormValues,
+} from "@/lib/validations/fichaTecnica";
 
 type ResultadoAcao =
   | { success: true }
@@ -64,4 +69,43 @@ export async function atualizarProduto(
 export async function alternarAtivoProduto(id: string, ativo: boolean) {
   await prisma.produto.update({ where: { id }, data: { ativo } });
   revalidatePath("/produtos");
+}
+
+export async function salvarConsumoMateriaPrima(
+  produtoId: string,
+  dadosBrutos: ConsumoMateriaPrimaFormValues,
+): Promise<ResultadoAcao> {
+  const resultado = consumoMateriaPrimaSchema.safeParse(dadosBrutos);
+  if (!resultado.success) {
+    return {
+      success: false,
+      error: "Verifique os campos destacados.",
+      camposComErro: extrairErrosDeCampo(resultado.error.issues),
+    };
+  }
+
+  await prisma.consumoMateriaPrima.upsert({
+    where: {
+      produtoId_materiaPrimaId: {
+        produtoId,
+        materiaPrimaId: resultado.data.materiaPrimaId,
+      },
+    },
+    create: {
+      produtoId,
+      materiaPrimaId: resultado.data.materiaPrimaId,
+      quantidade: quantidadeParaNumero(resultado.data.quantidade),
+    },
+    update: {
+      quantidade: quantidadeParaNumero(resultado.data.quantidade),
+    },
+  });
+
+  revalidatePath(`/produtos/${produtoId}/ficha-tecnica`);
+  return { success: true };
+}
+
+export async function excluirConsumoMateriaPrima(id: string, produtoId: string) {
+  await prisma.consumoMateriaPrima.delete({ where: { id } });
+  revalidatePath(`/produtos/${produtoId}/ficha-tecnica`);
 }
