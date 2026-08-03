@@ -36,19 +36,18 @@ const itensComercial = [
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
 ];
 
-const itensRelatorios = [
-  { href: "/relatorios/clientes", label: "Por cliente", icon: Search },
-  { href: "/relatorios/faturamento", label: "Faturamento do dia", icon: CalendarDays },
-];
-
 const itensFabrica = [
   { href: "/producao", label: "Produção", icon: Factory },
   { href: "/estoque", label: "Estoque", icon: Warehouse },
 ];
 
-const itensFinanceiro = [
-  { href: "/faturamento", label: "Faturamento", icon: Receipt },
-  { href: "/expedicao", label: "Expedição", icon: Truck },
+const itensFinanceiro = [{ href: "/faturamento", label: "Faturamento", icon: Receipt }];
+
+const itensExpedicao = [{ href: "/expedicao", label: "Expedição", icon: Truck }];
+
+const itensRelatorios = [
+  { href: "/relatorios/clientes", label: "Por cliente", icon: Search },
+  { href: "/relatorios/faturamento", label: "Faturamento do dia", icon: CalendarDays },
 ];
 
 export function AppSidebar() {
@@ -95,27 +94,6 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="font-mono tracking-wider uppercase">
-            Relatórios
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {itensRelatorios.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    render={<Link href={item.href} />}
-                    isActive={pathname === item.href}
-                  >
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="font-mono tracking-wider uppercase">
             Fábrica
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -142,6 +120,48 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {itensFinanceiro.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    render={<Link href={item.href} />}
+                    isActive={pathname === item.href}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="font-mono tracking-wider uppercase">
+            Expedição
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {itensExpedicao.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    render={<Link href={item.href} />}
+                    isActive={pathname === item.href}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="font-mono tracking-wider uppercase">
+            Relatórios
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {itensRelatorios.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
