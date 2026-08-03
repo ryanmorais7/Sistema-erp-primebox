@@ -2,6 +2,43 @@ import { z } from "zod";
 
 const somenteDigitos = (valor: string) => valor.replace(/\D/g, "");
 
+export const UFS = [
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
+] as const;
+
+function capitalizarPalavras(texto: string): string {
+  return texto
+    .trim()
+    .toLowerCase()
+    .replace(/(^|\s)\S/g, (letra) => letra.toUpperCase());
+}
+
 const cnpjOpcional = z
   .string()
   .optional()
@@ -40,13 +77,20 @@ export const clienteSchema = z
     endereco: z.string().trim().optional(),
     numero: z.string().trim().optional(),
     bairro: z.string().trim().optional(),
-    cidade: z.string().trim().optional(),
+    cidade: z
+      .string()
+      .trim()
+      .optional()
+      .transform((valor) => (valor ? capitalizarPalavras(valor) : valor)),
     estado: z
       .string()
       .trim()
       .toUpperCase()
       .optional()
-      .refine((valor) => !valor || valor.length === 2, "UF deve ter 2 letras"),
+      .refine(
+        (valor) => !valor || (UFS as readonly string[]).includes(valor),
+        "Selecione uma UF válida",
+      ),
     cep: z
       .string()
       .trim()

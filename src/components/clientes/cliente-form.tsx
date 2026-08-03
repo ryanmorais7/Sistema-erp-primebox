@@ -2,15 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { atualizarCliente, criarCliente } from "@/app/clientes/actions";
-import { clienteSchema, type ClienteFormValues } from "@/lib/validations/cliente";
+import { clienteSchema, UFS, type ClienteFormValues } from "@/lib/validations/cliente";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const ufItems = Object.fromEntries(UFS.map((uf) => [uf, uf]));
 
 const valoresPadrao: ClienteFormValues = {
   razaoSocial: "",
@@ -38,6 +47,7 @@ export function ClienteForm({ clienteId, valoresIniciais }: ClienteFormProps) {
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
@@ -143,8 +153,29 @@ export function ClienteForm({ clienteId, valoresIniciais }: ClienteFormProps) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="estado">UF</Label>
-            <Input id="estado" maxLength={2} {...register("estado")} />
+            <Label>UF</Label>
+            <Controller
+              control={control}
+              name="estado"
+              render={({ field }) => (
+                <Select
+                  items={ufItems}
+                  value={field.value || null}
+                  onValueChange={(valor) => field.onChange(valor ?? "")}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="UF" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UFS.map((uf) => (
+                      <SelectItem key={uf} value={uf}>
+                        {uf}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
             {errors.estado && <p className="text-sm text-destructive">{errors.estado.message}</p>}
           </div>
 

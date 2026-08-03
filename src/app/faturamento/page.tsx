@@ -58,7 +58,14 @@ export default async function FaturamentoPage() {
               {cobrancas.map((cobranca) => {
                 const statusExibicao = statusExibicaoCobranca(cobranca);
                 return (
-                  <TableRow key={cobranca.id}>
+                  <TableRow
+                    key={cobranca.id}
+                    className={
+                      statusExibicao === "ATRASADO"
+                        ? "bg-destructive/5 hover:bg-destructive/10"
+                        : undefined
+                    }
+                  >
                     <TableCell className="font-mono">#{cobranca.numero}</TableCell>
                     <TableCell className="font-medium">
                       {cobranca.pedido.cliente.nomeFantasia || cobranca.pedido.cliente.razaoSocial}
