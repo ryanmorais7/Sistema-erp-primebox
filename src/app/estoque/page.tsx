@@ -127,9 +127,9 @@ export default async function EstoquePage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Item</TableHead>
+                <TableHead className="text-right">Valor do item</TableHead>
                 <TableHead className="text-right">Saldo</TableHead>
                 <TableHead>Nível</TableHead>
-                <TableHead className="text-right">Melhor preço</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -147,15 +147,9 @@ export default async function EstoquePage() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      {saldo} {materiaPrima.unidade}
-                    </TableCell>
-                    <TableCell>
-                      <NivelBadge saldo={saldo} minimo={minimo} />
-                    </TableCell>
-                    <TableCell className="text-right">
                       {melhorPreco ? (
                         <>
-                          {formatadorMoeda.format(melhorPreco.valor)}
+                          {formatadorMoeda.format(melhorPreco.valor)}/{materiaPrima.unidade}
                           <span className="block text-xs text-muted-foreground">
                             {melhorPreco.fornecedor}
                           </span>
@@ -163,6 +157,12 @@ export default async function EstoquePage() {
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {saldo} {materiaPrima.unidade}
+                    </TableCell>
+                    <TableCell>
+                      <NivelBadge saldo={saldo} minimo={minimo} />
                     </TableCell>
                     <TableCell className="flex justify-end gap-2">
                       <Button
