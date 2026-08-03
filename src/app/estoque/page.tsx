@@ -38,6 +38,7 @@ export default async function EstoquePage() {
     ]);
 
   const melhorPrecoPorMateriaPrima = new Map<string, { valor: number; fornecedor: string }>();
+  const cotacoesPorMateriaPrima = new Map<string, number>();
   for (const preco of precos) {
     const valor = Number(preco.valor);
     const atual = melhorPrecoPorMateriaPrima.get(preco.materiaPrimaId);
@@ -47,6 +48,10 @@ export default async function EstoquePage() {
         fornecedor: preco.fornecedor.nome,
       });
     }
+    cotacoesPorMateriaPrima.set(
+      preco.materiaPrimaId,
+      (cotacoesPorMateriaPrima.get(preco.materiaPrimaId) ?? 0) + 1,
+    );
   }
 
   return (
@@ -137,9 +142,14 @@ export default async function EstoquePage() {
               {materiasPrimas.map((materiaPrima) => {
                 const saldo = saldosMateriasPrimas.get(materiaPrima.id) ?? 0;
                 const minimo = Number(materiaPrima.estoqueMinimo);
+                const baixo = saldo < minimo;
                 const melhorPreco = melhorPrecoPorMateriaPrima.get(materiaPrima.id);
+                const totalCotacoes = cotacoesPorMateriaPrima.get(materiaPrima.id) ?? 0;
                 return (
-                  <TableRow key={materiaPrima.id}>
+                  <TableRow
+                    key={materiaPrima.id}
+                    className={baixo ? "bg-destructive/5 hover:bg-destructive/10" : undefined}
+                  >
                     <TableCell className="font-medium">
                       {materiaPrima.nome}
                       <span className="block text-xs text-muted-foreground">
@@ -152,10 +162,16 @@ export default async function EstoquePage() {
                           {formatadorMoeda.format(melhorPreco.valor)}/{materiaPrima.unidade}
                           <span className="block text-xs text-muted-foreground">
                             {melhorPreco.fornecedor}
+                            {totalCotacoes > 1 && ` · ${totalCotacoes} fornecedores`}
                           </span>
                         </>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <Link
+                          href={`/estoque/materia-prima/${materiaPrima.id}/editar`}
+                          className="text-muted-foreground underline hover:text-foreground"
+                        >
+                          Cotar
+                        </Link>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
