@@ -24,7 +24,7 @@ ser implementado.
 | Rentabilidade (custo x preço) | Implementado e validado localmente | Margem por item e total no formulário de pedido, e card "Rentabilidade" na visualização do pedido (`/pedidos/[id]`) com custo total, receita total e margem em R$ e %. Sempre `print:hidden` — não aparece na versão impressa para o lojista |
 | Impressão de pedido | Implementado | Tela de visualização (`/pedidos/[id]`) com botão "Imprimir" (CSS de impressão do navegador, sem geração de PDF no servidor) |
 | Identidade visual (sidebar + paleta) | Implementado | Sidebar em grupos Comercial/Fábrica/Financeiro/Expedição/Relatórios, todos ativos (nenhum "em breve" restante); Painel (`/`) com dados reais de pedidos/clientes e tabela de pedidos recentes; filtro por abas em Pedidos; paleta creme/cobre/verde-azulado e tipografia Space Grotesk/Inter/IBM Plex Mono |
-| Gráfico de faturamento no Painel | Implementado e validado em produção | Card no Painel (`/`) com barras dos últimos 6 meses (Recharts), agrupado por `updatedAt` do pedido faturado — mesma convenção de data do relatório de faturamento por dia. Meses sem faturamento aparecem zerados, não somem |
+| Gráfico de faturamento no Painel | Implementado e validado localmente | Card no Painel (`/`) com barras dos últimos 6 meses (Recharts), agrupado por `updatedAt` do pedido faturado. Clicar num mês filtra os 4 cards de resumo (pedidos em carteira, faturados, clientes ativos, valor) pra aquele mês, e mostra um card "Faturamento em {mês}" com variação vs. o mês anterior — ver ADR-019. Meses sem faturamento aparecem zerados, não somem |
 | Relatório por cliente | Implementado | `/relatorios/clientes` — busca por nome, histórico completo de pedidos e totais agrupados por mês/ano |
 | Relatório de faturamento por dia | Implementado | `/relatorios/faturamento` — seleciona uma data, mostra pedidos faturados naquele dia por cliente e o total |
 
@@ -42,6 +42,7 @@ ser implementado.
 - Ver [ADR-014](../decisoes/ADR-014-rentabilidade.md) — rentabilidade (custo x preço) do produto e do pedido.
 - Ver [ADR-015](../decisoes/ADR-015-catalogo-produtos.md) — correção do catálogo de produtos (Base, Unibox, Baú).
 - Ver [ADR-018](../decisoes/ADR-018-grafico-faturamento-painel.md) — gráfico de faturamento no Painel.
+- Ver [ADR-019](../decisoes/ADR-019-painel-interativo-estoque-layout.md) — Painel interativo por mês e reorganização visual do Estoque.
 
 Com isso, os 4 itens do escopo do MVP (Fase 1) estão implementados, e
 já foram refinados com o uso real do Pedro, incluindo o
