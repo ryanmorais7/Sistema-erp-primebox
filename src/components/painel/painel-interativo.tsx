@@ -121,6 +121,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
                   dataKey="faturamento"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={24}
+                  minPointSize={3}
                   onClick={(dado: BarRectangleItem) => {
                     const chave = (dado.payload as DadoMes | undefined)?.chave;
                     if (chave) setChaveSelecionada(chave);
