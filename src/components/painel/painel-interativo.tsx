@@ -61,8 +61,8 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
     <div className="flex flex-col gap-6">
       <div>
         <p className="mb-2 text-xs text-muted-foreground">
-          Mostrando dados de <strong className="text-foreground">{dadoSelecionado.label}</strong> —
-          clique em outro mês no gráfico abaixo para comparar.
+          Mostrando dados de <strong className="text-foreground">{dadoSelecionado.label}</strong>.
+          Clique em outro mês no gráfico abaixo para comparar.
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cartoes.map((cartao) => (

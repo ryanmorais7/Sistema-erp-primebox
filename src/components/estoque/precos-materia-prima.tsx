@@ -135,7 +135,7 @@ export function PrecosMateriaPrima({
 
         {fornecedores.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            Nenhum fornecedor ativo cadastrado —{" "}
+            Nenhum fornecedor ativo cadastrado,{" "}
             <Link href="/estoque/fornecedores/novo" className="underline">
               cadastre um primeiro
             </Link>

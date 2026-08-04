@@ -55,7 +55,7 @@ function formatarEndereco(cliente: {
     [cliente.cidade, cliente.estado].filter(Boolean).join("/"),
     cliente.cep,
   ].filter(Boolean);
-  return partes.length ? partes.join(" — ") : null;
+  return partes.length ? partes.join(", ") : null;
 }
 
 type PageProps = {
@@ -122,7 +122,6 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
         <div className="flex items-start justify-between border-b pb-4 print:pb-2">
           <div>
             <p className="font-heading text-lg font-semibold">PrimeBox</p>
-            <p className="text-sm text-muted-foreground">Sistema de gestão — uso interno</p>
           </div>
           <div className="text-right">
             <p className="font-mono text-sm">Pedido #{pedido.numero}</p>
@@ -231,7 +230,7 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
 
       <div className="rounded-lg border p-4 print:hidden">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Rentabilidade (uso interno — não aparece na impressão)
+          Rentabilidade (uso interno, não aparece na impressão)
         </p>
         <div className="mt-2 grid gap-2 sm:grid-cols-3">
           <div>
@@ -254,7 +253,7 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
       {pedido.observacoes && (
         <div className="rounded-lg border p-4 print:hidden">
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Observações (uso interno — não aparece na impressão)
+            Observações (uso interno, não aparece na impressão)
           </p>
           <p className="mt-1 text-sm whitespace-pre-wrap">{pedido.observacoes}</p>
         </div>

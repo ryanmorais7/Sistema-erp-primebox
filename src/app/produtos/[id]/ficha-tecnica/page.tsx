@@ -37,7 +37,7 @@ export default async function FichaTecnicaProdutoPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={`Ficha técnica — ${produto.nome}`} />
+      <PageHeader title={`Ficha técnica · ${produto.nome}`} />
       <FichaTecnica
         produtoId={produto.id}
         materiasPrimas={materiasPrimasAtivas}

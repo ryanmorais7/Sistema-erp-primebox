@@ -43,7 +43,7 @@ export default async function NovaCobrancaPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={`Nova cobrança — Pedido #${pedido.numero}`} />
+      <PageHeader title={`Nova cobrança · Pedido #${pedido.numero}`} />
       <form action={aoSubmeter} className="flex flex-col gap-6">
         <Card>
           <CardHeader>

@@ -84,7 +84,6 @@ export default async function ReciboPage({ params }: PageProps) {
         <div className="flex items-start justify-between border-b pb-4 print:pb-2">
           <div>
             <p className="font-heading text-lg font-semibold">PrimeBox</p>
-            <p className="text-sm text-muted-foreground">Sistema de gestão — uso interno</p>
           </div>
           <div className="text-right">
             <p className="font-mono text-sm">Recibo #{cobranca.numero}</p>

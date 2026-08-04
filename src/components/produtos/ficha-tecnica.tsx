@@ -128,7 +128,7 @@ export function FichaTecnica({ produtoId, materiasPrimas, consumosIniciais }: Fi
 
         {materiasPrimas.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            Nenhuma matéria-prima ativa cadastrada —{" "}
+            Nenhuma matéria-prima ativa cadastrada,{" "}
             <Link href="/estoque/materia-prima/novo" className="underline">
               cadastre uma primeiro
             </Link>
