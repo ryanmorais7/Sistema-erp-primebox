@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { criarCobranca } from "@/app/cobrancas/actions";
+import { criarCobranca } from "@/app/(app)/cobrancas/actions";
 import { hojeBr } from "@/lib/data";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";

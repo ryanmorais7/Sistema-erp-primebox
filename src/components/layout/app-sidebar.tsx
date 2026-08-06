@@ -14,8 +14,12 @@ import {
   Truck,
   Search,
   CalendarDays,
+  KeyRound,
+  LogOut,
 } from "lucide-react";
 
+import { logout } from "@/app/login/actions";
+import type { PapelUsuario } from "@/lib/session";
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +32,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+
+const papelLabels: Record<PapelUsuario, string> = {
+  DESENVOLVEDOR: "Desenvolvedor",
+  ADMINISTRADOR: "Administrador",
+  FUNCIONARIO: "Funcionário",
+};
 
 const itensComercial = [
   { href: "/", label: "Painel", icon: LayoutDashboard },
@@ -50,7 +61,11 @@ const itensRelatorios = [
   { href: "/relatorios/faturamento", label: "Faturamento do dia", icon: CalendarDays },
 ];
 
-export function AppSidebar() {
+type AppSidebarProps = {
+  usuario: { nome: string; papel: PapelUsuario };
+};
+
+export function AppSidebar({ usuario }: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -176,9 +191,40 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-dashed border-sidebar-border px-4 py-3 font-mono text-[0.65rem] text-sidebar-foreground/50">
-        <p>v0.1 · MVP</p>
-        <p>PrimeBox · uso interno</p>
+      <SidebarFooter className="border-t border-dashed border-sidebar-border px-4 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-sidebar-foreground">{usuario.nome}</p>
+            <p className="font-mono text-[0.65rem] tracking-wider text-sidebar-foreground/50 uppercase">
+              {papelLabels[usuario.papel]}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-1">
+            <Button
+              render={<Link href="/trocar-senha" />}
+              nativeButton={false}
+              variant="ghost"
+              size="icon-sm"
+              className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
+              aria-label="Trocar senha"
+              title="Trocar senha"
+            >
+              <KeyRound />
+            </Button>
+            <form action={logout}>
+              <Button
+                type="submit"
+                variant="ghost"
+                size="icon-sm"
+                className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                aria-label="Sair"
+                title="Sair"
+              >
+                <LogOut />
+              </Button>
+            </form>
+          </div>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

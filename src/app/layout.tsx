@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -37,21 +35,7 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${spaceGrotesk.variable} ${inter.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full">
-        <SidebarProvider>
-          <div className="print:hidden">
-            <AppSidebar />
-          </div>
-          <SidebarInset>
-            <header className="flex items-center border-b px-4 py-3 md:hidden print:hidden">
-              <SidebarTrigger />
-            </header>
-            <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-8 print:max-w-none print:p-0">
-              {children}
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-      </body>
+      <body className="min-h-full">{children}</body>
     </html>
   );
 }

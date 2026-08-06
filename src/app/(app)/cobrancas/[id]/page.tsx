@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { marcarComoPago, marcarComoPendente } from "@/app/cobrancas/actions";
+import { marcarComoPago, marcarComoPendente } from "@/app/(app)/cobrancas/actions";
 import { statusExibicaoCobranca, statusExibicaoLabels } from "@/lib/cobranca";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { Badge } from "@/components/ui/badge";

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { atualizarProduto, criarProduto } from "@/app/produtos/actions";
+import { atualizarProduto, criarProduto } from "@/app/(app)/produtos/actions";
 import {
   produtoSchema,
   tipoProdutoLabels,

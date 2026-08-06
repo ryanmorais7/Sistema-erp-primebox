@@ -11,6 +11,23 @@ datasource db {
   provider = "postgresql"
 }
 
+enum PapelUsuario {
+  DESENVOLVEDOR
+  ADMINISTRADOR
+  FUNCIONARIO
+}
+
+model Usuario {
+  id        String       @id @default(cuid())
+  nome      String
+  email     String       @unique
+  senhaHash String
+  papel     PapelUsuario @default(FUNCIONARIO)
+  ativo     Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
 model Cliente {
   id           String  @id @default(cuid())
   razaoSocial  String

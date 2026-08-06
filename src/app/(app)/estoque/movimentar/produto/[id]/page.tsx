@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { calcularSaldoProduto } from "@/lib/estoque";
-import { registrarMovimentoProduto } from "@/app/estoque/actions";
+import { registrarMovimentoProduto } from "@/app/(app)/estoque/actions";
 import { MovimentoForm } from "@/components/estoque/movimento-form";
 import { PageHeader } from "@/components/layout/page-header";
 

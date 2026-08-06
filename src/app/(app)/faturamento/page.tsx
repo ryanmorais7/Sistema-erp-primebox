@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Eye, Check, Undo2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { marcarComoPago, marcarComoPendente } from "@/app/cobrancas/actions";
+import { marcarComoPago, marcarComoPendente } from "@/app/(app)/cobrancas/actions";
 import { statusExibicaoCobranca, statusExibicaoLabels } from "@/lib/cobranca";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";

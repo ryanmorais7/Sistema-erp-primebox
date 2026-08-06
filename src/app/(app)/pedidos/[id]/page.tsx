@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
-import { gerarOrdemProducao } from "@/app/producao/actions";
+import { gerarOrdemProducao } from "@/app/(app)/producao/actions";
 import { statusExibicaoCobranca, statusExibicaoLabels } from "@/lib/cobranca";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

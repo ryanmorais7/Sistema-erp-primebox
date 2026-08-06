@@ -7,7 +7,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 
-import { salvarConsumoMateriaPrima, excluirConsumoMateriaPrima } from "@/app/produtos/actions";
+import { salvarConsumoMateriaPrima, excluirConsumoMateriaPrima } from "@/app/(app)/produtos/actions";
 import {
   consumoMateriaPrimaSchema,
   type ConsumoMateriaPrimaFormValues,

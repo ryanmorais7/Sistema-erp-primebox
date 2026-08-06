@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { atualizarFornecedor, criarFornecedor } from "@/app/estoque/actions";
+import { atualizarFornecedor, criarFornecedor } from "@/app/(app)/estoque/actions";
 import { fornecedorSchema, type FornecedorFormValues } from "@/lib/validations/fornecedor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

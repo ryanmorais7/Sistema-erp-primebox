@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { atualizarCliente, criarCliente } from "@/app/clientes/actions";
+import { atualizarCliente, criarCliente } from "@/app/(app)/clientes/actions";
 import { clienteSchema, UFS, type ClienteFormValues } from "@/lib/validations/cliente";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

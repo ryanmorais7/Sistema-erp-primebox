@@ -6,7 +6,7 @@ import { useForm, useFieldArray, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 
-import { atualizarPedido, criarPedido } from "@/app/pedidos/actions";
+import { atualizarPedido, criarPedido } from "@/app/(app)/pedidos/actions";
 import { pedidoSchema, type PedidoFormValues } from "@/lib/validations/pedido";
 import { precoParaNumero, formatarPrecoBr } from "@/lib/validations/moeda";
 import { Button } from "@/components/ui/button";
