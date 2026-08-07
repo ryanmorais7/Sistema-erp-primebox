@@ -19,3 +19,15 @@ export const trocarSenhaSchema = z
   });
 
 export type TrocarSenhaFormValues = z.infer<typeof trocarSenhaSchema>;
+
+export const definirSenhaSchema = z
+  .object({
+    novaSenha: z.string().min(6, "A senha precisa ter pelo menos 6 caracteres"),
+    confirmarSenha: z.string().min(1, "Confirme a senha"),
+  })
+  .refine((dados) => dados.novaSenha === dados.confirmarSenha, {
+    message: "As senhas não coincidem",
+    path: ["confirmarSenha"],
+  });
+
+export type DefinirSenhaFormValues = z.infer<typeof definirSenhaSchema>;

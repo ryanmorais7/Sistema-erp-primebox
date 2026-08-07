@@ -18,14 +18,16 @@ enum PapelUsuario {
 }
 
 model Usuario {
-  id        String       @id @default(cuid())
-  nome      String
-  email     String       @unique
-  senhaHash String
-  papel     PapelUsuario @default(FUNCIONARIO)
-  ativo     Boolean      @default(true)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id                   String       @id @default(cuid())
+  nome                 String
+  email                String       @unique
+  senhaHash            String?
+  papel                PapelUsuario @default(FUNCIONARIO)
+  ativo                Boolean      @default(true)
+  tokenConviteHash     String?      @unique
+  tokenConviteExpiraEm DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 }
 
 model Cliente {

@@ -9,7 +9,7 @@ const NOME_COOKIE = "primebox_session";
 
 const chaveCodificada = new TextEncoder().encode(process.env.SESSION_SECRET);
 
-const ROTAS_PUBLICAS = ["/login"];
+const ROTAS_PUBLICAS = ["/login", "/definir-senha"];
 
 async function temSessaoValida(request: NextRequest): Promise<boolean> {
   const cookie = request.cookies.get(NOME_COOKIE)?.value;
