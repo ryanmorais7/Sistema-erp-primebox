@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeftRight, Pencil, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoMateriaPrima, excluirMateriaPrima } from "./actions";
+import { excluirProduto } from "@/app/(app)/produtos/actions";
 import { calcularSaldosProdutos, calcularSaldosMateriasPrimas } from "@/lib/estoque";
 import { PageHeader } from "@/components/layout/page-header";
 import { SecaoRecolhivel } from "@/components/estoque/secao-recolhivel";
@@ -106,7 +107,7 @@ export default async function EstoquePage() {
                         <TableCell>
                           <NivelBadge saldo={saldo} minimo={minimo} />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="flex justify-end gap-2">
                           <Button
                             render={<Link href={`/estoque/movimentar/produto/${produto.id}`} />}
                             nativeButton={false}
@@ -117,6 +118,11 @@ export default async function EstoquePage() {
                           >
                             <ArrowLeftRight />
                           </Button>
+                          <BotaoExcluir
+                            acao={excluirProduto.bind(null, produto.id)}
+                            confirmacao={`Excluir "${produto.nome}" permanentemente? Essa ação não pode ser desfeita.`}
+                            label="Excluir produto"
+                          />
                         </TableCell>
                       </TableRow>
                     );
