@@ -1,4 +1,4 @@
-# ADR-029: Excluir de verdade Produto, Matéria-prima e Fornecedor
+# ADR-029: Excluir de verdade Produto, Matéria-prima, Fornecedor e Cliente
 
 - **Status:** Aceito
 - **Data:** 2026-08-08
@@ -43,16 +43,19 @@ bloqueada.
 ### Onde entrou
 
 - `/produtos` — ao lado do botão de ativar/desativar.
-- `/estoque` — na seção de matéria-prima (a seção de produtos acabados
-  ali já não tinha botão de editar/desativar, só "registrar
-  movimentação" — não mexi nisso, o botão de excluir produto fica só na
-  tela `/produtos`).
+- `/estoque` — em ambas as seções: matéria-prima, e também produtos
+  acabados (que antes só tinha "registrar movimentação", sem nenhuma
+  ação de editar/desativar/excluir — reaproveita a mesma
+  `excluirProduto` já usada em `/produtos`).
 - `/estoque/fornecedores`.
+- `/clientes` — mesma lógica, bloqueia se o cliente tiver pedido
+  vinculado (`Cliente` não tinha essa checagem antes porque nunca teve
+  exclusão de verdade, só ativar/desativar).
 
 ## Consequências
 
 - Testado com item livre (exclui normalmente) e item com histórico
-  vinculado (bloqueia com a mensagem certa) pras 3 entidades, incluindo
+  vinculado (bloqueia com a mensagem certa) pras 4 entidades, incluindo
   conferir que o diálogo de confirmação aparece antes de qualquer ação.
 - Se um item tiver histórico e o usuário realmente precisar removê-lo,
   a única forma continua sendo desativar (ou eu apagar manualmente pelo

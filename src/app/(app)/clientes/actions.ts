@@ -76,3 +76,19 @@ export async function alternarAtivoCliente(id: string, ativo: boolean) {
   await prisma.cliente.update({ where: { id }, data: { ativo } });
   revalidatePath("/clientes");
 }
+
+export async function excluirCliente(id: string): Promise<ResultadoAcao> {
+  const pedidos = await prisma.pedido.count({ where: { clienteId: id } });
+
+  if (pedidos > 0) {
+    return {
+      success: false,
+      error:
+        'Não é possível excluir: esse cliente já tem pedidos vinculados. Use "Desativar" pra escondê-lo sem perder o histórico.',
+    };
+  }
+
+  await prisma.cliente.delete({ where: { id } });
+  revalidatePath("/clientes");
+  return { success: true };
+}

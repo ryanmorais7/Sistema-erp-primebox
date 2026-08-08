@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { ClipboardList, Pencil, Check, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { alternarAtivoCliente } from "./actions";
+import { alternarAtivoCliente, excluirCliente } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BotaoExcluir } from "@/components/ui/botao-excluir";
 import {
   Table,
   TableBody,
@@ -109,6 +110,11 @@ export default async function ClientesPage() {
                         {cliente.ativo ? <X /> : <Check />}
                       </Button>
                     </form>
+                    <BotaoExcluir
+                      acao={excluirCliente.bind(null, cliente.id)}
+                      confirmacao={`Excluir "${cliente.nomeFantasia || cliente.razaoSocial}" permanentemente? Essa ação não pode ser desfeita.`}
+                      label="Excluir cliente"
+                    />
                   </TableCell>
                 </TableRow>
               ))}
