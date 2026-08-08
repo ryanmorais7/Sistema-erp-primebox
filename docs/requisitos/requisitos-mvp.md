@@ -51,6 +51,7 @@ ser implementado.
 - Ver [ADR-024](../decisoes/ADR-024-correcao-login-case-insensitive.md) — correção de bug de login (e-mail case-insensitive) e ajustes visuais no recibo.
 - Ver [ADR-025](../decisoes/ADR-025-navegacao-rapida-painel.md) — navegação rápida a partir dos cards e da lista do Painel.
 - Ver [ADR-026](../decisoes/ADR-026-canhoto-entrega-pedido.md) — recibo do pedido com canhoto de entrega (substitui ADR-023).
+- Ver [ADR-027](../decisoes/ADR-027-cores-impressao.md) — correção de cor de fundo sumindo na impressão.
 
 Com isso, os 4 itens do escopo do MVP (Fase 1) estão implementados, e
 já foram refinados com o uso real do Pedro, incluindo o

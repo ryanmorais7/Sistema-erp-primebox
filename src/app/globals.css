@@ -145,3 +145,14 @@
     @apply font-heading;
   }
 }
+
+@media print {
+  @page {
+    margin: 10mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
