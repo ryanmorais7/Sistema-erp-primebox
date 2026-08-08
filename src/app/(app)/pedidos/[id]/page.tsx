@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { FileDown, MessageCircle, Factory, Receipt, Truck, Box } from "lucide-react";
+import { FileDown, MessageCircle, Factory, Receipt, Truck, Box, Scissors } from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { verificarSessao } from "@/lib/dal";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
 import { gerarOrdemProducao } from "@/app/(app)/producao/actions";
@@ -20,6 +21,12 @@ const statusExpedicaoLabels = {
   EM_ROTA: "Em rota",
   ENTREGUE: "Entregue",
 } as const;
+
+const badgePagamentoClasses: Record<string, string> = {
+  PAGO: "bg-positive-soft text-positive",
+  PENDENTE: "bg-accent text-accent-foreground",
+  ATRASADO: "bg-destructive/10 text-destructive",
+};
 import {
   Table,
   TableBody,
@@ -64,6 +71,7 @@ type PageProps = {
 
 export default async function VisualizarPedidoPage({ params }: PageProps) {
   const { id } = await params;
+  const sessao = await verificarSessao();
 
   const pedido = await prisma.pedido.findUnique({
     where: { id },
@@ -81,6 +89,14 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
 
   const endereco = formatarEndereco(pedido.cliente);
   const documento = formatarDocumento(pedido.cliente.cnpj, pedido.cliente.cpf);
+  const nomeExibido = pedido.cliente.nomeFantasia || pedido.cliente.razaoSocial;
+  const linhaSecundariaCliente = [
+    pedido.cliente.nomeFantasia ? pedido.cliente.razaoSocial : null,
+    documento,
+    pedido.cliente.telefone,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const custoTotal = pedido.itens.reduce(
     (total, item) => total + Number(item.custoUnitario) * item.quantidade,
@@ -91,10 +107,6 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
   const margemPercentual = valorTotal > 0 ? (margemTotal / valorTotal) * 100 : 0;
 
   const statusPagamento = pedido.cobranca ? statusExibicaoCobranca(pedido.cobranca) : "PENDENTE";
-  const badgePagamentoClasses: Record<string, string> = {
-    PAGO: "bg-positive-soft text-positive",
-    ATRASADO: "bg-destructive/10 text-destructive",
-  };
 
   return (
     <div className="flex flex-col gap-6 print:gap-4">
@@ -143,13 +155,12 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
             <p className="text-sm text-muted-foreground">
               {formatadorData.format(pedido.createdAt)}
             </p>
-            {pedido.status === "FATURADO" ? (
-              <Badge className="mt-1 bg-positive-soft text-positive">Faturado</Badge>
-            ) : (
-              <Badge className="mt-1" variant="secondary">
-                Em carteira
-              </Badge>
-            )}
+            <Badge
+              className={`mt-1 ${badgePagamentoClasses[statusPagamento] ?? ""}`}
+              variant="secondary"
+            >
+              {statusExibicaoLabels[statusPagamento]}
+            </Badge>
           </div>
         </div>
 
@@ -157,13 +168,10 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Cliente
           </p>
-          <p className="font-medium">{pedido.cliente.nomeFantasia || pedido.cliente.razaoSocial}</p>
-          {pedido.cliente.nomeFantasia && (
-            <p className="text-sm text-muted-foreground">{pedido.cliente.razaoSocial}</p>
+          <p className="font-medium">{nomeExibido}</p>
+          {linhaSecundariaCliente && (
+            <p className="text-sm text-muted-foreground">{linhaSecundariaCliente}</p>
           )}
-          <p className="text-sm text-muted-foreground">
-            {[documento, pedido.cliente.telefone].filter(Boolean).join(" · ")}
-          </p>
           {endereco && <p className="text-sm text-muted-foreground">{endereco}</p>}
         </div>
 
@@ -242,43 +250,58 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
           </p>
         </div>
 
-        <div className="mt-8 grid gap-6 border-t pt-6 sm:grid-cols-2 print:grid-cols-2">
-          {(["PrimeBox", "Cliente"] as const).map((via) => (
-            <div key={via} className="flex flex-col gap-6 rounded-lg border p-4 print:break-inside-avoid">
-              <div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    Via {via}
-                  </p>
-                  {via === "Cliente" && (
-                    <Badge
-                      variant="secondary"
-                      className={badgePagamentoClasses[statusPagamento] ?? ""}
-                    >
-                      {statusExibicaoLabels[statusPagamento]}
-                    </Badge>
-                  )}
-                </div>
-                <p className="mt-1 text-sm">
-                  Confirmo o recebimento da mercadoria descrita acima, em perfeitas condições.
-                </p>
-              </div>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <div className="h-8 border-b border-dashed" />
-                  <p className="mt-1 text-xs text-muted-foreground">Nome de quem recebeu</p>
-                </div>
-                <div>
-                  <div className="h-8 border-b border-dashed" />
-                  <p className="mt-1 text-xs text-muted-foreground">Assinatura</p>
-                </div>
-                <div className="w-32">
-                  <div className="h-8 border-b border-dashed" />
-                  <p className="mt-1 text-xs text-muted-foreground">Data</p>
-                </div>
-              </div>
+        <div className="mt-10 flex justify-end">
+          <div className="flex flex-col items-end gap-1">
+            <div className="w-56 border-b border-foreground/40" />
+            <p className="text-sm font-semibold">{sessao.nome}</p>
+            <p className="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
+              Representante
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="relative my-8 print:my-6">
+          <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-muted-foreground/50" />
+          <p className="relative mx-auto flex w-fit items-center gap-1.5 bg-background px-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
+            <Scissors className="size-3" />
+            Cortar aqui · Canhoto fica com a PrimeBox
+          </p>
+        </div>
+
+        <div className="rounded-lg border print:break-inside-avoid">
+          <div className="flex flex-wrap items-start justify-between gap-4 p-4">
+            <div>
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Cliente
+              </p>
+              <p className="font-medium">{nomeExibido}</p>
             </div>
-          ))}
+            <p className="max-w-xs text-right text-sm text-muted-foreground">
+              Confirmo o recebimento dos produtos citados acima, em perfeitas condições.
+            </p>
+          </div>
+          <div className="grid grid-cols-[1fr_auto_auto] border-t">
+            <div className="flex flex-col gap-6 p-4">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Assinatura do cliente
+              </p>
+              <div className="border-b border-foreground/40" />
+            </div>
+            <div className="flex flex-col gap-6 border-l p-4">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Data
+              </p>
+              <p className="text-sm text-muted-foreground">___ / ___ / ______</p>
+            </div>
+            <div className="flex flex-col gap-6 border-l p-4">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Pedido nº
+              </p>
+              <p className="text-sm font-semibold">#{pedido.numero}</p>
+            </div>
+          </div>
         </div>
       </div>
 

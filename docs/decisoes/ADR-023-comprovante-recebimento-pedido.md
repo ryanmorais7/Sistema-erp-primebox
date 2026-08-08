@@ -1,6 +1,6 @@
 # ADR-023: Comprovante de recebimento (2 vias) no recibo do pedido
 
-- **Status:** Aceito
+- **Status:** Substituído pelo [ADR-026](./ADR-026-canhoto-entrega-pedido.md)
 - **Data:** 2026-08-08
 
 ## Contexto
