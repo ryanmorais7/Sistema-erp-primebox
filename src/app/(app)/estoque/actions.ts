@@ -84,6 +84,26 @@ export async function alternarAtivoMateriaPrima(id: string, ativo: boolean) {
   revalidatePath("/estoque");
 }
 
+export async function excluirMateriaPrima(id: string): Promise<ResultadoAcao> {
+  const [movimentos, precos, consumos] = await Promise.all([
+    prisma.movimentoEstoqueMateriaPrima.count({ where: { materiaPrimaId: id } }),
+    prisma.precoMateriaPrima.count({ where: { materiaPrimaId: id } }),
+    prisma.consumoMateriaPrima.count({ where: { materiaPrimaId: id } }),
+  ]);
+
+  if (movimentos > 0 || precos > 0 || consumos > 0) {
+    return {
+      success: false,
+      error:
+        'Não é possível excluir: essa matéria-prima já tem movimentações, preços de fornecedor ou ficha técnica vinculados. Use "Desativar" pra escondê-la sem perder o histórico.',
+    };
+  }
+
+  await prisma.materiaPrima.delete({ where: { id } });
+  revalidatePath("/estoque");
+  return { success: true };
+}
+
 export async function registrarMovimentoProduto(
   produtoId: string,
   dadosBrutos: MovimentoEstoqueFormValues,
@@ -192,6 +212,22 @@ export async function atualizarFornecedor(
 export async function alternarAtivoFornecedor(id: string, ativo: boolean) {
   await prisma.fornecedor.update({ where: { id }, data: { ativo } });
   revalidatePath("/estoque/fornecedores");
+}
+
+export async function excluirFornecedor(id: string): Promise<ResultadoAcao> {
+  const precos = await prisma.precoMateriaPrima.count({ where: { fornecedorId: id } });
+
+  if (precos > 0) {
+    return {
+      success: false,
+      error:
+        'Não é possível excluir: esse fornecedor tem preços de matéria-prima vinculados. Use "Desativar" pra escondê-lo sem perder o histórico.',
+    };
+  }
+
+  await prisma.fornecedor.delete({ where: { id } });
+  revalidatePath("/estoque/fornecedores");
+  return { success: true };
 }
 
 export async function salvarPrecoMateriaPrima(

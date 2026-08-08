@@ -20,7 +20,7 @@ foi implementada — ver tabela abaixo.)
 | Item | Status | Observações |
 |---|---|---|
 | Cadastro de Clientes | Implementado e validado em produção | Listagem (`/clientes`), criação (`/clientes/novo`) e edição (`/clientes/[id]/editar`), com ativar/desativar (soft delete). Validação com Zod (exige CNPJ ou CPF, formatos de telefone/CEP/UF) e React Hook Form |
-| Cadastro de Produtos | Implementado e validado em produção | Listagem (`/produtos`), criação (`/produtos/novo`) e edição (`/produtos/[id]/editar`), com ativar/desativar. Tipo (Base, Unibox ou Baú — catálogo real da fábrica, ver ADR-015) e medida via seleção (medida vem da tabela `Medida`); preço aceita formato brasileiro (ex: 1.899,90). Campo de custo de produção com margem estimada calculada ao vivo; coluna "Margem" na listagem |
+| Cadastro de Produtos | Implementado e validado em produção | Listagem (`/produtos`), criação (`/produtos/novo`) e edição (`/produtos/[id]/editar`), com ativar/desativar e excluir de verdade (bloqueado se o produto tiver pedido/movimentação/ficha técnica vinculados — ver ADR-029). Tipo (Base, Unibox ou Baú — catálogo real da fábrica, ver ADR-015) e medida via seleção (medida vem da tabela `Medida`); preço aceita formato brasileiro (ex: 1.899,90). Campo de custo de produção com margem estimada calculada ao vivo; coluna "Margem" na listagem |
 | Pedido | Implementado e validado localmente | Listagem (`/pedidos`), criação (`/pedidos/novo`) e edição (`/pedidos/[id]/editar`) com itens dinâmicos (cliente + produto + quantidade + preço unitário editável + custo unitário editável). Combobox de busca por nome do cliente. Campo de observações (anotações de pagamento). Ações de faturar e excluir (só para pedidos em carteira); pedido faturado redireciona para a visualização. Valor total sempre recalculado no servidor a partir dos preços informados |
 | Rentabilidade (custo x preço) | Implementado e validado localmente | Margem por item e total no formulário de pedido, e card "Rentabilidade" na visualização do pedido (`/pedidos/[id]`) com custo total, receita total e margem em R$ e %. Sempre `print:hidden` — não aparece na versão impressa para o lojista |
 | Impressão de pedido | Implementado | Tela de visualização (`/pedidos/[id]`) com botão "Imprimir" (CSS de impressão do navegador, sem geração de PDF no servidor). Recibo mostra status de pagamento e assinatura do representante (quem está logado); inclui canhoto destacável pro cliente assinar na entrega, que volta pra PrimeBox como comprovante — ver ADR-026 |
@@ -55,6 +55,7 @@ foi implementada — ver tabela abaixo.)
 - Ver [ADR-026](../decisoes/ADR-026-canhoto-entrega-pedido.md) — recibo do pedido com canhoto de entrega (substitui ADR-023).
 - Ver [ADR-027](../decisoes/ADR-027-cores-impressao.md) — correção de cor de fundo sumindo na impressão.
 - Ver [ADR-028](../decisoes/ADR-028-recibo-op-producao.md) — recibo de OP consolidado em Produção.
+- Ver [ADR-029](../decisoes/ADR-029-excluir-produto-materia-prima-fornecedor.md) — excluir de verdade Produto, Matéria-prima e Fornecedor.
 
 Com isso, os 4 itens do escopo do MVP (Fase 1) estão implementados, e
 já foram refinados com o uso real do Pedro, incluindo o

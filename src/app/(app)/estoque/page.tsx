@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { ArrowLeftRight, Pencil, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { alternarAtivoMateriaPrima } from "./actions";
+import { alternarAtivoMateriaPrima, excluirMateriaPrima } from "./actions";
 import { calcularSaldosProdutos, calcularSaldosMateriasPrimas } from "@/lib/estoque";
 import { PageHeader } from "@/components/layout/page-header";
 import { SecaoRecolhivel } from "@/components/estoque/secao-recolhivel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BotaoExcluir } from "@/components/ui/botao-excluir";
 import {
   Table,
   TableBody,
@@ -226,6 +227,11 @@ export default async function EstoquePage() {
                               <X />
                             </Button>
                           </form>
+                          <BotaoExcluir
+                            acao={excluirMateriaPrima.bind(null, materiaPrima.id)}
+                            confirmacao={`Excluir "${materiaPrima.nome}" permanentemente? Essa ação não pode ser desfeita.`}
+                            label="Excluir matéria-prima"
+                          />
                         </TableCell>
                       </TableRow>
                     );

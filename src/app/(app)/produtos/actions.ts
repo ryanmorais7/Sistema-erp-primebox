@@ -71,6 +71,26 @@ export async function alternarAtivoProduto(id: string, ativo: boolean) {
   revalidatePath("/produtos");
 }
 
+export async function excluirProduto(id: string): Promise<ResultadoAcao> {
+  const [itensPedido, movimentos, fichaTecnica] = await Promise.all([
+    prisma.itemPedido.count({ where: { produtoId: id } }),
+    prisma.movimentoEstoqueProduto.count({ where: { produtoId: id } }),
+    prisma.consumoMateriaPrima.count({ where: { produtoId: id } }),
+  ]);
+
+  if (itensPedido > 0 || movimentos > 0 || fichaTecnica > 0) {
+    return {
+      success: false,
+      error:
+        'Não é possível excluir: esse produto já tem pedidos, movimentações de estoque ou ficha técnica vinculados. Use "Desativar" pra escondê-lo sem perder o histórico.',
+    };
+  }
+
+  await prisma.produto.delete({ where: { id } });
+  revalidatePath("/produtos");
+  return { success: true };
+}
+
 export async function salvarConsumoMateriaPrima(
   produtoId: string,
   dadosBrutos: ConsumoMateriaPrimaFormValues,

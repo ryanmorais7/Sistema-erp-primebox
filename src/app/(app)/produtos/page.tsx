@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Pencil, Check, X, Layers } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { alternarAtivoProduto } from "./actions";
+import { alternarAtivoProduto, excluirProduto } from "./actions";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BotaoExcluir } from "@/components/ui/botao-excluir";
 import {
   Table,
   TableBody,
@@ -125,6 +126,11 @@ export default async function ProdutosPage() {
                         {produto.ativo ? <X /> : <Check />}
                       </Button>
                     </form>
+                    <BotaoExcluir
+                      acao={excluirProduto.bind(null, produto.id)}
+                      confirmacao={`Excluir "${produto.nome}" permanentemente? Essa ação não pode ser desfeita.`}
+                      label="Excluir produto"
+                    />
                   </TableCell>
                 </TableRow>
                 );
