@@ -6,14 +6,15 @@ export const itemPedidoSchema = z.object({
   quantidade: z
     .number()
     .int("Quantidade deve ser um número inteiro")
-    .positive("Quantidade deve ser maior que zero"),
+    .positive("Quantidade deve ser maior que zero")
+    .max(100000, "Quantidade muito alta"),
   precoUnitario: precoSchema,
   custoUnitario: custoSchema,
 });
 
 export const pedidoSchema = z.object({
   clienteId: z.string().trim().min(1, "Selecione um cliente"),
-  observacoes: z.string().trim().optional(),
+  observacoes: z.string().trim().max(1000, "Observações muito longas").optional(),
   itens: z
     .array(itemPedidoSchema)
     .min(1, "Adicione pelo menos um item")

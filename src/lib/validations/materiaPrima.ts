@@ -2,8 +2,8 @@ import { z } from "zod";
 import { precoParaNumero as valorParaNumero } from "./moeda";
 
 export const materiaPrimaSchema = z.object({
-  nome: z.string().trim().min(2, "Informe o nome da matéria-prima"),
-  unidade: z.string().trim().min(1, "Informe a unidade (ex: m, kg, un)"),
+  nome: z.string().trim().min(2, "Informe o nome da matéria-prima").max(150, "Nome muito longo"),
+  unidade: z.string().trim().min(1, "Informe a unidade (ex: m, kg, un)").max(20, "Unidade muito longa"),
   estoqueMinimo: z
     .string()
     .trim()

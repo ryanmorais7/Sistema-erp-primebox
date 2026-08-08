@@ -57,29 +57,31 @@ const cpfOpcional = z
 
 export const clienteSchema = z
   .object({
-    razaoSocial: z.string().trim().min(3, "Informe a razão social"),
-    nomeFantasia: z.string().trim().optional(),
+    razaoSocial: z.string().trim().min(3, "Informe a razão social").max(200, "Nome muito longo"),
+    nomeFantasia: z.string().trim().max(200, "Nome muito longo").optional(),
     cnpj: cnpjOpcional,
     cpf: cpfOpcional,
     telefone: z
       .string()
       .trim()
       .transform(somenteDigitos)
-      .refine((valor) => valor.length >= 10, "Telefone inválido"),
+      .refine((valor) => valor.length >= 10 && valor.length <= 11, "Telefone inválido"),
     email: z
       .string()
       .trim()
+      .max(200, "E-mail muito longo")
       .optional()
       .refine((valor) => !valor || z.string().email().safeParse(valor).success, {
         message: "E-mail inválido",
       }),
-    contatoNome: z.string().trim().optional(),
-    endereco: z.string().trim().optional(),
-    numero: z.string().trim().optional(),
-    bairro: z.string().trim().optional(),
+    contatoNome: z.string().trim().max(150, "Nome muito longo").optional(),
+    endereco: z.string().trim().max(200, "Endereço muito longo").optional(),
+    numero: z.string().trim().max(20, "Número muito longo").optional(),
+    bairro: z.string().trim().max(100, "Bairro muito longo").optional(),
     cidade: z
       .string()
       .trim()
+      .max(100, "Cidade muito longa")
       .optional()
       .transform((valor) => (valor ? capitalizarPalavras(valor) : valor)),
     estado: z

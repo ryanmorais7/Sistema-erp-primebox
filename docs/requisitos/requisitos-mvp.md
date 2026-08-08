@@ -27,7 +27,7 @@ ser implementado.
 | Gráfico de faturamento no Painel | Implementado e validado localmente | Card no Painel (`/`) com barras dos últimos 6 meses (Recharts), agrupado por `updatedAt` do pedido faturado. Clicar num mês filtra os 4 cards de resumo (pedidos em carteira, faturados, clientes ativos, valor) pra aquele mês, e mostra um card "Faturamento em {mês}" com variação vs. o mês anterior — ver ADR-019. Meses sem faturamento aparecem zerados, não somem |
 | Relatório por cliente | Implementado | `/relatorios/clientes` — busca por nome, histórico completo de pedidos e totais agrupados por mês/ano |
 | Relatório de faturamento por dia | Implementado | `/relatorios/faturamento` — seleciona uma data, mostra pedidos faturados naquele dia por cliente e o total |
-| Login e controle de acesso | Implementado e validado localmente | Tela de login responsiva em `/login`. Sessão via cookie JWT assinado (`jose`), sem biblioteca de autenticação externa. Papéis `DESENVOLVEDOR`/`ADMINISTRADOR`/`FUNCIONARIO` já modelados, mas hoje sem nenhuma restrição de tela entre eles. Troca de senha em `/trocar-senha`. Contas novas (ex: administrador) são convidadas por link em `/definir-senha` em vez de receber senha pronta — ver ADR-020 e ADR-021 |
+| Login e controle de acesso | Implementado e validado localmente | Tela de login responsiva em `/login`. Sessão via cookie JWT assinado (`jose`), sem biblioteca de autenticação externa. Papéis `DESENVOLVEDOR`/`ADMINISTRADOR`/`FUNCIONARIO` já modelados, mas hoje sem nenhuma restrição de tela entre eles. Troca de senha em `/trocar-senha`. Contas novas (ex: administrador) são convidadas por link em `/definir-senha` (válido 48h) em vez de receber senha pronta. Bloqueio de 15 min após 5 tentativas de senha erradas — ver ADR-020, ADR-021 e ADR-022 |
 
 ## Decisões de modelagem relevantes
 
@@ -46,6 +46,7 @@ ser implementado.
 - Ver [ADR-019](../decisoes/ADR-019-painel-interativo-estoque-layout.md) — Painel interativo por mês e reorganização visual do Estoque.
 - Ver [ADR-020](../decisoes/ADR-020-login-autenticacao.md) — login e controle de acesso.
 - Ver [ADR-021](../decisoes/ADR-021-convite-definir-senha.md) — convite por link para definir senha.
+- Ver [ADR-022](../decisoes/ADR-022-auditoria-seguranca-pre-lancamento.md) — auditoria de segurança pré-lançamento.
 
 Com isso, os 4 itens do escopo do MVP (Fase 1) estão implementados, e
 já foram refinados com o uso real do Pedro, incluindo o

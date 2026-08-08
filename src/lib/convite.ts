@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes, createHash } from "node:crypto";
 
-const DURACAO_CONVITE_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+const DURACAO_CONVITE_MS = 48 * 60 * 60 * 1000; // 48 horas
 
 export function gerarConvite() {
   const token = randomBytes(32).toString("hex");

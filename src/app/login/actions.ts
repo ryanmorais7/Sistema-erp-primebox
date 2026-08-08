@@ -18,6 +18,9 @@ type ResultadoAcao =
   | { success: true }
   | { success: false; error: string; camposComErro?: Record<string, string> };
 
+const MAX_TENTATIVAS_LOGIN = 5;
+const DURACAO_BLOQUEIO_MS = 15 * 60 * 1000; // 15 minutos
+
 export async function login(
   _estadoAnterior: ResultadoAcao | undefined,
   formData: FormData,
@@ -39,6 +42,14 @@ export async function login(
     return { success: false, error: "E-mail ou senha inválidos." };
   }
 
+  if (usuario.bloqueadoAte && usuario.bloqueadoAte > new Date()) {
+    const minutosRestantes = Math.ceil((usuario.bloqueadoAte.getTime() - Date.now()) / 60000);
+    return {
+      success: false,
+      error: `Muitas tentativas incorretas. Tente novamente em ${minutosRestantes} min.`,
+    };
+  }
+
   if (!usuario.senhaHash) {
     return {
       success: false,
@@ -48,7 +59,22 @@ export async function login(
 
   const senhaConfere = await bcrypt.compare(resultado.data.senha, usuario.senhaHash);
   if (!senhaConfere) {
+    const tentativas = usuario.tentativasFalhas + 1;
+    const atingiuLimite = tentativas >= MAX_TENTATIVAS_LOGIN;
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: atingiuLimite
+        ? { tentativasFalhas: 0, bloqueadoAte: new Date(Date.now() + DURACAO_BLOQUEIO_MS) }
+        : { tentativasFalhas: tentativas },
+    });
     return { success: false, error: "E-mail ou senha inválidos." };
+  }
+
+  if (usuario.tentativasFalhas > 0 || usuario.bloqueadoAte) {
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { tentativasFalhas: 0, bloqueadoAte: null },
+    });
   }
 
   await criarSessao({ id: usuario.id, nome: usuario.nome, papel: usuario.papel });

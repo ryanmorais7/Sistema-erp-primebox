@@ -2,7 +2,7 @@ import { z } from "zod";
 import { precoSchema } from "./moeda";
 
 export const fornecedorSchema = z.object({
-  nome: z.string().trim().min(2, "Informe o nome do fornecedor"),
+  nome: z.string().trim().min(2, "Informe o nome do fornecedor").max(150, "Nome muito longo"),
 });
 
 export type FornecedorFormValues = z.infer<typeof fornecedorSchema>;

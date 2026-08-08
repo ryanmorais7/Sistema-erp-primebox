@@ -10,11 +10,11 @@ export const tipoProdutoLabels: Record<(typeof TIPOS_PRODUTO)[number], string> =
 };
 
 export const produtoSchema = z.object({
-  nome: z.string().trim().min(3, "Informe o nome do produto"),
+  nome: z.string().trim().min(3, "Informe o nome do produto").max(150, "Nome muito longo"),
   tipo: z.enum(TIPOS_PRODUTO),
   medidaId: z.string().trim().min(1, "Selecione a medida"),
-  tecido: z.string().trim().optional(),
-  cor: z.string().trim().optional(),
+  tecido: z.string().trim().max(100, "Tecido muito longo").optional(),
+  cor: z.string().trim().max(60, "Cor muito longa").optional(),
   preco: precoSchema,
   custo: custoSchema,
 });

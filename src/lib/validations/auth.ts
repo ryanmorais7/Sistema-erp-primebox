@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  email: z.string().trim().min(1, "Informe o e-mail").email("E-mail inválido"),
-  senha: z.string().min(1, "Informe a senha"),
+  email: z.string().trim().min(1, "Informe o e-mail").email("E-mail inválido").max(200),
+  senha: z.string().min(1, "Informe a senha").max(200),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
@@ -10,7 +10,10 @@ export type LoginFormValues = z.infer<typeof loginSchema>;
 export const trocarSenhaSchema = z
   .object({
     senhaAtual: z.string().min(1, "Informe a senha atual"),
-    novaSenha: z.string().min(6, "A nova senha precisa ter pelo menos 6 caracteres"),
+    novaSenha: z
+      .string()
+      .min(6, "A nova senha precisa ter pelo menos 6 caracteres")
+      .max(72, "A senha pode ter no máximo 72 caracteres"),
     confirmarSenha: z.string().min(1, "Confirme a nova senha"),
   })
   .refine((dados) => dados.novaSenha === dados.confirmarSenha, {
@@ -22,7 +25,10 @@ export type TrocarSenhaFormValues = z.infer<typeof trocarSenhaSchema>;
 
 export const definirSenhaSchema = z
   .object({
-    novaSenha: z.string().min(6, "A senha precisa ter pelo menos 6 caracteres"),
+    novaSenha: z
+      .string()
+      .min(6, "A senha precisa ter pelo menos 6 caracteres")
+      .max(72, "A senha pode ter no máximo 72 caracteres"),
     confirmarSenha: z.string().min(1, "Confirme a senha"),
   })
   .refine((dados) => dados.novaSenha === dados.confirmarSenha, {
