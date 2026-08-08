@@ -65,3 +65,28 @@ configuração que o navegador costuma lembrar depois da primeira vez.
   cabeçalho/rodapé do próprio navegador (usa o `<title>` da página) — não
   é algo que a aplicação injeta na impressão. Não há como forçar isso a
   sumir via código; depende da configuração de quem imprime.
+
+## Atualização: fundo branco puro na impressão
+
+Depois de investigar um relato de "folha alaranjada" (que no fim das
+contas era só o creme de fundo padrão do sistema, `--background:
+#f7f5f1`, sendo percebido como alaranjado numa captura de tela — nada
+quebrado), Ryan pediu pra deixar o fundo impresso branco puro mesmo
+assim, só na impressão, sem mudar a paleta do sistema em tela. Adicionado:
+
+```css
+@media print {
+  :root,
+  .dark {
+    --background: #ffffff;
+  }
+  ...
+}
+```
+
+Como o `body` e os cards do recibo usam `bg-background` (sem cor própria
+declarada), sobrescrever essa variável CSS só dentro de `@media print`
+troca o fundo pra branco na hora de imprimir, sem tocar em nenhuma tela
+do sistema (Painel, Clientes, etc. continuam com o creme normal).
+Testado gerando PDF real de novo — fundo saiu branco — e conferindo que
+a tela do Painel continua creme depois da mudança.

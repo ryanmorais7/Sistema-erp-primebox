@@ -147,6 +147,11 @@
 }
 
 @media print {
+  :root,
+  .dark {
+    --background: #ffffff;
+  }
+
   @page {
     margin: 10mm;
   }
