@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileDown, MessageCircle, Factory, Receipt, Truck } from "lucide-react";
+import { FileDown, MessageCircle, Factory, Receipt, Truck, Box } from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
@@ -90,6 +90,12 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
   const margemTotal = valorTotal - custoTotal;
   const margemPercentual = valorTotal > 0 ? (margemTotal / valorTotal) * 100 : 0;
 
+  const statusPagamento = pedido.cobranca ? statusExibicaoCobranca(pedido.cobranca) : "PENDENTE";
+  const badgePagamentoClasses: Record<string, string> = {
+    PAGO: "bg-positive-soft text-positive",
+    ATRASADO: "bg-destructive/10 text-destructive",
+  };
+
   return (
     <div className="flex flex-col gap-6 print:gap-4">
       <div className="flex items-start justify-between print:hidden">
@@ -120,7 +126,16 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
 
       <div className="rounded-lg border p-6 print:border-none print:p-0">
         <div className="flex items-start justify-between border-b pb-4 print:pb-2">
-          <div>
+          <div className="flex items-center gap-2">
+            <div
+              className="flex size-8 items-center justify-center rounded-lg"
+              style={{
+                background:
+                  "linear-gradient(155deg, color-mix(in oklch, var(--brand) 100%, white 22%), var(--brand) 55%, color-mix(in oklch, var(--brand) 100%, black 22%))",
+              }}
+            >
+              <Box className="size-4 text-white" strokeWidth={1.8} />
+            </div>
             <p className="font-heading text-lg font-semibold">PrimeBox</p>
           </div>
           <div className="text-right">
@@ -228,12 +243,22 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
         </div>
 
         <div className="mt-8 grid gap-6 border-t pt-6 sm:grid-cols-2 print:grid-cols-2">
-          {(["PrimeBox", "Cliente"] as const).map((via, indice) => (
+          {(["PrimeBox", "Cliente"] as const).map((via) => (
             <div key={via} className="flex flex-col gap-6 rounded-lg border p-4 print:break-inside-avoid">
               <div>
-                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  {indice + 1}ª via — {via}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    Via {via}
+                  </p>
+                  {via === "Cliente" && (
+                    <Badge
+                      variant="secondary"
+                      className={badgePagamentoClasses[statusPagamento] ?? ""}
+                    >
+                      {statusExibicaoLabels[statusPagamento]}
+                    </Badge>
+                  )}
+                </div>
                 <p className="mt-1 text-sm">
                   Confirmo o recebimento da mercadoria descrita acima, em perfeitas condições.
                 </p>

@@ -34,8 +34,8 @@ export async function login(
     return { success: false, error: "Verifique o e-mail e a senha informados." };
   }
 
-  const usuario = await prisma.usuario.findUnique({
-    where: { email: resultado.data.email.toLowerCase() },
+  const usuario = await prisma.usuario.findFirst({
+    where: { email: { equals: resultado.data.email, mode: "insensitive" } },
   });
 
   if (!usuario || !usuario.ativo) {
