@@ -226,6 +226,35 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
             Total: {formatadorMoeda.format(Number(pedido.valorTotal))}
           </p>
         </div>
+
+        <div className="mt-8 grid gap-6 border-t pt-6 sm:grid-cols-2 print:grid-cols-2">
+          {(["PrimeBox", "Cliente"] as const).map((via, indice) => (
+            <div key={via} className="flex flex-col gap-6 rounded-lg border p-4 print:break-inside-avoid">
+              <div>
+                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  {indice + 1}ª via — {via}
+                </p>
+                <p className="mt-1 text-sm">
+                  Confirmo o recebimento da mercadoria descrita acima, em perfeitas condições.
+                </p>
+              </div>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <div className="h-8 border-b border-dashed" />
+                  <p className="mt-1 text-xs text-muted-foreground">Nome de quem recebeu</p>
+                </div>
+                <div>
+                  <div className="h-8 border-b border-dashed" />
+                  <p className="mt-1 text-xs text-muted-foreground">Assinatura</p>
+                </div>
+                <div className="w-32">
+                  <div className="h-8 border-b border-dashed" />
+                  <p className="mt-1 text-xs text-muted-foreground">Data</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="rounded-lg border p-4 print:hidden">
