@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Bar,
   BarChart,
@@ -51,10 +52,22 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
       : null;
 
   const cartoes = [
-    { label: "Pedidos em carteira", valor: String(dadoSelecionado.pedidosEmCarteira) },
-    { label: "Pedidos faturados", valor: String(dadoSelecionado.pedidosFaturados) },
-    { label: "Clientes ativos", valor: String(dadoSelecionado.clientesAtivos) },
-    { label: "Valor em carteira", valor: formatadorMoedaCompleto.format(dadoSelecionado.valorEmCarteira) },
+    {
+      label: "Pedidos em carteira",
+      valor: String(dadoSelecionado.pedidosEmCarteira),
+      href: "/pedidos?status=EM_CARTEIRA",
+    },
+    {
+      label: "Pedidos faturados",
+      valor: String(dadoSelecionado.pedidosFaturados),
+      href: "/pedidos?status=FATURADO",
+    },
+    { label: "Clientes ativos", valor: String(dadoSelecionado.clientesAtivos), href: "/clientes" },
+    {
+      label: "Valor em carteira",
+      valor: formatadorMoedaCompleto.format(dadoSelecionado.valorEmCarteira),
+      href: "/pedidos?status=EM_CARTEIRA",
+    },
   ];
 
   return (
@@ -66,16 +79,18 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cartoes.map((cartao) => (
-            <Card key={cartao.label}>
-              <CardHeader>
-                <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                  {cartao.label}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-semibold tracking-tight">{cartao.valor}</p>
-              </CardContent>
-            </Card>
+            <Link key={cartao.label} href={cartao.href}>
+              <Card className="transition-colors hover:bg-accent/40">
+                <CardHeader>
+                  <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                    {cartao.label}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-semibold tracking-tight">{cartao.valor}</p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </div>

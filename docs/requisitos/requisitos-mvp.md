@@ -49,6 +49,7 @@ ser implementado.
 - Ver [ADR-022](../decisoes/ADR-022-auditoria-seguranca-pre-lancamento.md) — auditoria de segurança pré-lançamento.
 - Ver [ADR-023](../decisoes/ADR-023-comprovante-recebimento-pedido.md) — comprovante de recebimento (2 vias) no recibo do pedido.
 - Ver [ADR-024](../decisoes/ADR-024-correcao-login-case-insensitive.md) — correção de bug de login (e-mail case-insensitive) e ajustes visuais no recibo.
+- Ver [ADR-025](../decisoes/ADR-025-navegacao-rapida-painel.md) — navegação rápida a partir dos cards e da lista do Painel.
 
 Com isso, os 4 itens do escopo do MVP (Fase 1) estão implementados, e
 já foram refinados com o uso real do Pedro, incluindo o

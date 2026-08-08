@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { dataBr } from "@/lib/data";
 import { PainelInterativo } from "@/components/painel/painel-interativo";
+import { LinhaPedidoRecente } from "@/components/painel/linha-pedido-recente";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -169,7 +170,7 @@ export default async function PainelPage() {
             </TableHeader>
             <TableBody>
               {pedidosRecentes.map((pedido) => (
-                <TableRow key={pedido.id}>
+                <LinhaPedidoRecente key={pedido.id} href={`/pedidos/${pedido.id}`}>
                   <TableCell className="font-mono">#{pedido.numero}</TableCell>
                   <TableCell className="font-medium">
                     {pedido.cliente.nomeFantasia || pedido.cliente.razaoSocial}
@@ -182,7 +183,7 @@ export default async function PainelPage() {
                       <Badge variant="secondary">Em carteira</Badge>
                     )}
                   </TableCell>
-                </TableRow>
+                </LinhaPedidoRecente>
               ))}
             </TableBody>
           </Table>
