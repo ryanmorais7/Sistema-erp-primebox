@@ -10,9 +10,10 @@
 
 ## Fora de escopo nesta fase
 
-Ordem de Produção, estoque, financeiro, boleto, nota fiscal. Qualquer
-pedido de funcionalidade fora desta lista deve ser sinalizado antes de
-ser implementado.
+Estoque, financeiro, boleto, nota fiscal. Qualquer pedido de
+funcionalidade fora desta lista deve ser sinalizado antes de ser
+implementado. (Ordem de Produção era fora de escopo na Fase 1, mas já
+foi implementada — ver tabela abaixo.)
 
 ## Status de implementação
 
@@ -28,6 +29,7 @@ ser implementado.
 | Relatório por cliente | Implementado | `/relatorios/clientes` — busca por nome, histórico completo de pedidos e totais agrupados por mês/ano |
 | Relatório de faturamento por dia | Implementado | `/relatorios/faturamento` — seleciona uma data, mostra pedidos faturados naquele dia por cliente e o total |
 | Login e controle de acesso | Implementado e validado localmente | Tela de login responsiva em `/login`. Sessão via cookie JWT assinado (`jose`), sem biblioteca de autenticação externa. Papéis `DESENVOLVEDOR`/`ADMINISTRADOR`/`FUNCIONARIO` já modelados, mas hoje sem nenhuma restrição de tela entre eles. Troca de senha em `/trocar-senha`. Contas novas (ex: administrador) são convidadas por link em `/definir-senha` (válido 48h) em vez de receber senha pronta. Bloqueio de 15 min após 5 tentativas de senha erradas — ver ADR-020, ADR-021 e ADR-022 |
+| Ordem de Produção | Implementado e validado localmente | `/producao` — board kanban (Aguardando/Em produção/Concluído) por `OrdemProducao`, gerada a partir de um item de pedido (`Gerar OP` em `/pedidos/[id]`). Recibo de OP imprimível, consolidando todas as peças pendentes (aguardando + em produção) de todos os clientes numa lista única, agrupada por cliente em ordem de chegada — ver ADR-028 |
 
 ## Decisões de modelagem relevantes
 
@@ -52,6 +54,7 @@ ser implementado.
 - Ver [ADR-025](../decisoes/ADR-025-navegacao-rapida-painel.md) — navegação rápida a partir dos cards e da lista do Painel.
 - Ver [ADR-026](../decisoes/ADR-026-canhoto-entrega-pedido.md) — recibo do pedido com canhoto de entrega (substitui ADR-023).
 - Ver [ADR-027](../decisoes/ADR-027-cores-impressao.md) — correção de cor de fundo sumindo na impressão.
+- Ver [ADR-028](../decisoes/ADR-028-recibo-op-producao.md) — recibo de OP consolidado em Produção.
 
 Com isso, os 4 itens do escopo do MVP (Fase 1) estão implementados, e
 já foram refinados com o uso real do Pedro, incluindo o
