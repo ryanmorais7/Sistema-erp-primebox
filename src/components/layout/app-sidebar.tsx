@@ -15,6 +15,7 @@ import {
   CalendarDays,
   KeyRound,
   LogOut,
+  ChevronsUpDown,
 } from "lucide-react";
 
 import { logout } from "@/app/login/actions";
@@ -31,7 +32,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 const papelLabels: Record<PapelUsuario, string> = {
   DESENVOLVEDOR: "Desenvolvedor",
@@ -93,6 +99,7 @@ export function AppSidebar({ usuario }: AppSidebarProps) {
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
                     isActive={pathname === item.href}
+                    className="border-l-2 border-l-transparent data-active:border-l-[#8B4720]"
                   >
                     <item.icon />
                     <span>{item.label}</span>
@@ -114,6 +121,7 @@ export function AppSidebar({ usuario }: AppSidebarProps) {
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
                     isActive={pathname === item.href}
+                    className="border-l-2 border-l-transparent data-active:border-l-[#8B4720]"
                   >
                     <item.icon />
                     <span>{item.label}</span>
@@ -135,6 +143,7 @@ export function AppSidebar({ usuario }: AppSidebarProps) {
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
                     isActive={pathname === item.href}
+                    className="border-l-2 border-l-transparent data-active:border-l-[#8B4720]"
                   >
                     <item.icon />
                     <span>{item.label}</span>
@@ -145,40 +154,32 @@ export function AppSidebar({ usuario }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-dashed border-sidebar-border px-4 py-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-sidebar-foreground">{usuario.nome}</p>
-            <p className="font-mono text-[0.65rem] tracking-wider text-sidebar-foreground/50 uppercase">
-              {papelLabels[usuario.papel]}
-            </p>
-          </div>
-          <div className="flex shrink-0 gap-1">
-            <Button
-              render={<Link href="/trocar-senha" />}
-              nativeButton={false}
-              variant="ghost"
-              size="icon-sm"
-              className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
-              aria-label="Trocar senha"
-              title="Trocar senha"
-            >
+      <SidebarFooter className="border-t border-dashed border-sidebar-border px-2 py-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-sidebar-accent"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-sidebar-foreground">
+                {usuario.nome}
+              </p>
+              <p className="font-mono text-[0.65rem] tracking-wider text-sidebar-foreground/50 uppercase">
+                {papelLabels[usuario.papel]}
+              </p>
+            </div>
+            <ChevronsUpDown className="size-4 shrink-0 text-sidebar-foreground/50" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-56">
+            <DropdownMenuItem render={<Link href="/trocar-senha" />}>
               <KeyRound />
-            </Button>
-            <form action={logout}>
-              <Button
-                type="submit"
-                variant="ghost"
-                size="icon-sm"
-                className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
-                aria-label="Sair"
-                title="Sair"
-              >
-                <LogOut />
-              </Button>
-            </form>
-          </div>
-        </div>
+              Trocar senha
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => logout()}>
+              <LogOut />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
   );
