@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { limitesDoDiaBr, hojeBr } from "@/lib/data";
+import { limitesDoPeriodoBr, hojeBr } from "@/lib/data";
 import { PageHeader } from "@/components/layout/page-header";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -19,13 +20,15 @@ export const dynamic = "force-dynamic";
 const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 type PageProps = {
-  searchParams: Promise<{ data?: string }>;
+  searchParams: Promise<{ inicio?: string; fim?: string }>;
 };
 
 export default async function RelatorioFaturamentoPage({ searchParams }: PageProps) {
-  const { data } = await searchParams;
-  const dataConsultada = data || hojeBr();
-  const { inicio, fim } = limitesDoDiaBr(dataConsultada);
+  const { inicio: inicioParam, fim: fimParam } = await searchParams;
+  const hoje = hojeBr();
+  const dataInicio = inicioParam || hoje;
+  const dataFim = fimParam || hoje;
+  const { inicio, fim } = limitesDoPeriodoBr(dataInicio, dataFim);
 
   const pedidos = await prisma.pedido.findMany({
     where: {
@@ -36,27 +39,36 @@ export default async function RelatorioFaturamentoPage({ searchParams }: PagePro
     orderBy: { numero: "asc" },
   });
 
-  const totalDoDia = pedidos.reduce((total, pedido) => total + Number(pedido.valorTotal), 0);
+  const totalDoPeriodo = pedidos.reduce((total, pedido) => total + Number(pedido.valorTotal), 0);
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Faturamento por dia" />
+      <PageHeader title="Faturamento por período" />
 
-      <form action="/relatorios/faturamento" className="flex max-w-xs gap-2">
-        <Input type="date" name="data" defaultValue={dataConsultada} />
+      <form action="/relatorios/faturamento" className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="inicio">De</Label>
+          <Input id="inicio" type="date" name="inicio" defaultValue={dataInicio} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="fim">Até</Label>
+          <Input id="fim" type="date" name="fim" defaultValue={dataFim} />
+        </div>
         <Button type="submit">Buscar</Button>
       </form>
 
       <div className="rounded-lg border p-4">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Total faturado no dia
+          Total faturado no período
         </p>
-        <p className="text-3xl font-semibold tracking-tight">{formatadorMoeda.format(totalDoDia)}</p>
+        <p className="text-3xl font-semibold tracking-tight">
+          {formatadorMoeda.format(totalDoPeriodo)}
+        </p>
         <p className="text-sm text-muted-foreground">{pedidos.length} pedido(s)</p>
       </div>
 
       {pedidos.length === 0 ? (
-        <p className="text-muted-foreground">Nenhum pedido faturado nessa data.</p>
+        <p className="text-muted-foreground">Nenhum pedido faturado nesse período.</p>
       ) : (
         <div className="rounded-lg border">
           <Table>

@@ -13,6 +13,15 @@ export function limitesDoDiaBr(data: string) {
   return { inicio, fim };
 }
 
+// Mesma lógica de limitesDoDiaBr, mas pro intervalo entre duas datas
+// (início do primeiro dia até o fim do último, ambos inclusive).
+export function limitesDoPeriodoBr(dataInicio: string, dataFim: string) {
+  const inicio = dataBr(dataInicio);
+  const fim = new Date(dataBr(dataFim));
+  fim.setUTCDate(fim.getUTCDate() + 1);
+  return { inicio, fim };
+}
+
 export function hojeBr(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
 }
