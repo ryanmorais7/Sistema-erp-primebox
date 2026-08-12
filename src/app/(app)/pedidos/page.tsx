@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, Pencil, Check, Trash2 } from "lucide-react";
+import { Eye, Pencil, Check, Trash2, Printer } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { excluirPedido, faturarPedido } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -108,10 +108,20 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                       nativeButton={false}
                       variant="outline"
                       size="icon-sm"
-                      aria-label="Ver/imprimir pedido"
-                      title="Ver/imprimir"
+                      aria-label="Ver pedido"
+                      title="Ver"
                     >
                       <Eye />
+                    </Button>
+                    <Button
+                      render={<Link href={`/pedidos/${pedido.id}?print=1`} target="_blank" />}
+                      nativeButton={false}
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label="Imprimir pedido"
+                      title="Imprimir"
+                    >
+                      <Printer />
                     </Button>
                     {pedido.status === "EM_CARTEIRA" && (
                       <>
