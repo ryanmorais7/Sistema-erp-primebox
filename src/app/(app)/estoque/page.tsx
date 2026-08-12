@@ -76,9 +76,9 @@ export default async function EstoquePage() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-border">
-        <div className="lg:pr-6">
-          <SecaoRecolhivel titulo="Produtos acabados" contador={produtos.length}>
+      <div className="flex flex-col gap-6">
+        <div>
+          <SecaoRecolhivel titulo="Produtos prontos" contador={produtos.length}>
             {produtos.length === 0 ? (
               <p className="p-4 text-sm text-muted-foreground">Nenhum produto ativo cadastrado.</p>
             ) : (
@@ -143,7 +143,7 @@ export default async function EstoquePage() {
           </SecaoRecolhivel>
         </div>
 
-        <div className="lg:pl-6">
+        <div>
           <SecaoRecolhivel titulo="Matéria-prima" contador={materiasPrimas.length}>
             {materiasPrimas.length === 0 ? (
               <p className="p-4 text-sm text-muted-foreground">
