@@ -66,8 +66,26 @@ function agruparPorAno(pedidos: { createdAt: Date; valorTotal: number }[]) {
 export default async function RelatorioClientesPage({ searchParams }: PageProps) {
   const { q, clienteId } = await searchParams;
 
-  if (clienteId) {
-    const cliente = await prisma.cliente.findUnique({ where: { id: clienteId } });
+  const clientesEncontrados =
+    q && !clienteId
+      ? await prisma.cliente.findMany({
+          where: {
+            OR: [
+              { razaoSocial: { contains: q, mode: "insensitive" } },
+              { nomeFantasia: { contains: q, mode: "insensitive" } },
+            ],
+          },
+          orderBy: { razaoSocial: "asc" },
+          take: 20,
+        })
+      : [];
+
+  // Achou exatamente 1 cliente na busca: mostra o relatório direto, sem
+  // precisar clicar de novo pra "abrir" o único resultado possível.
+  const clienteIdEfetivo = clienteId || (clientesEncontrados.length === 1 ? clientesEncontrados[0].id : undefined);
+
+  if (clienteIdEfetivo) {
+    const cliente = await prisma.cliente.findUnique({ where: { id: clienteIdEfetivo } });
     if (!cliente) {
       return (
         <div className="flex flex-col gap-6">
@@ -78,7 +96,7 @@ export default async function RelatorioClientesPage({ searchParams }: PageProps)
     }
 
     const pedidos = await prisma.pedido.findMany({
-      where: { clienteId },
+      where: { clienteId: clienteIdEfetivo },
       orderBy: { numero: "desc" },
     });
     const pedidosNumero = pedidos.map((pedido) => ({
@@ -192,19 +210,6 @@ export default async function RelatorioClientesPage({ searchParams }: PageProps)
     );
   }
 
-  const clientesEncontrados = q
-    ? await prisma.cliente.findMany({
-        where: {
-          OR: [
-            { razaoSocial: { contains: q, mode: "insensitive" } },
-            { nomeFantasia: { contains: q, mode: "insensitive" } },
-          ],
-        },
-        orderBy: { razaoSocial: "asc" },
-        take: 20,
-      })
-    : [];
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Relatório por cliente" />
@@ -226,17 +231,22 @@ export default async function RelatorioClientesPage({ searchParams }: PageProps)
                 {clientesEncontrados.map((cliente) => (
                   <TableRow key={cliente.id}>
                     <TableCell>
-                      <Link
-                        href={`/relatorios/clientes?clienteId=${cliente.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {cliente.nomeFantasia || cliente.razaoSocial}
-                      </Link>
+                      <p className="font-medium">{cliente.nomeFantasia || cliente.razaoSocial}</p>
                       {cliente.nomeFantasia && (
                         <span className="block text-xs text-muted-foreground">
                           {cliente.razaoSocial}
                         </span>
                       )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        render={<Link href={`/relatorios/clientes?clienteId=${cliente.id}`} />}
+                        nativeButton={false}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Ver detalhadamente
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
