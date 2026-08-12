@@ -99,10 +99,6 @@ export const clienteSchema = z
       .optional()
       .transform((valor) => (valor ? somenteDigitos(valor) : undefined))
       .refine((valor) => !valor || valor.length === 8, "CEP deve ter 8 dígitos"),
-  })
-  .refine((dados) => Boolean(dados.cnpj || dados.cpf), {
-    message: "Informe CNPJ ou CPF",
-    path: ["cnpj"],
   });
 
 export type ClienteFormValues = z.input<typeof clienteSchema>;

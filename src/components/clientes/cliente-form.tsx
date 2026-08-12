@@ -100,10 +100,7 @@ export function ClienteForm({ clienteId, valoresIniciais }: ClienteFormProps) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="cnpj">
-              CNPJ
-              <CampoObrigatorio />
-            </Label>
+            <Label htmlFor="cnpj">CNPJ</Label>
             <Controller
               control={control}
               name="cnpj"
@@ -122,10 +119,7 @@ export function ClienteForm({ clienteId, valoresIniciais }: ClienteFormProps) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="cpf">
-              CPF
-              <CampoObrigatorio />
-            </Label>
+            <Label htmlFor="cpf">CPF</Label>
             <Controller
               control={control}
               name="cpf"
