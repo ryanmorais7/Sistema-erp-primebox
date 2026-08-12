@@ -4,7 +4,7 @@ import { MateriaPrimaForm } from "@/components/estoque/materia-prima-form";
 import { PrecosMateriaPrima } from "@/components/estoque/precos-materia-prima";
 import { PageHeader } from "@/components/layout/page-header";
 import { formatarPrecoBr } from "@/lib/validations/moeda";
-import type { MateriaPrimaFormValues } from "@/lib/validations/materiaPrima";
+import { UNIDADES_MATERIA_PRIMA, type MateriaPrimaFormValues } from "@/lib/validations/materiaPrima";
 
 // Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
 export const dynamic = "force-dynamic";
@@ -30,9 +30,15 @@ export default async function EditarMateriaPrimaPage({ params }: PageProps) {
     notFound();
   }
 
+  const unidadeValida = (UNIDADES_MATERIA_PRIMA as readonly string[]).includes(
+    materiaPrima.unidade,
+  )
+    ? (materiaPrima.unidade as MateriaPrimaFormValues["unidade"])
+    : UNIDADES_MATERIA_PRIMA[0];
+
   const valoresIniciais: MateriaPrimaFormValues = {
     nome: materiaPrima.nome,
-    unidade: materiaPrima.unidade,
+    unidade: unidadeValida,
     estoqueMinimo: formatarPrecoBr(Number(materiaPrima.estoqueMinimo)),
   };
 
