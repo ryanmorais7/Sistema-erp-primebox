@@ -10,7 +10,6 @@ import {
   ClipboardList,
   Factory,
   Warehouse,
-  Receipt,
   Truck,
   Search,
   CalendarDays,
@@ -52,13 +51,11 @@ const itensFabrica = [
   { href: "/estoque", label: "Estoque", icon: Warehouse },
 ];
 
-const itensFinanceiro = [{ href: "/faturamento", label: "Faturamento", icon: Receipt }];
-
 const itensExpedicao = [{ href: "/expedicao", label: "Expedição", icon: Truck }];
 
 const itensRelatorios = [
   { href: "/relatorios/clientes", label: "Por cliente", icon: Search },
-  { href: "/relatorios/faturamento", label: "Faturamento do dia", icon: CalendarDays },
+  { href: "/relatorios/faturamento", label: "Faturamento por período", icon: CalendarDays },
 ];
 
 type AppSidebarProps = {
@@ -114,27 +111,6 @@ export function AppSidebar({ usuario }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {itensFabrica.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    render={<Link href={item.href} />}
-                    isActive={pathname === item.href}
-                  >
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="font-mono tracking-wider uppercase">
-            Financeiro
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {itensFinanceiro.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}

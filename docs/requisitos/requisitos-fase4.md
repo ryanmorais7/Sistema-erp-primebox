@@ -1,5 +1,9 @@
 # Requisitos da Fase 4 — PrimeBox ERP
 
+> **Removida em 2026-08-12** — ver [ADR-030](../decisoes/ADR-030-remocao-cobranca.md).
+> Este documento fica só como registro histórico do que foi construído
+> e depois removido a pedido do Ryan.
+
 Fase seguinte à Fase 3 (ver [requisitos-fase3.md](requisitos-fase3.md)),
 conforme roadmap definido com Ryan: "Faturamento, cobrança e recibos".
 

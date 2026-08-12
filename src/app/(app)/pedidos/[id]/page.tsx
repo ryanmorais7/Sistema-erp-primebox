@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { FileDown, MessageCircle, Factory, Receipt, Truck, Box, Scissors } from "lucide-react";
+import { FileDown, MessageCircle, Factory, Truck, Box, Scissors } from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verificarSessao } from "@/lib/dal";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
+import { AutoImprimir } from "@/components/pedidos/auto-imprimir";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
 import { gerarOrdemProducao } from "@/app/(app)/producao/actions";
-import { statusExibicaoCobranca, statusExibicaoLabels } from "@/lib/cobranca";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -22,10 +22,14 @@ const statusExpedicaoLabels = {
   ENTREGUE: "Entregue",
 } as const;
 
-const badgePagamentoClasses: Record<string, string> = {
-  PAGO: "bg-positive-soft text-positive",
-  PENDENTE: "bg-accent text-accent-foreground",
-  ATRASADO: "bg-destructive/10 text-destructive",
+const statusPedidoLabels = {
+  EM_CARTEIRA: "Em carteira",
+  FATURADO: "Faturado",
+} as const;
+
+const badgeStatusPedidoClasses: Record<string, string> = {
+  FATURADO: "bg-positive-soft text-positive",
+  EM_CARTEIRA: "bg-accent text-accent-foreground",
 };
 import {
   Table,
@@ -67,10 +71,12 @@ function formatarEndereco(cliente: {
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ print?: string }>;
 };
 
-export default async function VisualizarPedidoPage({ params }: PageProps) {
+export default async function VisualizarPedidoPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const { print } = await searchParams;
   const sessao = await verificarSessao();
 
   const pedido = await prisma.pedido.findUnique({
@@ -78,7 +84,6 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
     include: {
       cliente: true,
       itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
-      cobranca: true,
       expedicao: true,
     },
   });
@@ -106,10 +111,9 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
   const margemTotal = valorTotal - custoTotal;
   const margemPercentual = valorTotal > 0 ? (margemTotal / valorTotal) * 100 : 0;
 
-  const statusPagamento = pedido.cobranca ? statusExibicaoCobranca(pedido.cobranca) : "PENDENTE";
-
   return (
     <div className="flex flex-col gap-6 print:gap-4">
+      <AutoImprimir ativo={print === "1"} />
       <div className="flex items-start justify-between print:hidden">
         <div>
           <p className="font-mono text-[0.7rem] tracking-widest text-brand uppercase">
@@ -156,10 +160,10 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
               {formatadorData.format(pedido.createdAt)}
             </p>
             <Badge
-              className={`mt-1 ${badgePagamentoClasses[statusPagamento] ?? ""}`}
+              className={`mt-1 ${badgeStatusPedidoClasses[pedido.status] ?? ""}`}
               variant="secondary"
             >
-              {statusExibicaoLabels[statusPagamento]}
+              {statusPedidoLabels[pedido.status]}
             </Badge>
           </div>
         </div>
@@ -333,36 +337,6 @@ export default async function VisualizarPedidoPage({ params }: PageProps) {
             Observações (uso interno, não aparece na impressão)
           </p>
           <p className="mt-1 text-sm whitespace-pre-wrap">{pedido.observacoes}</p>
-        </div>
-      )}
-
-      {pedido.status === "FATURADO" && (
-        <div className="flex items-center justify-between rounded-lg border p-4 print:hidden">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Cobrança
-          </p>
-          {pedido.cobranca ? (
-            <Button
-              render={<Link href={`/cobrancas/${pedido.cobranca.id}`} />}
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-            >
-              <Receipt />
-              Ver recibo #{pedido.cobranca.numero} ·{" "}
-              {statusExibicaoLabels[statusExibicaoCobranca(pedido.cobranca)]}
-            </Button>
-          ) : (
-            <Button
-              render={<Link href={`/pedidos/${pedido.id}/cobranca/nova`} />}
-              nativeButton={false}
-              variant="outline"
-              size="sm"
-            >
-              <Receipt />
-              Gerar cobrança
-            </Button>
-          )}
         </div>
       )}
 

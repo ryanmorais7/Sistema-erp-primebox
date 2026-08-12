@@ -107,7 +107,6 @@ model Pedido {
   valorTotal  Decimal      @db.Decimal(10, 2)
   observacoes String?
   itens       ItemPedido[]
-  cobranca    Cobranca?
   expedicao   Expedicao?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -221,22 +220,6 @@ model MovimentoEstoqueMateriaPrima {
   quantidade     Decimal              @db.Decimal(10, 2)
   observacao     String?
   createdAt      DateTime             @default(now())
-}
-
-enum StatusCobranca {
-  PENDENTE
-  PAGO
-}
-
-model Cobranca {
-  id         String         @id @default(cuid())
-  numero     Int            @unique @default(autoincrement())
-  pedidoId   String         @unique
-  pedido     Pedido         @relation(fields: [pedidoId], references: [id])
-  vencimento DateTime
-  status     StatusCobranca @default(PENDENTE)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
 }
 
 enum StatusExpedicao {
