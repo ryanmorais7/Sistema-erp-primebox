@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -85,7 +86,10 @@ export function MovimentoForm({ titulo, saldoAtual, unidade, aoRegistrar }: Movi
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label>Tipo *</Label>
+              <Label>
+                Tipo
+                <CampoObrigatorio />
+              </Label>
               <Controller
                 control={control}
                 name="tipo"
@@ -111,7 +115,10 @@ export function MovimentoForm({ titulo, saldoAtual, unidade, aoRegistrar }: Movi
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="quantidade">Quantidade *</Label>
+              <Label htmlFor="quantidade">
+                Quantidade
+                <CampoObrigatorio />
+              </Label>
               <Input id="quantidade" placeholder="0" {...register("quantidade")} />
               {errors.quantidade && (
                 <p className="text-sm text-destructive">{errors.quantidade.message}</p>

@@ -9,6 +9,7 @@ import { definirSenhaSchema, type DefinirSenhaFormValues } from "@/lib/validatio
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 
 const valoresPadrao: DefinirSenhaFormValues = {
   novaSenha: "",
@@ -42,13 +43,19 @@ export function DefinirSenhaForm({ token }: { token: string }) {
   return (
     <form onSubmit={handleSubmit(aoSubmeter)} className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="novaSenha">Senha</Label>
+        <Label htmlFor="novaSenha">
+          Senha
+          <CampoObrigatorio />
+        </Label>
         <Input id="novaSenha" type="password" autoComplete="new-password" {...register("novaSenha")} />
         {errors.novaSenha && <p className="text-sm text-destructive">{errors.novaSenha.message}</p>}
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="confirmarSenha">Confirmar senha</Label>
+        <Label htmlFor="confirmarSenha">
+          Confirmar senha
+          <CampoObrigatorio />
+        </Label>
         <Input
           id="confirmarSenha"
           type="password"

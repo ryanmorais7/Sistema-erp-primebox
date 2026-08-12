@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -127,7 +128,10 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-2">
-            <Label>Cliente *</Label>
+            <Label>
+              Cliente
+              <CampoObrigatorio />
+            </Label>
             <Controller
               control={control}
               name="clienteId"
@@ -178,7 +182,10 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
               <div key={field.id} className="flex flex-col gap-3 border-b pb-4 last:border-b-0 last:pb-0">
                 <div className="grid gap-3 sm:grid-cols-[1fr_5rem_auto] sm:items-end">
                   <div className="flex flex-col gap-2">
-                    <Label>Produto *</Label>
+                    <Label>
+                      Produto
+                      <CampoObrigatorio />
+                    </Label>
                     <Controller
                       control={control}
                       name={`itens.${index}.produtoId`}
@@ -222,7 +229,10 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Label>Qtd. *</Label>
+                    <Label>
+                      Qtd.
+                      <CampoObrigatorio />
+                    </Label>
                     <Input
                       type="number"
                       min={1}
@@ -251,7 +261,10 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
 
                 <div className="grid gap-3 sm:grid-cols-4">
                   <div className="flex flex-col gap-2">
-                    <Label>Preço unit. *</Label>
+                    <Label>
+                      Preço unit.
+                      <CampoObrigatorio />
+                    </Label>
                     <Input placeholder="0,00" {...register(`itens.${index}.precoUnitario`)} />
                     {errors.itens?.[index]?.precoUnitario && (
                       <p className="text-sm text-destructive">
@@ -261,7 +274,10 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Label>Custo unit. *</Label>
+                    <Label>
+                      Custo unit.
+                      <CampoObrigatorio />
+                    </Label>
                     <Input placeholder="0,00" {...register(`itens.${index}.custoUnitario`)} />
                     {errors.itens?.[index]?.custoUnitario && (
                       <p className="text-sm text-destructive">

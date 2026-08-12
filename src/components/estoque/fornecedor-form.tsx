@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 
 const valoresPadrao: FornecedorFormValues = {
   nome: "",
@@ -60,7 +61,10 @@ export function FornecedorForm({ fornecedorId, valoresIniciais }: FornecedorForm
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="nome">Nome *</Label>
+            <Label htmlFor="nome">
+              Nome
+              <CampoObrigatorio />
+            </Label>
             <Input id="nome" placeholder="Ex: Espumas Nordeste" {...register("nome")} />
             {errors.nome && <p className="text-sm text-destructive">{errors.nome.message}</p>}
           </div>

@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { atualizarCliente, criarCliente } from "@/app/(app)/clientes/actions";
 import { clienteSchema, UFS, type ClienteFormValues } from "@/lib/validations/cliente";
+import { mascararCnpj, mascararCpf, mascararCep, mascararTelefone } from "@/lib/mascaras";
+import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -82,7 +84,10 @@ export function ClienteForm({ clienteId, valoresIniciais }: ClienteFormProps) {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label htmlFor="razaoSocial">Razão social *</Label>
+            <Label htmlFor="razaoSocial">
+              Razão social
+              <CampoObrigatorio />
+            </Label>
             <Input id="razaoSocial" {...register("razaoSocial")} />
             {errors.razaoSocial && (
               <p className="text-sm text-destructive">{errors.razaoSocial.message}</p>
@@ -95,20 +100,68 @@ export function ClienteForm({ clienteId, valoresIniciais }: ClienteFormProps) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="cnpj">CNPJ</Label>
-            <Input id="cnpj" {...register("cnpj")} placeholder="00.000.000/0000-00" />
+            <Label htmlFor="cnpj">
+              CNPJ
+              <CampoObrigatorio />
+            </Label>
+            <Controller
+              control={control}
+              name="cnpj"
+              render={({ field }) => (
+                <Input
+                  id="cnpj"
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(mascararCnpj(e.target.value))}
+                  onBlur={field.onBlur}
+                  placeholder="00.000.000/0000-00"
+                  inputMode="numeric"
+                />
+              )}
+            />
             {errors.cnpj && <p className="text-sm text-destructive">{errors.cnpj.message}</p>}
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="cpf">CPF</Label>
-            <Input id="cpf" {...register("cpf")} placeholder="000.000.000-00" />
+            <Label htmlFor="cpf">
+              CPF
+              <CampoObrigatorio />
+            </Label>
+            <Controller
+              control={control}
+              name="cpf"
+              render={({ field }) => (
+                <Input
+                  id="cpf"
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(mascararCpf(e.target.value))}
+                  onBlur={field.onBlur}
+                  placeholder="000.000.000-00"
+                  inputMode="numeric"
+                />
+              )}
+            />
             {errors.cpf && <p className="text-sm text-destructive">{errors.cpf.message}</p>}
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="telefone">Telefone *</Label>
-            <Input id="telefone" {...register("telefone")} placeholder="(00) 00000-0000" />
+            <Label htmlFor="telefone">
+              Telefone
+              <CampoObrigatorio />
+            </Label>
+            <Controller
+              control={control}
+              name="telefone"
+              render={({ field }) => (
+                <Input
+                  id="telefone"
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(mascararTelefone(e.target.value))}
+                  onBlur={field.onBlur}
+                  placeholder="(00) 00000-0000"
+                  inputMode="numeric"
+                />
+              )}
+            />
             {errors.telefone && (
               <p className="text-sm text-destructive">{errors.telefone.message}</p>
             )}
@@ -181,7 +234,20 @@ export function ClienteForm({ clienteId, valoresIniciais }: ClienteFormProps) {
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="cep">CEP</Label>
-            <Input id="cep" {...register("cep")} placeholder="00000-000" />
+            <Controller
+              control={control}
+              name="cep"
+              render={({ field }) => (
+                <Input
+                  id="cep"
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(mascararCep(e.target.value))}
+                  onBlur={field.onBlur}
+                  placeholder="00000-000"
+                  inputMode="numeric"
+                />
+              )}
+            />
             {errors.cep && <p className="text-sm text-destructive">{errors.cep.message}</p>}
           </div>
         </CardContent>

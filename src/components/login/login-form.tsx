@@ -6,6 +6,7 @@ import { login } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 
 function BotaoEntrar() {
   const { pending } = useFormStatus();
@@ -22,7 +23,10 @@ export function LoginForm() {
   return (
     <form action={acao} className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">E-mail</Label>
+        <Label htmlFor="email">
+          E-mail
+          <CampoObrigatorio />
+        </Label>
         <Input
           id="email"
           name="email"
@@ -34,7 +38,10 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="senha">Senha</Label>
+        <Label htmlFor="senha">
+          Senha
+          <CampoObrigatorio />
+        </Label>
         <Input id="senha" name="senha" type="password" autoComplete="current-password" required />
       </div>
 

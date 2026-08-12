@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 
 const valoresPadrao: TrocarSenhaFormValues = {
   senhaAtual: "",
@@ -59,7 +60,10 @@ export function TrocarSenhaForm() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="senhaAtual">Senha atual *</Label>
+            <Label htmlFor="senhaAtual">
+              Senha atual
+              <CampoObrigatorio />
+            </Label>
             <Input id="senhaAtual" type="password" {...register("senhaAtual")} />
             {errors.senhaAtual && (
               <p className="text-sm text-destructive">{errors.senhaAtual.message}</p>
@@ -67,7 +71,10 @@ export function TrocarSenhaForm() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="novaSenha">Nova senha *</Label>
+            <Label htmlFor="novaSenha">
+              Nova senha
+              <CampoObrigatorio />
+            </Label>
             <Input id="novaSenha" type="password" {...register("novaSenha")} />
             {errors.novaSenha && (
               <p className="text-sm text-destructive">{errors.novaSenha.message}</p>
@@ -75,7 +82,10 @@ export function TrocarSenhaForm() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="confirmarSenha">Confirmar nova senha *</Label>
+            <Label htmlFor="confirmarSenha">
+              Confirmar nova senha
+              <CampoObrigatorio />
+            </Label>
             <Input id="confirmarSenha" type="password" {...register("confirmarSenha")} />
             {errors.confirmarSenha && (
               <p className="text-sm text-destructive">{errors.confirmarSenha.message}</p>
