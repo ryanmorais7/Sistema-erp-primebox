@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { ArrowLeftRight, Pencil, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { alternarAtivoMateriaPrima, excluirMateriaPrima } from "./actions";
-import { excluirProduto } from "@/app/(app)/produtos/actions";
+import { alternarAtivoMateriaPrima } from "./actions";
+import { alternarAtivoProduto } from "@/app/(app)/produtos/actions";
 import { calcularSaldosProdutos, calcularSaldosMateriasPrimas } from "@/lib/estoque";
 import { PageHeader } from "@/components/layout/page-header";
 import { SecaoRecolhivel } from "@/components/estoque/secao-recolhivel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BotaoExcluir } from "@/components/ui/botao-excluir";
 import {
   Table,
   TableBody,
@@ -118,11 +117,22 @@ export default async function EstoquePage() {
                           >
                             <ArrowLeftRight />
                           </Button>
-                          <BotaoExcluir
-                            acao={excluirProduto.bind(null, produto.id)}
-                            confirmacao={`Excluir "${produto.nome}" permanentemente? Essa ação não pode ser desfeita.`}
-                            label="Excluir produto"
-                          />
+                          <form
+                            action={async () => {
+                              "use server";
+                              await alternarAtivoProduto(produto.id, false);
+                            }}
+                          >
+                            <Button
+                              type="submit"
+                              variant="outline"
+                              size="icon-sm"
+                              aria-label="Desativar produto"
+                              title="Desativar"
+                            >
+                              <X />
+                            </Button>
+                          </form>
                         </TableCell>
                       </TableRow>
                     );
@@ -233,11 +243,6 @@ export default async function EstoquePage() {
                               <X />
                             </Button>
                           </form>
-                          <BotaoExcluir
-                            acao={excluirMateriaPrima.bind(null, materiaPrima.id)}
-                            confirmacao={`Excluir "${materiaPrima.nome}" permanentemente? Essa ação não pode ser desfeita.`}
-                            label="Excluir matéria-prima"
-                          />
                         </TableCell>
                       </TableRow>
                     );

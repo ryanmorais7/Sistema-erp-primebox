@@ -84,26 +84,6 @@ export async function alternarAtivoMateriaPrima(id: string, ativo: boolean) {
   revalidatePath("/estoque");
 }
 
-export async function excluirMateriaPrima(id: string): Promise<ResultadoAcao> {
-  const [movimentos, precos, consumos] = await Promise.all([
-    prisma.movimentoEstoqueMateriaPrima.count({ where: { materiaPrimaId: id } }),
-    prisma.precoMateriaPrima.count({ where: { materiaPrimaId: id } }),
-    prisma.consumoMateriaPrima.count({ where: { materiaPrimaId: id } }),
-  ]);
-
-  if (movimentos > 0 || precos > 0 || consumos > 0) {
-    return {
-      success: false,
-      error:
-        'Não é possível excluir: essa matéria-prima já tem movimentações, preços de fornecedor ou ficha técnica vinculados. Use "Desativar" pra escondê-la sem perder o histórico.',
-    };
-  }
-
-  await prisma.materiaPrima.delete({ where: { id } });
-  revalidatePath("/estoque");
-  return { success: true };
-}
-
 export async function registrarMovimentoProduto(
   produtoId: string,
   dadosBrutos: MovimentoEstoqueFormValues,
