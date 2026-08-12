@@ -13,7 +13,7 @@ import {
   YAxis,
   type BarRectangleItem,
 } from "recharts";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, ClipboardList, CircleCheck, Users, Wallet } from "lucide-react";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
@@ -57,22 +57,38 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
       label: "Pedidos em carteira",
       valor: String(dadoSelecionado.pedidosEmCarteira),
       href: "/pedidos?status=EM_CARTEIRA",
+      icon: ClipboardList,
+      bg: "#F4E2D6",
+      iconColor: "#C9622B",
     },
     {
       label: "Pedidos faturados",
       valor: String(dadoSelecionado.pedidosFaturados),
       href: "/pedidos?status=FATURADO",
+      icon: CircleCheck,
+      bg: "#DFEAE6",
+      iconColor: "#0F6E56",
     },
-    { label: "Clientes ativos", valor: String(dadoSelecionado.clientesAtivos), href: "/clientes" },
+    {
+      label: "Clientes ativos",
+      valor: String(dadoSelecionado.clientesAtivos),
+      href: "/clientes",
+      icon: Users,
+      bg: "#E4DFD4",
+      iconColor: "#5B6560",
+    },
     {
       label: "Valor em carteira",
       valor: formatadorMoedaCompleto.format(dadoSelecionado.valorEmCarteira),
       href: "/pedidos?status=EM_CARTEIRA",
+      icon: Wallet,
+      bg: "#F4E2D6",
+      iconColor: "#C9622B",
     },
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div>
         <p className="mb-2 text-xs text-muted-foreground">
           Mostrando dados de{" "}
@@ -82,9 +98,15 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cartoes.map((cartao) => (
             <Link key={cartao.label} href={cartao.href}>
-              <Card className="transition-colors hover:bg-accent/40">
+              <Card className="shadow-[0_2px_8px_rgba(28,35,33,0.06)] transition-colors hover:bg-accent/40">
                 <CardHeader>
-                  <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                  <div
+                    className="flex size-8 items-center justify-center rounded-md"
+                    style={{ background: cartao.bg }}
+                  >
+                    <cartao.icon className="size-4" style={{ color: cartao.iconColor }} />
+                  </div>
+                  <p className="mt-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
                     {cartao.label}
                   </p>
                 </CardHeader>
@@ -97,7 +119,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
         </div>
       </div>
 
-      <Card>
+      <Card className="shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
         <CardHeader>
           <p className="font-heading text-sm font-semibold">Faturamento (últimos 6 meses)</p>
         </CardHeader>
@@ -148,8 +170,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
                   {dadosPorMes.map((m) => (
                     <Cell
                       key={m.chave}
-                      fill="var(--brand)"
-                      fillOpacity={m.chave === chaveSelecionada ? 1 : 0.35}
+                      fill={m.chave === chaveSelecionada ? "#C9622B" : "#C9C7BE"}
                     />
                   ))}
                 </Bar>
@@ -159,7 +180,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
         <CardHeader>
           <p className="font-heading text-sm font-semibold">
             Faturamento em {dadoSelecionado.labelCompleto}

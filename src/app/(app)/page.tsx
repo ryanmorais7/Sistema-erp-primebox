@@ -162,12 +162,12 @@ export default async function PainelPage() {
   }));
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <PageHeader title="Painel" />
 
       <PainelInterativo dadosPorMes={dadosPorMes} />
 
-      <div className="rounded-lg border">
+      <div className="rounded-lg border shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
         <div className="flex items-center justify-between border-b p-4">
           <p className="font-heading text-sm font-semibold">Pedidos recentes</p>
           <Link href="/pedidos" className="text-sm text-muted-foreground hover:text-foreground">
