@@ -1,7 +1,26 @@
 import { z } from "zod";
 
+// Aceita "," ou "." como separador decimal (usuário pode digitar em
+// qualquer um dos dois formatos). O último separador na string é
+// sempre o decimal; qualquer separador anterior é de milhar. Se os
+// dígitos após esse separador forem 3 ou mais, na verdade não era um
+// separador decimal e sim de milhar (ex: "1.500" = 1500, não 1,5).
 export function precoParaNumero(preco: string): number {
-  return Number(preco.replace(/\./g, "").replace(",", "."));
+  const limpo = preco.trim().replace(/[^0-9.,]/g, "");
+  const indiceSeparadorDecimal = Math.max(limpo.lastIndexOf("."), limpo.lastIndexOf(","));
+
+  if (indiceSeparadorDecimal === -1) {
+    return Number(limpo);
+  }
+
+  const parteInteira = limpo.slice(0, indiceSeparadorDecimal).replace(/[.,]/g, "");
+  const parteDecimal = limpo.slice(indiceSeparadorDecimal + 1).replace(/[.,]/g, "");
+
+  if (parteDecimal.length >= 3) {
+    return Number(parteInteira + parteDecimal);
+  }
+
+  return Number(`${parteInteira || "0"}.${parteDecimal}`);
 }
 
 export function formatarPrecoBr(preco: number): string {

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 import {
   Select,
   SelectContent,
@@ -93,13 +94,19 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <Label htmlFor="nome">Nome *</Label>
+            <Label htmlFor="nome">
+              Nome
+              <CampoObrigatorio />
+            </Label>
             <Input id="nome" placeholder="Ex: Unibox Molas Ensacadas Casal" {...register("nome")} />
             {errors.nome && <p className="text-sm text-destructive">{errors.nome.message}</p>}
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label>Tipo *</Label>
+            <Label>
+              Tipo
+              <CampoObrigatorio />
+            </Label>
             <Controller
               control={control}
               name="tipo"
@@ -122,7 +129,10 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label>Medida *</Label>
+            <Label>
+              Medida
+              <CampoObrigatorio />
+            </Label>
             <Controller
               control={control}
               name="medidaId"
@@ -161,15 +171,21 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="preco">Preço de venda (R$) *</Label>
-            <Input id="preco" placeholder="0,00" {...register("preco")} />
-            {errors.preco && <p className="text-sm text-destructive">{errors.preco.message}</p>}
+            <Label htmlFor="custo">
+              Custo de produção (R$)
+              <CampoObrigatorio />
+            </Label>
+            <Input id="custo" placeholder="0,00" {...register("custo")} />
+            {errors.custo && <p className="text-sm text-destructive">{errors.custo.message}</p>}
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="custo">Custo de produção (R$) *</Label>
-            <Input id="custo" placeholder="0,00" {...register("custo")} />
-            {errors.custo && <p className="text-sm text-destructive">{errors.custo.message}</p>}
+            <Label htmlFor="preco">
+              Preço de venda (R$)
+              <CampoObrigatorio />
+            </Label>
+            <Input id="preco" placeholder="0,00" {...register("preco")} />
+            {errors.preco && <p className="text-sm text-destructive">{errors.preco.message}</p>}
           </div>
 
           <div className="flex flex-col gap-2 sm:col-span-2">
