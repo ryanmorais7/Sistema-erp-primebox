@@ -18,14 +18,28 @@ type PageProps = {
 export default async function NovaExpedicaoPage({ params }: PageProps) {
   const { id } = await params;
 
-  const pedido = await prisma.pedido.findUnique({
-    where: { id },
-    include: { cliente: true, expedicao: true },
-  });
+  const [pedido, expedicoesAnteriores] = await Promise.all([
+    prisma.pedido.findUnique({
+      where: { id },
+      include: { cliente: true, expedicao: true },
+    }),
+    prisma.expedicao.findMany({
+      where: { transportadora: { not: null } },
+      distinct: ["transportadora"],
+      select: { transportadora: true },
+    }),
+  ]);
 
   if (!pedido) {
     notFound();
   }
+
+  const transportadorasSugeridas = [
+    "Veículo da empresa",
+    ...expedicoesAnteriores
+      .map((e) => e.transportadora)
+      .filter((nome): nome is string => Boolean(nome) && nome !== "Veículo da empresa"),
+  ];
 
   if (pedido.expedicao) {
     redirect(`/pedidos/${pedido.id}`);
@@ -56,8 +70,14 @@ export default async function NovaExpedicaoPage({ params }: PageProps) {
               <Input
                 id="transportadora"
                 name="transportadora"
-                placeholder="Ex: Rota Norte Transportes (opcional)"
+                list="transportadoras-sugeridas"
+                placeholder="Ex: Rota Norte Transportes, ou Veículo da empresa (opcional)"
               />
+              <datalist id="transportadoras-sugeridas">
+                {transportadorasSugeridas.map((nome) => (
+                  <option key={nome} value={nome} />
+                ))}
+              </datalist>
             </div>
           </CardContent>
         </Card>
