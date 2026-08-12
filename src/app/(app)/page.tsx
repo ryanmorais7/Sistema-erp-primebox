@@ -34,6 +34,21 @@ const NOMES_MES = [
   "Dez",
 ];
 
+const NOMES_MES_COMPLETO = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
 // Horário do Brasil (-03:00 fixo, sem horário de verão desde 2019) —
 // mesma convenção de src/lib/data.ts, aplicada ao mês em vez do dia.
 function anoMesAtualBr(): { ano: number; mes: number } {
@@ -52,7 +67,8 @@ function anoMesAtualBr(): { ano: number; mes: number } {
 
 function ultimosMeses(quantidade: number) {
   const { ano: anoAtual, mes: mesAtual } = anoMesAtualBr();
-  const meses: { chave: string; label: string; ano: number; mes: number }[] = [];
+  const meses: { chave: string; label: string; labelCompleto: string; ano: number; mes: number }[] =
+    [];
   for (let i = quantidade - 1; i >= 0; i--) {
     let mes = mesAtual - i;
     let ano = anoAtual;
@@ -63,6 +79,7 @@ function ultimosMeses(quantidade: number) {
     meses.push({
       chave: `${ano}-${String(mes).padStart(2, "0")}`,
       label: NOMES_MES[mes - 1],
+      labelCompleto: NOMES_MES_COMPLETO[mes - 1],
       ano,
       mes,
     });
@@ -136,6 +153,7 @@ export default async function PainelPage() {
   const dadosPorMes = meses.map((m) => ({
     chave: m.chave,
     label: m.label,
+    labelCompleto: m.labelCompleto,
     pedidosEmCarteira: carteiraPorMes.get(m.chave)?.pedidos ?? 0,
     valorEmCarteira: carteiraPorMes.get(m.chave)?.valor ?? 0,
     pedidosFaturados: faturamentoPorMes.get(m.chave)?.pedidos ?? 0,

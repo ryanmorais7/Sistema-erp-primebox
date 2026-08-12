@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 type DadoMes = {
   chave: string;
   label: string;
+  labelCompleto: string;
   pedidosEmCarteira: number;
   valorEmCarteira: number;
   pedidosFaturados: number;
@@ -74,8 +75,9 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
     <div className="flex flex-col gap-6">
       <div>
         <p className="mb-2 text-xs text-muted-foreground">
-          Mostrando dados de <strong className="text-foreground">{dadoSelecionado.label}</strong>.
-          Clique em outro mês no gráfico abaixo para comparar.
+          Mostrando dados de{" "}
+          <strong className="text-foreground">{dadoSelecionado.labelCompleto}</strong>. Clique em
+          outro mês no gráfico abaixo para comparar.
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cartoes.map((cartao) => (
@@ -159,7 +161,9 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
 
       <Card>
         <CardHeader>
-          <p className="font-heading text-sm font-semibold">Faturamento em {dadoSelecionado.label}</p>
+          <p className="font-heading text-sm font-semibold">
+            Faturamento em {dadoSelecionado.labelCompleto}
+          </p>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-end justify-between gap-4">
