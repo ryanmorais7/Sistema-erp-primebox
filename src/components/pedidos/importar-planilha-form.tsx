@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Upload, ArrowLeft } from "lucide-react";
 
 import { analisarPlanilha, confirmarImportacao } from "@/app/(app)/pedidos/importar/actions";
+import { inferirMedidaId } from "@/lib/planilhaOp";
 import {
   confirmarImportacaoSchema,
   type ConfirmarImportacaoValues,
@@ -29,6 +30,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -99,8 +101,8 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
       produtosNovos: resultado.produtosNovos.map((texto) => ({
         texto,
         tipo: "BASE" as const,
-        medidaId: "",
-        preco: "",
+        medidaId: inferirMedidaId(texto, medidas) ?? medidas[0]?.id ?? "",
+        preco: "0",
         custo: "0",
       })),
     });
@@ -236,10 +238,7 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                   <Input value={campo.texto} disabled />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>
-                    Tipo
-                    <CampoObrigatorio />
-                  </Label>
+                  <Label>Tipo</Label>
                   <Controller
                     control={control}
                     name={`produtosNovos.${index}.tipo`}
@@ -264,10 +263,7 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>
-                    Medida
-                    <CampoObrigatorio />
-                  </Label>
+                  <Label>Medida</Label>
                   <Controller
                     control={control}
                     name={`produtosNovos.${index}.medidaId`}
@@ -297,10 +293,7 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                   )}
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>
-                    Preço (R$)
-                    <CampoObrigatorio />
-                  </Label>
+                  <Label>Preço (R$)</Label>
                   <Input placeholder="0,00" {...register(`produtosNovos.${index}.preco`)} />
                   {errors.produtosNovos?.[index]?.preco && (
                     <p className="text-sm text-destructive">
@@ -342,6 +335,17 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                 </TableRow>
               ))}
             </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={2} className="font-medium">
+                  Total
+                </TableCell>
+                <TableCell className="text-right font-medium">
+                  {analise.itens.reduce((total, item) => total + item.quantidade, 0)}
+                </TableCell>
+                <TableCell />
+              </TableRow>
+            </TableFooter>
           </Table>
         </CardContent>
       </Card>

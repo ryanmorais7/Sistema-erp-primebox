@@ -23,13 +23,32 @@ const ALIASES_COLUNA: Record<string, keyof LinhaPlanilha> = {
   OBS: "observacao",
 };
 
-function normalizarCabecalho(valor: unknown): string {
+function normalizarTexto(valor: unknown): string {
   return String(valor ?? "")
     .trim()
     .toUpperCase()
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/[.:]+$/, "");
+    .replace(/\p{Diacritic}/gu, "");
+}
+
+function normalizarCabecalho(valor: unknown): string {
+  return normalizarTexto(valor).replace(/[.:]+$/, "");
+}
+
+// Tenta achar a medida pelo nome dela dentro do texto do produto (ex:
+// "3 BASE QUEEN SAT 07" contém "QUEEN"). Medidas maiores primeiro, pra
+// "SUPER KING" não perder pra "KING" quando os dois aparecem no nome.
+export function inferirMedidaId(
+  produtoTexto: string,
+  medidas: { id: string; nome: string }[],
+): string | undefined {
+  const texto = normalizarTexto(produtoTexto);
+  const ordenadas = [...medidas].sort((a, b) => b.nome.length - a.nome.length);
+  const achada = ordenadas.find((medida) => {
+    const nome = normalizarTexto(medida.nome).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^A-Z])${nome}([^A-Z]|$)`).test(texto);
+  });
+  return achada?.id;
 }
 
 function acharCabecalho(linhasBrutas: unknown[][]) {
