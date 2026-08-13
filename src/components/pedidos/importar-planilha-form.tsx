@@ -1,12 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload, ArrowLeft } from "lucide-react";
+import { Upload, ArrowLeft, Factory, CircleCheck } from "lucide-react";
 
-import { analisarPlanilha, confirmarImportacao } from "@/app/(app)/pedidos/importar/actions";
+import {
+  analisarPlanilha,
+  confirmarImportacao,
+  gerarOPsDosPedidos,
+} from "@/app/(app)/pedidos/importar/actions";
 import { inferirMedidaId } from "@/lib/planilhaOp";
 import {
   confirmarImportacaoSchema,
@@ -45,14 +49,18 @@ type AnaliseSucesso = {
   produtosNovos: string[];
 };
 
+type PedidoCriado = { id: string; numero: number; clienteNome: string; itens: number };
+
 export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
-  const router = useRouter();
   const inputArquivoRef = useRef<HTMLInputElement>(null);
   const [nomeArquivo, setNomeArquivo] = useState<string | null>(null);
   const [analisando, setAnalisando] = useState(false);
   const [erroAnalise, setErroAnalise] = useState<string | null>(null);
   const [analise, setAnalise] = useState<AnaliseSucesso | null>(null);
   const [erroConfirmacao, setErroConfirmacao] = useState<string | null>(null);
+  const [pedidosCriados, setPedidosCriados] = useState<PedidoCriado[] | null>(null);
+  const [gerandoOP, setGerandoOP] = useState(false);
+  const [opsGeradas, setOpsGeradas] = useState<number | null>(null);
 
   const {
     register,
@@ -115,8 +123,74 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
       setErroConfirmacao(resultado.error);
       return;
     }
-    router.push("/pedidos");
-    router.refresh();
+    setPedidosCriados(resultado.pedidos);
+  }
+
+  async function aoGerarOPs() {
+    if (!pedidosCriados) return;
+    setGerandoOP(true);
+    const resultado = await gerarOPsDosPedidos(pedidosCriados.map((p) => p.id));
+    setGerandoOP(false);
+    setOpsGeradas(resultado.geradas);
+  }
+
+  if (pedidosCriados) {
+    const totalItens = pedidosCriados.reduce((total, p) => total + p.itens, 0);
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CircleCheck className="size-5 text-positive" />
+            Pedidos criados com sucesso
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-1 text-sm">
+            {pedidosCriados.map((pedido) => (
+              <li key={pedido.id}>
+                <Link href={`/pedidos/${pedido.id}`} className="hover:underline">
+                  Pedido #{pedido.numero}
+                </Link>{" "}
+                — {pedido.clienteNome} ({pedido.itens} item(ns))
+              </li>
+            ))}
+          </ul>
+
+          {opsGeradas === null ? (
+            <p className="text-sm text-muted-foreground">
+              Quer gerar a Ordem de Produção de todos os {totalItens} item(ns) de uma vez, em vez
+              de abrir pedido por pedido?
+            </p>
+          ) : (
+            <p className="text-sm text-positive">
+              {opsGeradas} OP(s) gerada(s). Já aparecem em Produção.
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-3">
+            {opsGeradas === null && (
+              <Button type="button" onClick={aoGerarOPs} disabled={gerandoOP}>
+                <Factory />
+                {gerandoOP ? "Gerando OPs..." : "Gerar OP de todos os itens"}
+              </Button>
+            )}
+            {opsGeradas !== null && (
+              <Button render={<Link href="/producao" />} nativeButton={false}>
+                <Factory />
+                Ver Produção
+              </Button>
+            )}
+            <Button
+              render={<Link href="/pedidos" />}
+              nativeButton={false}
+              variant="outline"
+            >
+              Ir para Pedidos
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (!analise) {

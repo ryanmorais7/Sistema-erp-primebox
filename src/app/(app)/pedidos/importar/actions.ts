@@ -67,8 +67,10 @@ export async function analisarPlanilha(formData: FormData): Promise<AnaliseResul
   };
 }
 
+type PedidoCriado = { id: string; numero: number; clienteNome: string; itens: number };
+
 type ConfirmarResultado =
-  | { success: true; pedidoIds: string[] }
+  | { success: true; pedidos: PedidoCriado[] }
   | { success: false; error: string };
 
 export async function confirmarImportacao(
@@ -81,7 +83,7 @@ export async function confirmarImportacao(
   const dados = resultado.data;
 
   try {
-    const pedidoIds = await prisma.$transaction(async (tx) => {
+    const pedidosCriados = await prisma.$transaction(async (tx) => {
       const mapaClientes = new Map<string, string>();
       for (const cliente of dados.clientesNovos) {
         const criado = await tx.cliente.create({
@@ -134,7 +136,7 @@ export async function confirmarImportacao(
         itensPorCliente.set(item.clienteTexto, lista);
       }
 
-      const idsCriados: string[] = [];
+      const criados: PedidoCriado[] = [];
       for (const [clienteTexto, itens] of itensPorCliente) {
         const clienteId = resolverCliente(clienteTexto);
         if (!clienteId) {
@@ -170,20 +172,44 @@ export async function confirmarImportacao(
             itens: { create: itensPedido },
           },
         });
-        idsCriados.push(pedido.id);
+        criados.push({
+          id: pedido.id,
+          numero: pedido.numero,
+          clienteNome: clienteTexto,
+          itens: itensPedido.length,
+        });
       }
 
-      return idsCriados;
+      return criados;
     });
 
     revalidatePath("/pedidos");
     revalidatePath("/clientes");
     revalidatePath("/produtos");
-    return { success: true, pedidoIds };
+    return { success: true, pedidos: pedidosCriados };
   } catch (erro) {
     return {
       success: false,
       error: erro instanceof Error ? erro.message : "Erro ao importar a planilha.",
     };
   }
+}
+
+export async function gerarOPsDosPedidos(pedidoIds: string[]): Promise<{ geradas: number }> {
+  const itens = await prisma.itemPedido.findMany({
+    where: { pedidoId: { in: pedidoIds }, ordemProducao: null },
+    select: { id: true },
+  });
+
+  if (itens.length === 0) {
+    return { geradas: 0 };
+  }
+
+  await prisma.ordemProducao.createMany({
+    data: itens.map((item) => ({ itemPedidoId: item.id })),
+  });
+
+  revalidatePath("/producao");
+  revalidatePath("/pedidos");
+  return { geradas: itens.length };
 }
