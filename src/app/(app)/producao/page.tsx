@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Box } from "lucide-react";
+import { ArrowRight, Box, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { iniciarProducao, concluirProducao } from "./actions";
+import { iniciarProducao, concluirProducao, cancelarOrdemProducao } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
@@ -35,10 +35,11 @@ function textoProduto(item: {
   cor: string | null;
   medida: { nome: string };
 }) {
-  const base =
-    item.tipo === "BASE"
-      ? `${tipoProdutoLabels[item.tipo]} ${item.nome}`
-      : `${item.medida.nome} ${item.nome}`;
+  const prefixo = item.tipo === "BASE" ? tipoProdutoLabels[item.tipo] : item.medida.nome;
+  // Planilhas importadas às vezes já trazem o prefixo no nome (ex: "Base
+  // queen sat 07") — evita duplicar ("Base Base queen sat 07").
+  const nomeJaTemPrefixo = item.nome.toLowerCase().startsWith(prefixo.toLowerCase());
+  const base = nomeJaTemPrefixo ? item.nome : `${prefixo} ${item.nome}`;
   const tecidoCor = [item.tecido, item.cor].filter(Boolean).join(" ");
   return tecidoCor ? `${base} · ${tecidoCor}` : base;
 }
@@ -189,18 +190,30 @@ export default async function ProducaoPage() {
                       </p>
 
                       {coluna.status === "AGUARDANDO" && (
-                        <form
-                          action={async () => {
-                            "use server";
-                            await iniciarProducao(ordem.id);
-                          }}
-                          className="mt-3"
-                        >
-                          <Button type="submit" variant="outline" size="sm">
-                            Iniciar produção
-                            <ArrowRight />
-                          </Button>
-                        </form>
+                        <div className="mt-3 flex items-center gap-2">
+                          <form
+                            action={async () => {
+                              "use server";
+                              await iniciarProducao(ordem.id);
+                            }}
+                          >
+                            <Button type="submit" variant="outline" size="sm">
+                              Iniciar produção
+                              <ArrowRight />
+                            </Button>
+                          </form>
+                          <form
+                            action={async () => {
+                              "use server";
+                              await cancelarOrdemProducao(ordem.id);
+                            }}
+                          >
+                            <Button type="submit" variant="destructive" size="sm">
+                              <X />
+                              Cancelar OP
+                            </Button>
+                          </form>
+                        </div>
                       )}
 
                       {coluna.status === "EM_PRODUCAO" && (

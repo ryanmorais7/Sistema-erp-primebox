@@ -92,13 +92,22 @@ export async function confirmarImportacao(
         mapaClientes.set(normalizar(cliente.texto), criado.id);
       }
 
+      let medidaPadraoId: string | undefined;
       const mapaProdutos = new Map<string, { id: string; preco: number; custo: number }>();
       for (const produto of dados.produtosNovos) {
+        let medidaId = produto.medidaId;
+        if (!medidaId) {
+          medidaPadraoId ??= (await tx.medida.findFirst({ select: { id: true } }))?.id;
+          if (!medidaPadraoId) {
+            throw new Error("Não há nenhuma medida cadastrada no sistema pra usar como padrão.");
+          }
+          medidaId = medidaPadraoId;
+        }
         const criado = await tx.produto.create({
           data: {
             nome: produto.texto,
             tipo: produto.tipo,
-            medidaId: produto.medidaId,
+            medidaId,
             preco: precoParaNumero(produto.preco),
             custo: precoParaNumero(produto.custo),
           },

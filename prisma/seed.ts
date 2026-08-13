@@ -90,18 +90,33 @@ async function main() {
       await prisma.cliente.delete({ where: { id: cliente.id } });
     }
 
-    const senhaHash = await bcrypt.hash("Teste@Primebox2026", 10);
-    await prisma.usuario.upsert({
+    const senhaHash = await bcrypt.hash("Testes@2026", 10);
+    const usuarioTesteAntigo = await prisma.usuario.findUnique({
       where: { email: "ryan.testes@primebox.local" },
-      update: { senhaHash, ativo: true },
-      create: {
-        nome: "Ryan Morais - Testes",
-        email: "ryan.testes@primebox.local",
-        senhaHash,
-        papel: "DESENVOLVEDOR",
-        ativo: true,
-      },
     });
+    if (usuarioTesteAntigo) {
+      await prisma.usuario.update({
+        where: { id: usuarioTesteAntigo.id },
+        data: {
+          nome: "Ryan Morais - Testes",
+          email: "moraisryan829@gmail.com",
+          senhaHash,
+          ativo: true,
+        },
+      });
+    } else {
+      await prisma.usuario.upsert({
+        where: { email: "moraisryan829@gmail.com" },
+        update: { senhaHash, ativo: true },
+        create: {
+          nome: "Ryan Morais - Testes",
+          email: "moraisryan829@gmail.com",
+          senhaHash,
+          papel: "DESENVOLVEDOR",
+          ativo: true,
+        },
+      });
+    }
 
     for (const cliente of clientesExemplo) {
       const existente = await prisma.cliente.findFirst({ where: { razaoSocial: cliente.razaoSocial } });

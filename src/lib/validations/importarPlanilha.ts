@@ -1,27 +1,29 @@
 import { z } from "zod";
-import { custoSchema } from "./moeda";
 import { TIPOS_PRODUTO } from "./produto";
+
+// Aceita qualquer texto (inclusive vazio) — vira 0 automaticamente ao
+// passar por precoParaNumero() na confirmação. Preço/custo nunca travam
+// a importação, diferente do cadastro manual de produto.
+const valorLivreSchema = z.string().trim();
 
 const somenteDigitos = (valor: string) => valor.replace(/\D/g, "");
 
 export const clienteNovoSchema = z.object({
   texto: z.string().trim().min(1),
-  telefone: z
-    .string()
-    .trim()
-    .transform(somenteDigitos)
-    .refine((valor) => valor.length >= 10 && valor.length <= 11, "Telefone inválido"),
+  // Nenhum campo aqui trava a confirmação — a planilha do Pedro não traz
+  // telefone, e o usuário pode ajustar depois em /clientes.
+  telefone: z.string().trim().transform(somenteDigitos),
 });
 
 export const produtoNovoSchema = z.object({
   texto: z.string().trim().min(1),
+  // Tipo, medida, preço e custo ficam pré-preenchidos com um valor padrão
+  // (ver importar-planilha-form.tsx) mas nada aqui é obrigatório pra
+  // confirmar — dá pra ajustar tudo depois em /produtos.
   tipo: z.enum(TIPOS_PRODUTO),
-  medidaId: z.string().trim().min(1, "Selecione a medida"),
-  // Preço/custo podem ficar 0 na importação (ajustados depois em
-  // /produtos) — diferente do cadastro normal, aqui não trava a
-  // confirmação por falta de preço.
-  preco: custoSchema,
-  custo: custoSchema,
+  medidaId: z.string().trim(),
+  preco: valorLivreSchema,
+  custo: valorLivreSchema,
 });
 
 export const itemImportadoSchema = z.object({

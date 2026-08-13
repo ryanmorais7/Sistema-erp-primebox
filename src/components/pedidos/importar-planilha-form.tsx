@@ -266,10 +266,7 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                   <Input value={campo.texto} disabled />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor={`cliente-telefone-${index}`}>
-                    Telefone
-                    <CampoObrigatorio />
-                  </Label>
+                  <Label htmlFor={`cliente-telefone-${index}`}>Telefone (opcional)</Label>
                   <Controller
                     control={control}
                     name={`clientesNovos.${index}.telefone`}
@@ -312,10 +309,7 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                   <Input value={campo.texto} disabled />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>
-                    Tipo
-                    <CampoObrigatorio />
-                  </Label>
+                  <Label>Tipo</Label>
                   <Controller
                     control={control}
                     name={`produtosNovos.${index}.tipo`}
@@ -340,10 +334,7 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>
-                    Medida
-                    <CampoObrigatorio />
-                  </Label>
+                  <Label>Medida</Label>
                   <Controller
                     control={control}
                     name={`produtosNovos.${index}.medidaId`}
