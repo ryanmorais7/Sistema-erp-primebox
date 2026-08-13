@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, Pencil, Check, Trash2, Printer, Upload } from "lucide-react";
+import { Eye, Pencil, Check, Trash2, Printer, Upload, AlertCircle, CircleCheck, CircleDashed } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { excluirPedido, faturarPedido } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -26,6 +26,38 @@ const abas: { label: string; status?: StatusPedido }[] = [
   { label: "Em carteira", status: "EM_CARTEIRA" },
   { label: "Faturados", status: "FATURADO" },
 ];
+
+function BadgeProducao({ geradas, total }: { geradas: number; total: number }) {
+  if (total === 0) return <span className="text-muted-foreground">—</span>;
+
+  if (geradas === 0) {
+    return (
+      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#F4E2D6] px-2 py-0.5 text-xs font-medium">
+        <AlertCircle className="size-3.5 text-[#C9622B]" />
+        <span className="text-[#C9622B]">{geradas}</span>
+        <span className="text-[#B08968]">/{total} OP</span>
+      </span>
+    );
+  }
+
+  if (geradas === total) {
+    return (
+      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#DFEAE6] px-2 py-0.5 text-xs font-medium">
+        <CircleCheck className="size-3.5 text-[#0F6E56]" />
+        <span className="text-[#0F6E56]">{geradas}</span>
+        <span className="text-[#5B9080]">/{total} OP</span>
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#F4E2D6] px-2 py-0.5 text-xs font-medium">
+      <CircleDashed className="size-3.5 text-[#0F6E56]" />
+      <span className="text-[#0F6E56]">{geradas}</span>
+      <span className="text-[#B08968]">/{total} OP</span>
+    </span>
+  );
+}
 
 type PageProps = {
   searchParams: Promise<{ status?: string }>;
@@ -89,6 +121,7 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                 <TableHead>Data</TableHead>
                 <TableHead>Valor total</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Produção</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -108,16 +141,21 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                       <Badge variant="secondary">Em carteira</Badge>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <BadgeProducao
+                      geradas={pedido.itens.filter((item) => item.ordemProducao).length}
+                      total={pedido.itens.length}
+                    />
+                  </TableCell>
                   <TableCell className="flex justify-end gap-2">
                     <Button
                       render={<Link href={`/pedidos/${pedido.id}`} />}
                       nativeButton={false}
                       variant="outline"
-                      size="icon-sm"
-                      aria-label="Ver pedido"
-                      title="Ver"
+                      size="sm"
                     >
                       <Eye />
+                      Ver pedido
                     </Button>
                     <Button
                       render={<Link href={`/pedidos/${pedido.id}?print=1`} target="_blank" />}

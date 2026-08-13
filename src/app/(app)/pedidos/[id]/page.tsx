@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileDown, MessageCircle, Factory, Truck, Box, Scissors } from "lucide-react";
+import { FileDown, MessageCircle, Truck, Box, Scissors, Wrench, CircleCheck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verificarSessao } from "@/lib/dal";
@@ -224,10 +224,14 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
                   </TableCell>
                   <TableCell className="text-right print:hidden">
                     {item.ordemProducao ? (
-                      <Badge variant="secondary">
+                      <Link
+                        href="/producao"
+                        className="inline-flex w-fit items-center gap-1 rounded-full bg-[#DFEAE6] px-2 py-0.5 text-xs font-medium text-[#0F6E56] hover:underline"
+                      >
+                        <CircleCheck className="size-3.5" />
                         OP #{item.ordemProducao.numero} ·{" "}
                         {statusOrdemProducaoLabels[item.ordemProducao.status]}
-                      </Badge>
+                      </Link>
                     ) : (
                       <form
                         action={async () => {
@@ -235,8 +239,12 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
                           await gerarOrdemProducao(item.id);
                         }}
                       >
-                        <Button type="submit" variant="outline" size="sm">
-                          <Factory />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
+                        >
+                          <Wrench />
                           Gerar OP
                         </Button>
                       </form>
