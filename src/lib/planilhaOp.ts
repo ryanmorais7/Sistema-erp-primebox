@@ -51,6 +51,20 @@ export function inferirMedidaId(
   return achada?.id;
 }
 
+// Pedro às vezes copia e cola do WhatsApp e o texto do produto vem com
+// a quantidade repetida na frente (ex: "3 BASE QUEEN SAT 07" quando
+// QUANT já é 3) — fica redundante ("3 unidades · 3 Base Queen"). Só
+// remove o número da frente quando ele bate exatamente com a
+// quantidade da linha, pra não arrancar um código de produto de
+// verdade (ex: "088 LINHO CINZA" com quantidade 3 fica intacto).
+function limparPrefixoQuantidade(produto: string, quantidade: number): string {
+  const match = produto.match(/^(\d+)\s*[xX]?\s+(.+)$/);
+  if (match && Number(match[1]) === quantidade) {
+    return match[2].trim();
+  }
+  return produto;
+}
+
 function acharCabecalho(linhasBrutas: unknown[][]) {
   for (let i = 0; i < linhasBrutas.length; i++) {
     const linha = linhasBrutas[i];
@@ -128,9 +142,10 @@ export function parsePlanilhaOp(buffer: ArrayBuffer): PlanilhaAnalisada {
         continue;
       }
 
+      const quantidadeFinal = registro.quantidade && registro.quantidade > 0 ? registro.quantidade : 1;
       linhas.push({
-        quantidade: registro.quantidade && registro.quantidade > 0 ? registro.quantidade : 1,
-        produto,
+        quantidade: quantidadeFinal,
+        produto: limparPrefixoQuantidade(produto, quantidadeFinal),
         cliente,
         observacao: registro.observacao ?? "",
       });
