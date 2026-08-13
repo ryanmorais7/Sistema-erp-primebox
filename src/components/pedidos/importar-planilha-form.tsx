@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,6 +45,8 @@ type AnaliseSucesso = {
 
 export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
   const router = useRouter();
+  const inputArquivoRef = useRef<HTMLInputElement>(null);
+  const [nomeArquivo, setNomeArquivo] = useState<string | null>(null);
   const [analisando, setAnalisando] = useState(false);
   const [erroAnalise, setErroAnalise] = useState<string | null>(null);
   const [analise, setAnalise] = useState<AnaliseSucesso | null>(null);
@@ -123,7 +125,7 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
-            Envie o arquivo .xlsx com as colunas QUANT, PRODUTO, CLIENTE e OBSERVAÇÃO (na primeira
+            Envie o arquivo Excel com as colunas QUANT, PRODUTO, CLIENTE e OBSERVAÇÃO (em qualquer
             aba). Um pedido é criado pra cada cliente encontrado, com os itens dele. Clientes e
             produtos que ainda não existem no sistema são conferidos na próxima tela antes de
             confirmar.
@@ -131,10 +133,28 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
           <form action={aoEnviarArquivo} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2 sm:max-w-sm">
               <Label htmlFor="arquivo">
-                Arquivo (.xlsx)
+                Arquivo
                 <CampoObrigatorio />
               </Label>
-              <Input id="arquivo" name="arquivo" type="file" accept=".xlsx,.xls" required />
+              <input
+                ref={inputArquivoRef}
+                id="arquivo"
+                name="arquivo"
+                type="file"
+                accept=".xlsx,.xls"
+                required
+                className="sr-only"
+                onChange={(e) => setNomeArquivo(e.target.files?.[0]?.name ?? null)}
+              />
+              <button
+                type="button"
+                onClick={() => inputArquivoRef.current?.click()}
+                className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 text-left text-sm transition-colors outline-none hover:bg-accent/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <span className={nomeArquivo ? "text-foreground" : "text-muted-foreground"}>
+                  {nomeArquivo ?? "Clique aqui pra escolher um arquivo"}
+                </span>
+              </button>
             </div>
             {erroAnalise && <p className="text-sm text-destructive">{erroAnalise}</p>}
             <Button type="submit" disabled={analisando} className="self-start">
