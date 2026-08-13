@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, Pencil, Check, Trash2, Printer } from "lucide-react";
+import { Eye, Pencil, Check, Trash2, Printer, Upload } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { excluirPedido, faturarPedido } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -47,9 +47,15 @@ export default async function PedidosPage({ searchParams }: PageProps) {
       <PageHeader
         title="Pedidos"
         action={
-          <Button render={<Link href="/pedidos/novo" />} nativeButton={false}>
-            Novo pedido
-          </Button>
+          <div className="flex gap-2">
+            <Button render={<Link href="/pedidos/importar" />} nativeButton={false} variant="outline">
+              <Upload />
+              Importar planilha
+            </Button>
+            <Button render={<Link href="/pedidos/novo" />} nativeButton={false}>
+              Novo pedido
+            </Button>
+          </div>
         }
       />
 
