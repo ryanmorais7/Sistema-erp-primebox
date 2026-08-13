@@ -402,7 +402,7 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                 <TableHead>Cliente</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead className="text-right">Qtd.</TableHead>
-                <TableHead>Observação</TableHead>
+                <TableHead>Observação (opcional)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -411,7 +411,13 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                   <TableCell>{item.cliente}</TableCell>
                   <TableCell>{item.produto}</TableCell>
                   <TableCell className="text-right">{item.quantidade}</TableCell>
-                  <TableCell className="text-muted-foreground">{item.observacao || "—"}</TableCell>
+                  <TableCell>
+                    <Input
+                      placeholder="Sem observação"
+                      className="h-7"
+                      {...register(`itens.${index}.observacao`)}
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

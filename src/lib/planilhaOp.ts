@@ -52,17 +52,15 @@ export function inferirMedidaId(
 }
 
 // Pedro às vezes copia e cola do WhatsApp e o texto do produto vem com
-// a quantidade repetida na frente (ex: "3 BASE QUEEN SAT 07" quando
-// QUANT já é 3) — fica redundante ("3 unidades · 3 Base Queen"). Só
-// remove o número da frente quando ele bate exatamente com a
-// quantidade da linha, pra não arrancar um código de produto de
-// verdade (ex: "088 LINHO CINZA" com quantidade 3 fica intacto).
-function limparPrefixoQuantidade(produto: string, quantidade: number): string {
-  const match = produto.match(/^(\d+)\s*[xX]?\s+(.+)$/);
-  if (match && Number(match[1]) === quantidade) {
-    return match[2].trim();
-  }
-  return produto;
+// um número solto na frente (ex: "3 BASE QUEEN SAT 07", "2 BASE QUEEN
+// SAT 02") — fica redundante com a coluna QUANT, que já é o lugar
+// certo pra quantidade. O número da frente nem sempre bate com QUANT
+// daquela linha (ele pode ter escrito errado ao copiar/colar), então
+// não dá pra confiar num "só remove se bater" — a quantidade nunca
+// deveria estar no nome do produto, então remove sempre.
+function limparPrefixoQuantidade(produto: string): string {
+  const match = produto.match(/^\d+\s*[xX]?\s+(.+)$/);
+  return match ? match[1].trim() : produto;
 }
 
 // Deixa só a primeira letra do texto maiúscula e o resto minúsculo (nunca
@@ -156,7 +154,7 @@ export function parsePlanilhaOp(buffer: ArrayBuffer): PlanilhaAnalisada {
       const quantidadeFinal = registro.quantidade && registro.quantidade > 0 ? registro.quantidade : 1;
       linhas.push({
         quantidade: quantidadeFinal,
-        produto: formatarNomeBonito(limparPrefixoQuantidade(produto, quantidadeFinal)),
+        produto: formatarNomeBonito(limparPrefixoQuantidade(produto)),
         cliente: formatarNomeBonito(cliente),
         observacao: (registro.observacao ?? "").replace(/\s+/g, " ").trim(),
       });
