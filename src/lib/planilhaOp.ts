@@ -65,6 +65,17 @@ function limparPrefixoQuantidade(produto: string, quantidade: number): string {
   return produto;
 }
 
+// Deixa só a primeira letra do texto maiúscula e o resto minúsculo (nunca
+// Title Case palavra por palavra), e colapsa espaçamento duplo/errado —
+// planilha às vezes vem tudo em caixa alta ou colada do WhatsApp. Isso é
+// só uma sugestão de formatação pra ficar organizado; o campo continua
+// editável na conferência antes de importar.
+export function formatarNomeBonito(texto: string): string {
+  const semEspacosExtras = texto.replace(/\s+/g, " ").trim();
+  const minusculo = semEspacosExtras.toLowerCase();
+  return minusculo.replace(/[a-zà-ÿ]/, (letra) => letra.toUpperCase());
+}
+
 function acharCabecalho(linhasBrutas: unknown[][]) {
   for (let i = 0; i < linhasBrutas.length; i++) {
     const linha = linhasBrutas[i];
@@ -145,9 +156,9 @@ export function parsePlanilhaOp(buffer: ArrayBuffer): PlanilhaAnalisada {
       const quantidadeFinal = registro.quantidade && registro.quantidade > 0 ? registro.quantidade : 1;
       linhas.push({
         quantidade: quantidadeFinal,
-        produto: limparPrefixoQuantidade(produto, quantidadeFinal),
-        cliente,
-        observacao: registro.observacao ?? "",
+        produto: formatarNomeBonito(limparPrefixoQuantidade(produto, quantidadeFinal)),
+        cliente: formatarNomeBonito(cliente),
+        observacao: (registro.observacao ?? "").replace(/\s+/g, " ").trim(),
       });
     }
 

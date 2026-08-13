@@ -312,7 +312,10 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                   <Input value={campo.texto} disabled />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Tipo</Label>
+                  <Label>
+                    Tipo
+                    <CampoObrigatorio />
+                  </Label>
                   <Controller
                     control={control}
                     name={`produtosNovos.${index}.tipo`}
@@ -337,7 +340,10 @@ export function ImportarPlanilhaForm({ medidas }: { medidas: Medida[] }) {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Medida</Label>
+                  <Label>
+                    Medida
+                    <CampoObrigatorio />
+                  </Label>
                   <Controller
                     control={control}
                     name={`produtosNovos.${index}.medidaId`}
