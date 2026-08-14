@@ -60,6 +60,16 @@ como produto" ali mesmo (`criarProdutoRapido`), pedindo só tipo,
 medida e preço (custo default 0) — sem forçar sair da tela pra
 cadastrar produto novo antes de lançar a OP.
 
+Diferente do Cliente, Produto não pode ficar "sem cadastro" de verdade
+— toda linha precisa de um `produtoId` real (estoque e ficha técnica
+dependem disso). Então se o usuário só digitar um nome que não bate
+com nada e não usar o popup, `criarOrdemAvulsa` cadastra o produto
+sozinho no momento de salvar: casa por nome exato primeiro (evita
+duplicar catálogo), senão cria um novo inferindo a medida a partir do
+texto (reaproveita `inferirMedidaId` da importação de planilha,
+ADR-031), tipo "Base" e custo 0 por padrão — preço vem do que foi
+digitado na linha, ou 0. Fica editável depois em `/produtos`.
+
 ### Board de Produção mesclado, folha impressa unificada
 
 `/producao` busca `OrdemProducao` e `ItemOrdemAvulsa` juntos, mescla

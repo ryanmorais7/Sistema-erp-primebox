@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { precoParaNumero } from "@/lib/validations/moeda";
 import { darBaixaProducaoConcluida, reverterBaixaProducaoConcluida } from "@/lib/estoque";
+import { inferirMedidaId, formatarNomeBonito } from "@/lib/planilhaOp";
 import {
   criarOrdemAvulsaSchema,
   clienteRapidoSchema,
@@ -65,6 +66,10 @@ export async function criarProdutoRapido(
   };
 }
 
+function normalizar(texto: string) {
+  return texto.trim().toLowerCase();
+}
+
 // Cria as linhas de uma submissão em lote. Cada linha vira produção
 // formal (Pedido → ItemPedido → OrdemProducao, agrupada por cliente,
 // mesma lógica da importação de planilha — ADR-031) se tiver um
@@ -79,14 +84,12 @@ export async function criarOrdemAvulsa(
   }
   const { linhas } = resultado.data;
 
-  const produtoIds = [...new Set(linhas.map((linha) => linha.produtoId))];
-  const produtos = await prisma.produto.findMany({ where: { id: { in: produtoIds } } });
-  const produtoPorId = new Map(produtos.map((produto) => [produto.id, produto]));
-  for (const linha of linhas) {
-    if (!produtoPorId.has(linha.produtoId)) {
-      return { success: false, error: "Um dos produtos selecionados não existe mais." };
-    }
-  }
+  const [produtosAtivos, medidas] = await Promise.all([
+    prisma.produto.findMany({ where: { ativo: true } }),
+    prisma.medida.findMany({ where: { ativo: true } }),
+  ]);
+  const produtoPorId = new Map(produtosAtivos.map((produto) => [produto.id, produto]));
+  const produtoPorNome = new Map(produtosAtivos.map((produto) => [normalizar(produto.nome), produto]));
 
   const clienteIds = [
     ...new Set(linhas.map((linha) => linha.clienteId).filter((v): v is string => Boolean(v))),
@@ -100,34 +103,76 @@ export async function criarOrdemAvulsa(
     !!linha.clienteId && clientePorId.has(linha.clienteId);
 
   await prisma.$transaction(async (tx) => {
-    const linhasFormais = linhas.filter(ehFormal);
-    const gruposPorCliente = new Map<string, LinhaOrdemAvulsaValues[]>();
-    for (const linha of linhasFormais) {
-      const grupo = gruposPorCliente.get(linha.clienteId!) ?? [];
-      grupo.push(linha);
-      gruposPorCliente.set(linha.clienteId!, grupo);
+    // Resolve o produto de cada linha: por id (selecionado/criado no
+    // popup), por nome exato já cadastrado, ou — se nenhum dos dois —
+    // cadastra um produto novo sozinho a partir do texto digitado,
+    // inferindo a medida do nome (mesma lógica da importação de
+    // planilha, ADR-031). Tipo entra como "Base" e custo como 0 por
+    // padrão; ajustável depois em /produtos.
+    const novosPorNome = new Map<string, string>();
+    const produtos: { linha: LinhaOrdemAvulsaValues; produtoId: string; preco: number; custo: number }[] =
+      [];
+    for (const linha of linhas) {
+      const nomeNormalizado = normalizar(linha.produtoTexto);
+      let produto =
+        (linha.produtoId ? produtoPorId.get(linha.produtoId) : undefined) ??
+        produtoPorNome.get(nomeNormalizado);
+
+      if (!produto) {
+        const idJaCriado = novosPorNome.get(nomeNormalizado);
+        if (idJaCriado) {
+          produto = produtoPorId.get(idJaCriado)!;
+        } else {
+          const medidaId = inferirMedidaId(linha.produtoTexto, medidas) ?? medidas[0]?.id;
+          if (!medidaId) {
+            throw new Error("Não há nenhuma medida cadastrada no sistema pra usar como padrão.");
+          }
+          const preco = linha.precoUnitario ? precoParaNumero(linha.precoUnitario) : 0;
+          const criado = await tx.produto.create({
+            data: {
+              nome: formatarNomeBonito(linha.produtoTexto),
+              tipo: "BASE",
+              medidaId,
+              preco,
+              custo: 0,
+            },
+          });
+          produtoPorId.set(criado.id, criado);
+          novosPorNome.set(nomeNormalizado, criado.id);
+          produto = criado;
+        }
+      }
+
+      produtos.push({
+        linha,
+        produtoId: produto.id,
+        preco: Number(produto.preco),
+        custo: Number(produto.custo),
+      });
     }
 
-    for (const [clienteId, linhasDoCliente] of gruposPorCliente) {
-      const itensComPreco = linhasDoCliente.map((linha) => {
-        const produto = produtoPorId.get(linha.produtoId)!;
-        const precoUnitario = linha.precoUnitario
-          ? precoParaNumero(linha.precoUnitario)
-          : Number(produto.preco);
-        return {
-          produtoId: linha.produtoId,
-          quantidade: linha.quantidade,
-          precoUnitario,
-          custoUnitario: Number(produto.custo),
-        };
-      });
+    const linhasFormais = produtos.filter((p) => ehFormal(p.linha));
+    const gruposPorCliente = new Map<string, typeof linhasFormais>();
+    for (const item of linhasFormais) {
+      const grupo = gruposPorCliente.get(item.linha.clienteId!) ?? [];
+      grupo.push(item);
+      gruposPorCliente.set(item.linha.clienteId!, grupo);
+    }
+
+    for (const [clienteId, itensDoCliente] of gruposPorCliente) {
+      const itensComPreco = itensDoCliente.map(({ linha, produtoId, preco, custo }) => ({
+        produtoId,
+        quantidade: linha.quantidade,
+        precoUnitario: linha.precoUnitario ? precoParaNumero(linha.precoUnitario) : preco,
+        custoUnitario: custo,
+      }));
       const valorTotal = itensComPreco.reduce(
         (total, item) => total + item.precoUnitario * item.quantidade,
         0,
       );
       const observacoes =
-        linhasDoCliente
-          .map((linha) => linha.observacao)
+        itensDoCliente
+          .map(({ linha }) => linha.observacao)
           .filter((valor): valor is string => Boolean(valor))
           .join(" · ") || null;
 
@@ -140,13 +185,13 @@ export async function criarOrdemAvulsa(
       }
     }
 
-    const linhasAvulsas = linhas.filter((linha) => !ehFormal(linha));
+    const linhasAvulsas = produtos.filter((p) => !ehFormal(p.linha));
     if (linhasAvulsas.length > 0) {
       await tx.ordemAvulsa.create({
         data: {
           itens: {
-            create: linhasAvulsas.map((linha) => ({
-              produtoId: linha.produtoId,
+            create: linhasAvulsas.map(({ linha, produtoId }) => ({
+              produtoId,
               quantidade: linha.quantidade,
               clienteTexto: linha.clienteTexto,
               observacao: linha.observacao || null,

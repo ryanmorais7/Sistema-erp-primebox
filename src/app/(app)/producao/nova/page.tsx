@@ -33,9 +33,10 @@ export default async function NovaOrdemAvulsaPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title="Criar OP" />
       <p className="text-sm text-muted-foreground">
-        Adicione quantas linhas precisar. Se o cliente não tiver cadastro (ex: &quot;Avulso&quot;),
-        vira uma OP avulsa, fora do fluxo formal de Pedidos. Se você escolher ou cadastrar um
-        cliente, essa linha vira um Pedido formal de verdade, do jeito de sempre.
+        Adicione quantas linhas precisar. Produto pode ser digitado livremente — se não bater com o
+        catálogo, é cadastrado sozinho ao salvar. Se o cliente não tiver cadastro (ex:
+        &quot;Avulso&quot;), vira uma OP avulsa, fora do fluxo formal de Pedidos. Se você escolher ou
+        cadastrar um cliente, essa linha vira um Pedido formal de verdade, do jeito de sempre.
       </p>
       <OrdemAvulsaForm produtos={produtosComPrecoNumero} clientes={clientes} medidas={medidas} />
     </div>

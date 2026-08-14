@@ -7,10 +7,12 @@ import { TIPOS_PRODUTO } from "./produto";
 const precoOpcionalSchema = z.string().trim().optional();
 
 export const linhaOrdemAvulsaSchema = z.object({
-  produtoId: z.string().trim().min(1, "Selecione ou cadastre um produto"),
-  // Só pra manter o texto digitado visível no campo — quem valida de
-  // verdade é produtoId.
-  produtoTexto: z.string().trim().optional(),
+  // Texto digitado é sempre o que vale — se não bater com um produto
+  // existente (por id ou por nome) nem for criado ali no popup, o
+  // servidor cadastra um produto novo sozinho a partir desse texto (ver
+  // criarOrdemAvulsa), igual ao que já faz a importação de planilha.
+  produtoTexto: z.string().trim().min(1, "Informe o produto"),
+  produtoId: z.string().trim().optional(),
   quantidade: z
     .number()
     .int("Quantidade deve ser um número inteiro")

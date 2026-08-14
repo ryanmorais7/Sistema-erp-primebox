@@ -142,9 +142,9 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
                     />
                   )}
                 />
-                {errors.linhas?.[index]?.produtoId && (
+                {errors.linhas?.[index]?.produtoTexto && (
                   <p className="text-xs text-destructive">
-                    {errors.linhas[index]?.produtoId?.message}
+                    {errors.linhas[index]?.produtoTexto?.message}
                   </p>
                 )}
               </div>
