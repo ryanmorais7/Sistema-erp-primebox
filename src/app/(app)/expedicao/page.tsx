@@ -17,7 +17,10 @@ const colunas = [
 
 export default async function ExpedicaoPage() {
   const expedicoes = await prisma.expedicao.findMany({
-    include: { pedido: { include: { cliente: true } } },
+    include: {
+      pedido: { include: { cliente: true } },
+      itemOrdemAvulsa: { include: { produto: true, ordemAvulsa: true } },
+    },
     orderBy: { numero: "asc" },
   });
 
@@ -43,18 +46,31 @@ export default async function ExpedicaoPage() {
                       <p className="font-mono text-xs text-muted-foreground">
                         Exp. #{expedicao.numero}
                       </p>
-                      <Link
-                        href={`/pedidos/${expedicao.pedido.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {expedicao.pedido.cliente.nomeFantasia ||
-                          expedicao.pedido.cliente.razaoSocial}
-                      </Link>
-                      <p className="text-sm text-muted-foreground">
-                        Pedido #{expedicao.pedido.numero}
-                        {expedicao.pedido.cliente.cidade &&
-                          ` · ${expedicao.pedido.cliente.cidade}/${expedicao.pedido.cliente.estado ?? ""}`}
-                      </p>
+                      {expedicao.pedido ? (
+                        <>
+                          <Link
+                            href={`/pedidos/${expedicao.pedido.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {expedicao.pedido.cliente.nomeFantasia ||
+                              expedicao.pedido.cliente.razaoSocial}
+                          </Link>
+                          <p className="text-sm text-muted-foreground">
+                            Pedido #{expedicao.pedido.numero}
+                            {expedicao.pedido.cliente.cidade &&
+                              ` · ${expedicao.pedido.cliente.cidade}/${expedicao.pedido.cliente.estado ?? ""}`}
+                          </p>
+                        </>
+                      ) : expedicao.itemOrdemAvulsa ? (
+                        <>
+                          <p className="font-medium">{expedicao.itemOrdemAvulsa.clienteTexto}</p>
+                          <p className="text-sm text-muted-foreground">
+                            OP Avulsa #{expedicao.itemOrdemAvulsa.ordemAvulsa.numero} ·{" "}
+                            {expedicao.itemOrdemAvulsa.quantidade}x{" "}
+                            {expedicao.itemOrdemAvulsa.produto.nome}
+                          </p>
+                        </>
+                      ) : null}
                       {expedicao.transportadora && (
                         <p className="text-sm text-muted-foreground">
                           {expedicao.transportadora}

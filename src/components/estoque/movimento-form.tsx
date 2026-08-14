@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import {
@@ -25,16 +25,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from "@/components/ui/combobox";
 
 type ResultadoAcao =
   | { success: true }
   | { success: false; error: string; camposComErro?: Record<string, string> };
+
+type Cliente = { id: string; razaoSocial: string; nomeFantasia: string | null };
+type ClienteOption = { value: string; label: string };
 
 type MovimentoFormProps = {
   titulo: string;
   saldoAtual: number;
   unidade?: string;
   tipoInicial?: TipoMovimento;
+  clientes?: Cliente[];
   aoRegistrar: (dados: MovimentoEstoqueFormValues) => Promise<ResultadoAcao>;
 };
 
@@ -43,20 +55,29 @@ export function MovimentoForm({
   saldoAtual,
   unidade,
   tipoInicial,
+  clientes,
   aoRegistrar,
 }: MovimentoFormProps) {
   const router = useRouter();
   const [erroGeral, setErroGeral] = useState<string | null>(null);
+  const [clienteId, setClienteId] = useState<string | null>(null);
   const {
     register,
     control,
     handleSubmit,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<MovimentoEstoqueFormValues>({
     resolver: zodResolver(movimentoEstoqueSchema),
     defaultValues: { tipo: tipoInicial ?? "ENTRADA", quantidade: "", observacao: "" },
   });
+
+  const tipoAtual = useWatch({ control, name: "tipo" });
+  const clienteOptions: ClienteOption[] = (clientes ?? []).map((cliente) => ({
+    value: cliente.id,
+    label: cliente.nomeFantasia || cliente.razaoSocial,
+  }));
 
   async function aoSubmeter(dados: MovimentoEstoqueFormValues) {
     setErroGeral(null);
@@ -127,6 +148,32 @@ export function MovimentoForm({
               )}
             </div>
           </div>
+
+          {tipoAtual === "SAIDA" && clientes && clientes.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <Label>Cliente (opcional)</Label>
+              <Combobox
+                items={clienteOptions}
+                value={clienteOptions.find((opcao) => opcao.value === clienteId) ?? null}
+                onValueChange={(item) => {
+                  setClienteId(item ? item.value : null);
+                  setValue("observacao", item ? `Saída para ${item.label}` : "");
+                }}
+              >
+                <ComboboxInput placeholder="Pra quem foi essa saída..." />
+                <ComboboxContent>
+                  <ComboboxEmpty>Nenhum cliente encontrado.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(item: ClienteOption) => (
+                      <ComboboxItem key={item.value} value={item}>
+                        {item.label}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="observacao">Observação</Label>

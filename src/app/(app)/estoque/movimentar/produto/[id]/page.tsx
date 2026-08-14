@@ -22,7 +22,14 @@ export default async function MovimentarProdutoPage({ params, searchParams }: Pa
     notFound();
   }
 
-  const saldoAtual = await calcularSaldoProduto(id);
+  const [saldoAtual, clientes] = await Promise.all([
+    calcularSaldoProduto(id),
+    prisma.cliente.findMany({
+      where: { ativo: true },
+      orderBy: { razaoSocial: "asc" },
+      select: { id: true, razaoSocial: true, nomeFantasia: true },
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -31,6 +38,7 @@ export default async function MovimentarProdutoPage({ params, searchParams }: Pa
         titulo="Registrar movimentação"
         saldoAtual={saldoAtual}
         tipoInicial={tipo === "SAIDA" ? "SAIDA" : tipo === "ENTRADA" ? "ENTRADA" : undefined}
+        clientes={clientes}
         aoRegistrar={registrarMovimentoProduto.bind(null, id)}
       />
     </div>

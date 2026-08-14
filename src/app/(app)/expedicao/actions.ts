@@ -16,6 +16,17 @@ export async function gerarExpedicao(pedidoId: string, transportadora: string) {
   return expedicao;
 }
 
+export async function gerarExpedicaoAvulsa(itemOrdemAvulsaId: string) {
+  const existente = await prisma.expedicao.findUnique({ where: { itemOrdemAvulsaId } });
+  if (existente) {
+    return existente;
+  }
+  const expedicao = await prisma.expedicao.create({ data: { itemOrdemAvulsaId } });
+  revalidatePath("/expedicao");
+  revalidatePath("/producao");
+  return expedicao;
+}
+
 export async function iniciarRota(id: string) {
   const expedicao = await prisma.expedicao.findUnique({ where: { id } });
   if (!expedicao || expedicao.status !== "AGUARDANDO") {

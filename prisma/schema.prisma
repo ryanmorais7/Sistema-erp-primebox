@@ -53,7 +53,8 @@ model Cliente {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  pedidos Pedido[]
+  pedidos          Pedido[]
+  itensOrdemAvulsa ItemOrdemAvulsa[]
 }
 
 enum TipoProduto {
@@ -89,6 +90,7 @@ model Produto {
   updatedAt     DateTime    @updatedAt
 
   itensPedido       ItemPedido[]
+  itensOrdemAvulsa  ItemOrdemAvulsa[]
   movimentosEstoque MovimentoEstoqueProduto[]
   fichaTecnica      ConsumoMateriaPrima[]
 }
@@ -143,6 +145,43 @@ model OrdemProducao {
   status       StatusOrdemProducao @default(AGUARDANDO)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
+}
+
+// OP avulsa: produção rápida sem Pedido/Cliente formal (ex: venda pra
+// um conhecido, "Avulso" na planilha do Pedro). Numeração própria
+// ("OP Avulsa #N"), fora do alcance dos relatórios de Faturamento e
+// "Por cliente" — ver ADR-033. Cada linha tem seu próprio status,
+// espelhando o ItemPedido/OrdemProducao do fluxo formal.
+model OrdemAvulsa {
+  id        String   @id @default(cuid())
+  numero    Int      @unique @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  itens ItemOrdemAvulsa[]
+}
+
+model ItemOrdemAvulsa {
+  id            String   @id @default(cuid())
+  ordemAvulsaId String
+  ordemAvulsa   OrdemAvulsa @relation(fields: [ordemAvulsaId], references: [id], onDelete: Cascade)
+  produtoId     String
+  produto       Produto  @relation(fields: [produtoId], references: [id])
+  quantidade    Int
+  // Nome digitado livremente — é o dado que aparece pro usuário. clienteId
+  // é só um vínculo informativo opcional (nunca usado pelos relatórios
+  // financeiros, que continuam olhando só pra Pedido/Cliente).
+  clienteTexto  String
+  clienteId     String?
+  cliente       Cliente? @relation(fields: [clienteId], references: [id])
+  observacao    String?
+  // Preço opcional, só pra referência (recibo/consulta) — não entra no
+  // Faturamento por período, que continua 100% baseado em Pedido.
+  precoUnitario Decimal? @db.Decimal(10, 2)
+  status        StatusOrdemProducao @default(AGUARDANDO)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  expedicao Expedicao?
 }
 
 enum TipoMovimentoEstoque {
@@ -232,13 +271,18 @@ enum StatusExpedicao {
   ENTREGUE
 }
 
+// pedidoId e itemOrdemAvulsaId são mutuamente exclusivos (uma expedição
+// vem do fluxo formal OU de uma linha de OP avulsa, nunca dos dois) —
+// não modelado como tal no banco, garantido na camada de ação.
 model Expedicao {
-  id             String          @id @default(cuid())
-  numero         Int             @unique @default(autoincrement())
-  pedidoId       String          @unique
-  pedido         Pedido          @relation(fields: [pedidoId], references: [id])
-  transportadora String?
-  status         StatusExpedicao @default(AGUARDANDO)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                String          @id @default(cuid())
+  numero            Int             @unique @default(autoincrement())
+  pedidoId          String?         @unique
+  pedido            Pedido?         @relation(fields: [pedidoId], references: [id])
+  itemOrdemAvulsaId String?         @unique
+  itemOrdemAvulsa   ItemOrdemAvulsa? @relation(fields: [itemOrdemAvulsaId], references: [id])
+  transportadora    String?
+  status            StatusExpedicao @default(AGUARDANDO)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 }

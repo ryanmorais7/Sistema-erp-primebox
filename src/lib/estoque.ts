@@ -32,6 +32,38 @@ export async function calcularSaldoMateriaPrima(materiaPrimaId: string): Promise
   return saldos.get(materiaPrimaId) ?? 0;
 }
 
+// Efeitos no estoque de concluir uma produção (formal ou avulsa): dá
+// entrada do produto acabado e saída automática das matérias-primas da
+// ficha técnica (ver ADR-011 e ADR-016). Não bloqueia se o saldo de
+// matéria-prima ficar negativo — é só um sinal visível de ajuste
+// necessário, não uma trava.
+export async function darBaixaProducaoConcluida(
+  produtoId: string,
+  quantidade: number,
+  rotuloOP: string,
+) {
+  await prisma.movimentoEstoqueProduto.create({
+    data: {
+      produtoId,
+      tipo: "ENTRADA",
+      quantidade,
+      observacao: `Produção concluída — ${rotuloOP}`,
+    },
+  });
+
+  const fichaTecnica = await prisma.consumoMateriaPrima.findMany({ where: { produtoId } });
+  for (const consumo of fichaTecnica) {
+    await prisma.movimentoEstoqueMateriaPrima.create({
+      data: {
+        materiaPrimaId: consumo.materiaPrimaId,
+        tipo: "SAIDA",
+        quantidade: Number(consumo.quantidade) * quantidade,
+        observacao: `Consumo da produção — ${rotuloOP}`,
+      },
+    });
+  }
+}
+
 function acumularSaldos(
   grupos: { id: string; tipo: "ENTRADA" | "SAIDA"; soma: unknown }[],
 ): Map<string, number> {

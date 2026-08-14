@@ -1,7 +1,17 @@
 import Link from "next/link";
-import { ArrowRight, Box, X } from "lucide-react";
+import { ArrowRight, Box, X, Plus, List, Receipt, Truck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { iniciarProducao, concluirProducao, cancelarOrdemProducao } from "./actions";
+import {
+  iniciarProducao,
+  concluirProducao,
+  cancelarOrdemProducao,
+} from "./actions";
+import {
+  iniciarProducaoAvulsa,
+  concluirProducaoAvulsa,
+  cancelarItemOrdemAvulsa,
+} from "./ordem-avulsa/actions";
+import { gerarExpedicaoAvulsa } from "@/app/(app)/expedicao/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
@@ -44,43 +54,106 @@ function textoProduto(item: {
   return tecidoCor ? `${base} · ${tecidoCor}` : base;
 }
 
+type Cartao = {
+  id: string;
+  origem: "formal" | "avulsa";
+  numeroLabel: string;
+  status: "AGUARDANDO" | "EM_PRODUCAO" | "CONCLUIDO";
+  quantidade: number;
+  produtoTexto: string;
+  clienteLabel: string;
+  clienteHref: string | null;
+  observacao: string;
+  grupo: string;
+  createdAt: Date;
+  temExpedicao: boolean;
+}
+
+function normalizar(texto: string) {
+  return texto.trim().toLowerCase();
+}
+
 export default async function ProducaoPage() {
-  const ordens = await prisma.ordemProducao.findMany({
-    include: { itemPedido: { include: { produto: { include: { medida: true } }, pedido: { include: { cliente: true } } } } },
-    orderBy: { numero: "asc" },
-  });
+  const [ordens, itensAvulsos] = await Promise.all([
+    prisma.ordemProducao.findMany({
+      include: {
+        itemPedido: {
+          include: { produto: { include: { medida: true } }, pedido: { include: { cliente: true } } },
+        },
+      },
+      orderBy: { numero: "asc" },
+    }),
+    prisma.itemOrdemAvulsa.findMany({
+      include: {
+        produto: { include: { medida: true } },
+        ordemAvulsa: true,
+        cliente: true,
+        expedicao: true,
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
 
-  // "ordens" já vem ordenado por numero asc, então o primeiro encontro de
-  // cada cliente aqui é a OP mais antiga dele — usado pra ordenar os
-  // grupos por ordem de chegada (FIFO), não alfabeticamente.
-  const pendentesBrutas = ordens.filter((ordem) => ordem.status !== "CONCLUIDO");
-  const primeiraOrdemPorCliente = new Map<string, number>();
-  for (const ordem of pendentesBrutas) {
-    const clienteId = ordem.itemPedido.pedido.clienteId;
-    if (!primeiraOrdemPorCliente.has(clienteId)) {
-      primeiraOrdemPorCliente.set(clienteId, ordem.numero);
+  const cartoesFormais: Cartao[] = ordens.map((ordem) => ({
+    id: ordem.id,
+    origem: "formal",
+    numeroLabel: `OP #${ordem.numero}`,
+    status: ordem.status,
+    quantidade: ordem.itemPedido.quantidade,
+    produtoTexto: textoProduto(ordem.itemPedido.produto),
+    clienteLabel:
+      ordem.itemPedido.pedido.cliente.nomeFantasia || ordem.itemPedido.pedido.cliente.razaoSocial,
+    clienteHref: `/pedidos/${ordem.itemPedido.pedido.id}`,
+    observacao: ordem.itemPedido.pedido.observacoes || "",
+    grupo: ordem.itemPedido.pedido.clienteId,
+    createdAt: ordem.createdAt,
+    temExpedicao: false,
+  }));
+
+  const cartoesAvulsos: Cartao[] = itensAvulsos.map((item) => ({
+    id: item.id,
+    origem: "avulsa",
+    numeroLabel: `OP Avulsa #${item.ordemAvulsa.numero}`,
+    status: item.status,
+    quantidade: item.quantidade,
+    produtoTexto: textoProduto(item.produto),
+    clienteLabel: item.clienteTexto,
+    clienteHref: item.clienteId ? `/clientes/${item.clienteId}/editar` : null,
+    observacao: item.observacao || "",
+    grupo: item.clienteId ?? `avulsa:${normalizar(item.clienteTexto)}`,
+    createdAt: item.createdAt,
+    temExpedicao: !!item.expedicao,
+  }));
+
+  const todosCartoes = [...cartoesFormais, ...cartoesAvulsos].sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+  );
+
+  // Agrupa por cliente (ou pelo texto livre da linha avulsa) e ordena por
+  // ordem de chegada (FIFO), pra alternar cor por grupo na folha impressa.
+  const pendentesBrutos = todosCartoes.filter((cartao) => cartao.status !== "CONCLUIDO");
+  const primeiraOcorrenciaPorGrupo = new Map<string, number>();
+  pendentesBrutos.forEach((cartao, index) => {
+    if (!primeiraOcorrenciaPorGrupo.has(cartao.grupo)) {
+      primeiraOcorrenciaPorGrupo.set(cartao.grupo, index);
     }
-  }
-
-  const pendentes = [...pendentesBrutas].sort((a, b) => {
-    const primeiraA = primeiraOrdemPorCliente.get(a.itemPedido.pedido.clienteId)!;
-    const primeiraB = primeiraOrdemPorCliente.get(b.itemPedido.pedido.clienteId)!;
-    return primeiraA - primeiraB || a.numero - b.numero;
   });
+  const pendentes = [...pendentesBrutos].sort(
+    (a, b) => primeiraOcorrenciaPorGrupo.get(a.grupo)! - primeiraOcorrenciaPorGrupo.get(b.grupo)!,
+  );
 
-  const linhas: { ordem: (typeof pendentes)[number]; corGrupo: "peach" | "teal" }[] = [];
-  let clienteAnterior: string | null = null;
+  const linhas: { cartao: Cartao; corGrupo: "peach" | "teal" }[] = [];
+  let grupoAnterior: string | null = null;
   let indiceGrupo = -1;
-  for (const ordem of pendentes) {
-    const clienteId = ordem.itemPedido.pedido.clienteId;
-    if (clienteId !== clienteAnterior) {
+  for (const cartao of pendentes) {
+    if (cartao.grupo !== grupoAnterior) {
       indiceGrupo++;
-      clienteAnterior = clienteId;
+      grupoAnterior = cartao.grupo;
     }
-    linhas.push({ ordem, corGrupo: indiceGrupo % 2 === 0 ? "peach" : "teal" });
+    linhas.push({ cartao, corGrupo: indiceGrupo % 2 === 0 ? "peach" : "teal" });
   }
 
-  const totalPecas = pendentes.reduce((total, ordem) => total + ordem.itemPedido.quantidade, 0);
+  const totalPecas = pendentes.reduce((total, cartao) => total + cartao.quantidade, 0);
 
   const corGrupoClasses: Record<string, string> = {
     peach: "bg-accent/40",
@@ -90,7 +163,26 @@ export default async function ProducaoPage() {
   return (
     <div className="flex flex-col gap-6 print:gap-4">
       <div className="print:hidden">
-        <PageHeader title="Produção" action={<ImprimirButton />} />
+        <PageHeader
+          title="Produção"
+          action={
+            <div className="flex gap-2">
+              <Button render={<Link href="/pedidos" />} nativeButton={false} variant="outline">
+                <List />
+                Ver fila de pedidos formais
+              </Button>
+              <Button
+                render={<Link href="/producao/nova" />}
+                nativeButton={false}
+                className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
+              >
+                <Plus />
+                Criar OP
+              </Button>
+              <ImprimirButton />
+            </div>
+          }
+        />
       </div>
 
       <div className="rounded-lg border p-6 print:border-none print:p-0">
@@ -132,21 +224,14 @@ export default async function ProducaoPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {linhas.map(({ ordem, corGrupo }) => (
-                  <TableRow key={ordem.id} className={corGrupoClasses[corGrupo]}>
-                    <TableCell className="font-mono font-semibold">
-                      {ordem.itemPedido.quantidade}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {textoProduto(ordem.itemPedido.produto)}
-                    </TableCell>
+                {linhas.map(({ cartao, corGrupo }) => (
+                  <TableRow key={`${cartao.origem}-${cartao.id}`} className={corGrupoClasses[corGrupo]}>
+                    <TableCell className="font-mono font-semibold">{cartao.quantidade}</TableCell>
+                    <TableCell className="font-medium">{cartao.produtoTexto}</TableCell>
                     <TableCell className="text-muted-foreground italic">
-                      {ordem.itemPedido.pedido.cliente.nomeFantasia ||
-                        ordem.itemPedido.pedido.cliente.razaoSocial}
+                      {cartao.clienteLabel}
                     </TableCell>
-                    <TableCell className="text-brand">
-                      {ordem.itemPedido.pedido.observacoes || ""}
-                    </TableCell>
+                    <TableCell className="text-brand">{cartao.observacao}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -164,72 +249,133 @@ export default async function ProducaoPage() {
 
       <div className="grid gap-4 lg:grid-cols-3 print:hidden">
         {colunas.map((coluna) => {
-          const ordensDaColuna = ordens.filter((ordem) => ordem.status === coluna.status);
+          const cartoesDaColuna = todosCartoes.filter((cartao) => cartao.status === coluna.status);
           return (
             <div key={coluna.status} className="rounded-lg border">
               <div className="flex items-center justify-between border-b p-3">
                 <p className="font-heading text-sm font-semibold">{coluna.titulo}</p>
-                <Badge variant="secondary">{ordensDaColuna.length}</Badge>
+                <Badge variant="secondary">{cartoesDaColuna.length}</Badge>
               </div>
               <div className="flex flex-col gap-3 p-3">
-                {ordensDaColuna.length === 0 ? (
+                {cartoesDaColuna.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhuma ordem aqui.</p>
                 ) : (
-                  ordensDaColuna.map((ordem) => (
-                    <div key={ordem.id} className="rounded-lg border p-3">
-                      <p className="font-mono text-xs text-muted-foreground">OP #{ordem.numero}</p>
-                      <Link
-                        href={`/pedidos/${ordem.itemPedido.pedido.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {ordem.itemPedido.pedido.cliente.nomeFantasia ||
-                          ordem.itemPedido.pedido.cliente.razaoSocial}
-                      </Link>
+                  cartoesDaColuna.map((cartao) => (
+                    <div key={`${cartao.origem}-${cartao.id}`} className="rounded-lg border p-3">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-mono text-xs text-muted-foreground">
+                          {cartao.numeroLabel}
+                        </p>
+                        {cartao.origem === "avulsa" && (
+                          <Badge variant="secondary" className="h-4 px-1.5 text-[0.6rem]">
+                            avulsa
+                          </Badge>
+                        )}
+                      </div>
+                      {cartao.clienteHref ? (
+                        <Link href={cartao.clienteHref} className="font-medium hover:underline">
+                          {cartao.clienteLabel}
+                        </Link>
+                      ) : (
+                        <p className="font-medium">{cartao.clienteLabel}</p>
+                      )}
                       <p className="text-sm text-muted-foreground">
-                        {ordem.itemPedido.quantidade}x {ordem.itemPedido.produto.nome}
+                        {cartao.quantidade}x {cartao.produtoTexto}
                       </p>
 
-                      {coluna.status === "AGUARDANDO" && (
-                        <div className="mt-3 flex items-center gap-2">
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Button
+                          render={
+                            <Link
+                              href={
+                                cartao.origem === "formal"
+                                  ? `/producao/recibo/formal/${cartao.id}`
+                                  : `/producao/recibo/avulsa/${cartao.id}`
+                              }
+                              target="_blank"
+                            />
+                          }
+                          nativeButton={false}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Receipt />
+                          Gerar recibo
+                        </Button>
+
+                        {coluna.status === "AGUARDANDO" && (
+                          <>
+                            <form
+                              action={async () => {
+                                "use server";
+                                if (cartao.origem === "formal") {
+                                  await iniciarProducao(cartao.id);
+                                } else {
+                                  await iniciarProducaoAvulsa(cartao.id);
+                                }
+                              }}
+                            >
+                              <Button type="submit" variant="outline" size="sm">
+                                Iniciar produção
+                                <ArrowRight />
+                              </Button>
+                            </form>
+                            <form
+                              action={async () => {
+                                "use server";
+                                if (cartao.origem === "formal") {
+                                  await cancelarOrdemProducao(cartao.id);
+                                } else {
+                                  await cancelarItemOrdemAvulsa(cartao.id);
+                                }
+                              }}
+                            >
+                              <Button type="submit" variant="destructive" size="sm">
+                                <X />
+                                Cancelar OP
+                              </Button>
+                            </form>
+                          </>
+                        )}
+
+                        {coluna.status === "EM_PRODUCAO" && (
                           <form
                             action={async () => {
                               "use server";
-                              await iniciarProducao(ordem.id);
+                              if (cartao.origem === "formal") {
+                                await concluirProducao(cartao.id);
+                              } else {
+                                await concluirProducaoAvulsa(cartao.id);
+                              }
                             }}
                           >
                             <Button type="submit" variant="outline" size="sm">
-                              Iniciar produção
+                              Concluir
                               <ArrowRight />
                             </Button>
                           </form>
-                          <form
-                            action={async () => {
-                              "use server";
-                              await cancelarOrdemProducao(ordem.id);
-                            }}
-                          >
-                            <Button type="submit" variant="destructive" size="sm">
-                              <X />
-                              Cancelar OP
-                            </Button>
-                          </form>
-                        </div>
-                      )}
+                        )}
 
-                      {coluna.status === "EM_PRODUCAO" && (
-                        <form
-                          action={async () => {
-                            "use server";
-                            await concluirProducao(ordem.id);
-                          }}
-                          className="mt-3"
-                        >
-                          <Button type="submit" variant="outline" size="sm">
-                            Concluir
-                            <ArrowRight />
-                          </Button>
-                        </form>
-                      )}
+                        {coluna.status === "CONCLUIDO" &&
+                          cartao.origem === "avulsa" &&
+                          !cartao.temExpedicao && (
+                            <form
+                              action={async () => {
+                                "use server";
+                                await gerarExpedicaoAvulsa(cartao.id);
+                              }}
+                            >
+                              <Button
+                                type="submit"
+                                size="sm"
+                                className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
+                              >
+                                <Truck />
+                                Gerar expedição
+                              </Button>
+                            </form>
+                          )}
+                      </div>
                     </div>
                   ))
                 )}
