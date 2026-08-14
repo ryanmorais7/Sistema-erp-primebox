@@ -143,7 +143,10 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                   </TableCell>
                   <TableCell>
                     <BadgeProducao
-                      geradas={pedido.itens.filter((item) => item.ordemProducao).length}
+                      geradas={
+                        pedido.itens.filter((item) => item.ordemProducao || item.atendidoEstoque)
+                          .length
+                      }
                       total={pedido.itens.length}
                     />
                   </TableCell>

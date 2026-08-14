@@ -1,12 +1,23 @@
 import Link from "next/link";
-import { FileDown, MessageCircle, Truck, Box, Scissors, Wrench, CircleCheck } from "lucide-react";
+import {
+  FileDown,
+  MessageCircle,
+  Truck,
+  Box,
+  Scissors,
+  Wrench,
+  CircleCheck,
+  Warehouse,
+} from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verificarSessao } from "@/lib/dal";
+import { calcularSaldosProdutos } from "@/lib/estoque";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { AutoImprimir } from "@/components/pedidos/auto-imprimir";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
 import { gerarOrdemProducao } from "@/app/(app)/producao/actions";
+import { atenderItemDoEstoque } from "@/app/(app)/estoque/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -79,14 +90,17 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
   const { print } = await searchParams;
   const sessao = await verificarSessao();
 
-  const pedido = await prisma.pedido.findUnique({
-    where: { id },
-    include: {
-      cliente: true,
-      itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
-      expedicao: true,
-    },
-  });
+  const [pedido, saldosProdutos] = await Promise.all([
+    prisma.pedido.findUnique({
+      where: { id },
+      include: {
+        cliente: true,
+        itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
+        expedicao: true,
+      },
+    }),
+    calcularSaldosProdutos(),
+  ]);
 
   if (!pedido) {
     notFound();
@@ -195,12 +209,22 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pedido.itens.map((item) => (
+              {pedido.itens.map((item) => {
+                const saldoEstoque = saldosProdutos.get(item.produtoId) ?? 0;
+                const saldoSuficiente = saldoEstoque >= item.quantidade;
+                return (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
                     {item.produto.nome}
                     <span className="block text-xs text-muted-foreground">
                       {tipoProdutoLabels[item.produto.tipo]}
+                    </span>
+                    <span
+                      className={`block text-xs font-medium print:hidden ${
+                        saldoSuficiente ? "text-[#0F6E56]" : "text-destructive/70"
+                      }`}
+                    >
+                      {saldoEstoque} em estoque
                     </span>
                   </TableCell>
                   <TableCell>{item.produto.medida.nome}</TableCell>
@@ -232,26 +256,51 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
                         OP #{item.ordemProducao.numero} ·{" "}
                         {statusOrdemProducaoLabels[item.ordemProducao.status]}
                       </Link>
+                    ) : item.atendidoEstoque ? (
+                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#DFEAE6] px-2 py-0.5 text-xs font-medium text-[#0F6E56]">
+                        <Warehouse className="size-3.5" />
+                        Atendido do estoque
+                      </span>
                     ) : (
-                      <form
-                        action={async () => {
-                          "use server";
-                          await gerarOrdemProducao(item.id);
-                        }}
-                      >
-                        <Button
-                          type="submit"
-                          size="sm"
-                          className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
+                      <div className="flex flex-col items-end gap-1.5">
+                        {saldoSuficiente && (
+                          <form
+                            action={async () => {
+                              "use server";
+                              await atenderItemDoEstoque(item.id);
+                            }}
+                          >
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="bg-[#DFEAE6] text-[#0F6E56] hover:bg-[#DFEAE6]/80"
+                            >
+                              <Warehouse />
+                              Atender do estoque
+                            </Button>
+                          </form>
+                        )}
+                        <form
+                          action={async () => {
+                            "use server";
+                            await gerarOrdemProducao(item.id);
+                          }}
                         >
-                          <Wrench />
-                          Gerar OP
-                        </Button>
-                      </form>
+                          <Button
+                            type="submit"
+                            size="sm"
+                            className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
+                          >
+                            <Wrench />
+                            Gerar OP
+                          </Button>
+                        </form>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>

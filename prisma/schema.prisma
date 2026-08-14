@@ -121,6 +121,10 @@ model ItemPedido {
   quantidade    Int
   precoUnitario Decimal @db.Decimal(10, 2)
   custoUnitario Decimal @default(0) @db.Decimal(10, 2)
+  // Item resolvido direto do saldo em estoque, sem passar por produção
+  // (ver ADR de conexão Estoque + Pedidos). Mutuamente exclusivo com
+  // ordemProducao na prática, mas não modelado como tal no banco.
+  atendidoEstoque Boolean @default(false)
 
   ordemProducao OrdemProducao?
 }

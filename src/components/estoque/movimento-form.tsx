@@ -10,6 +10,7 @@ import {
   tipoMovimentoLabels,
   TIPOS_MOVIMENTO,
   type MovimentoEstoqueFormValues,
+  type TipoMovimento,
 } from "@/lib/validations/movimentoEstoque";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,16 +34,17 @@ type MovimentoFormProps = {
   titulo: string;
   saldoAtual: number;
   unidade?: string;
+  tipoInicial?: TipoMovimento;
   aoRegistrar: (dados: MovimentoEstoqueFormValues) => Promise<ResultadoAcao>;
 };
 
-const valoresPadrao: MovimentoEstoqueFormValues = {
-  tipo: "ENTRADA",
-  quantidade: "",
-  observacao: "",
-};
-
-export function MovimentoForm({ titulo, saldoAtual, unidade, aoRegistrar }: MovimentoFormProps) {
+export function MovimentoForm({
+  titulo,
+  saldoAtual,
+  unidade,
+  tipoInicial,
+  aoRegistrar,
+}: MovimentoFormProps) {
   const router = useRouter();
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const {
@@ -53,7 +55,7 @@ export function MovimentoForm({ titulo, saldoAtual, unidade, aoRegistrar }: Movi
     formState: { errors, isSubmitting },
   } = useForm<MovimentoEstoqueFormValues>({
     resolver: zodResolver(movimentoEstoqueSchema),
-    defaultValues: valoresPadrao,
+    defaultValues: { tipo: tipoInicial ?? "ENTRADA", quantidade: "", observacao: "" },
   });
 
   async function aoSubmeter(dados: MovimentoEstoqueFormValues) {

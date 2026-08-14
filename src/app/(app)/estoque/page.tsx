@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeftRight, Pencil, X } from "lucide-react";
+import { PackagePlus, PackageMinus, Pencil, X, ShoppingCart, PackageX } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoMateriaPrima } from "./actions";
 import { alternarAtivoProduto } from "@/app/(app)/produtos/actions";
@@ -24,6 +24,31 @@ function NivelBadge({ saldo, minimo }: { saldo: number; minimo: number }) {
   const baixo = saldo < minimo;
   return (
     <Badge variant={baixo ? "destructive" : "secondary"}>{baixo ? "Baixo" : "OK"}</Badge>
+  );
+}
+
+// Dois ícones separados com legenda, em vez de um único ícone de setas
+// cruzadas ambíguo — cada um já pré-seleciona o tipo no formulário.
+function BotoesMovimento({ hrefBase }: { hrefBase: string }) {
+  return (
+    <div className="flex items-center gap-1">
+      <Link
+        href={`${hrefBase}?tipo=ENTRADA`}
+        className="flex flex-col items-center gap-0.5 rounded-lg px-1.5 py-1 text-[#0F6E56] transition-colors hover:bg-[#0F6E56]/10"
+        title="Registrar entrada"
+      >
+        <PackagePlus className="size-4" />
+        <span className="text-[0.6rem] leading-none font-medium">Entrada</span>
+      </Link>
+      <Link
+        href={`${hrefBase}?tipo=SAIDA`}
+        className="flex flex-col items-center gap-0.5 rounded-lg px-1.5 py-1 text-[#C9622B] transition-colors hover:bg-[#C9622B]/10"
+        title="Registrar saída"
+      >
+        <PackageMinus className="size-4" />
+        <span className="text-[0.6rem] leading-none font-medium">Saída</span>
+      </Link>
+    </div>
   );
 }
 
@@ -106,17 +131,29 @@ export default async function EstoquePage() {
                         <TableCell>
                           <NivelBadge saldo={saldo} minimo={minimo} />
                         </TableCell>
-                        <TableCell className="flex justify-end gap-2">
-                          <Button
-                            render={<Link href={`/estoque/movimentar/produto/${produto.id}`} />}
-                            nativeButton={false}
-                            variant="outline"
-                            size="icon-sm"
-                            aria-label="Registrar movimentação"
-                            title="Registrar movimentação"
-                          >
-                            <ArrowLeftRight />
-                          </Button>
+                        <TableCell className="flex items-center justify-end gap-2">
+                          <BotoesMovimento hrefBase={`/estoque/movimentar/produto/${produto.id}`} />
+                          {saldo > 0 ? (
+                            <Button
+                              render={<Link href={`/estoque/criar-pedido/${produto.id}`} />}
+                              nativeButton={false}
+                              size="sm"
+                              className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
+                            >
+                              <ShoppingCart />
+                              Criar pedido
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled
+                              className="bg-[#E4DFD4] text-[#9A9890] disabled:opacity-100"
+                            >
+                              <PackageX />
+                              Sem saldo
+                            </Button>
+                          )}
                           <form
                             action={async () => {
                               "use server";
@@ -202,19 +239,10 @@ export default async function EstoquePage() {
                         <TableCell>
                           <NivelBadge saldo={saldo} minimo={minimo} />
                         </TableCell>
-                        <TableCell className="flex justify-end gap-2">
-                          <Button
-                            render={
-                              <Link href={`/estoque/movimentar/materia-prima/${materiaPrima.id}`} />
-                            }
-                            nativeButton={false}
-                            variant="outline"
-                            size="icon-sm"
-                            aria-label="Registrar movimentação"
-                            title="Registrar movimentação"
-                          >
-                            <ArrowLeftRight />
-                          </Button>
+                        <TableCell className="flex items-center justify-end gap-2">
+                          <BotoesMovimento
+                            hrefBase={`/estoque/movimentar/materia-prima/${materiaPrima.id}`}
+                          />
                           <Button
                             render={
                               <Link href={`/estoque/materia-prima/${materiaPrima.id}/editar`} />

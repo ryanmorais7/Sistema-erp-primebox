@@ -27,9 +27,11 @@ matéria-prima".
 | Fornecedores e comparação de preço | Implementado e validado em produção | Cadastro em `/estoque/fornecedores`; cada matéria-prima pode ter vários fornecedores cotados, com o mais barato destacado |
 | Ficha técnica (consumo de matéria-prima por produto) | Implementado e validado em produção | Tela em `/produtos/[id]/ficha-tecnica`. Concluir uma OP agora dá saída automática de matéria-prima com base na ficha técnica do produto. Quantidades reais ainda precisam ser validadas produto a produto com o Pedro — só um produto de exemplo tem ficha preenchida, como demonstração |
 | Reorganização visual do Estoque | Implementado e validado localmente | Produtos acabados e Matéria-prima lado a lado (com divisor), cada um com botão minimizar/maximizar e contador de itens; layout centralizado com largura máxima — ver ADR-019 |
+| Conexão Estoque + Pedidos | Implementado e validado localmente | Item de pedido com saldo suficiente ganha o botão "Atender do estoque" (ao lado de "Gerar OP"), sem atendimento parcial. Botão "Criar pedido" na listagem de Estoque abre formulário simplificado (cliente, quantidade, preço) pra vender direto do saldo. Ícones de Entrada/Saída separados com legenda, pré-selecionando o tipo no formulário — ver ADR-032 |
 
 ## Decisões de modelagem relevantes
 
 - Ver [ADR-011](../decisoes/ADR-011-estoque.md) — modelo de Estoque e regras de negócio.
 - Ver [ADR-016](../decisoes/ADR-016-fornecedores-ficha-tecnica.md) — fornecedores, comparação de preço e ficha técnica.
 - Ver [ADR-019](../decisoes/ADR-019-painel-interativo-estoque-layout.md) — Painel interativo por mês e reorganização visual do Estoque.
+- Ver [ADR-032](../decisoes/ADR-032-conexao-estoque-pedidos.md) — conexão Estoque + Pedidos e ícones de movimentação.

@@ -22,3 +22,4 @@ export const movimentoEstoqueSchema = z.object({
 });
 
 export type MovimentoEstoqueFormValues = z.infer<typeof movimentoEstoqueSchema>;
+export type TipoMovimento = (typeof TIPOS_MOVIMENTO)[number];

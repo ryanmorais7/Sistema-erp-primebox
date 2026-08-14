@@ -10,10 +10,12 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tipo?: string }>;
 };
 
-export default async function MovimentarMateriaPrimaPage({ params }: PageProps) {
+export default async function MovimentarMateriaPrimaPage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const { tipo } = await searchParams;
 
   const materiaPrima = await prisma.materiaPrima.findUnique({ where: { id } });
   if (!materiaPrima) {
@@ -29,6 +31,7 @@ export default async function MovimentarMateriaPrimaPage({ params }: PageProps) 
         titulo="Registrar movimentação"
         saldoAtual={saldoAtual}
         unidade={materiaPrima.unidade}
+        tipoInicial={tipo === "SAIDA" ? "SAIDA" : tipo === "ENTRADA" ? "ENTRADA" : undefined}
         aoRegistrar={registrarMovimentoMateriaPrima.bind(null, id)}
       />
     </div>

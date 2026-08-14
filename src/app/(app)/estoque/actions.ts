@@ -15,6 +15,10 @@ import {
   type FornecedorFormValues,
   type PrecoMateriaPrimaFormValues,
 } from "@/lib/validations/fornecedor";
+import {
+  pedidoEstoqueSchema,
+  type PedidoEstoqueFormValues,
+} from "@/lib/validations/pedidoEstoque";
 
 type ResultadoAcao =
   | { success: true }
@@ -249,4 +253,109 @@ export async function excluirPrecoMateriaPrima(id: string, materiaPrimaId: strin
   await prisma.precoMateriaPrima.delete({ where: { id } });
   revalidatePath(`/estoque/materia-prima/${materiaPrimaId}/editar`);
   revalidatePath("/estoque");
+}
+
+// Resolve um item de pedido direto do saldo em estoque, sem passar por
+// produção: desconta o saldo, lança a saída automaticamente e marca o
+// item como atendido (ver ADR de conexão Estoque + Pedidos).
+export async function atenderItemDoEstoque(itemPedidoId: string) {
+  const item = await prisma.itemPedido.findUnique({
+    where: { id: itemPedidoId },
+    include: { pedido: true, ordemProducao: true },
+  });
+  if (!item || item.ordemProducao || item.atendidoEstoque) {
+    return;
+  }
+
+  const saldoAtual = await calcularSaldoProduto(item.produtoId);
+  if (item.quantidade > saldoAtual) {
+    return;
+  }
+
+  await prisma.$transaction([
+    prisma.itemPedido.update({ where: { id: item.id }, data: { atendidoEstoque: true } }),
+    prisma.movimentoEstoqueProduto.create({
+      data: {
+        produtoId: item.produtoId,
+        tipo: "SAIDA",
+        quantidade: item.quantidade,
+        observacao: `Referente ao pedido #${item.pedido.numero}`,
+      },
+    }),
+  ]);
+
+  revalidatePath("/pedidos");
+  revalidatePath(`/pedidos/${item.pedidoId}`);
+  revalidatePath("/estoque");
+}
+
+type ResultadoPedidoEstoque = ResultadoAcao & { pedidoId?: string };
+
+// Cria um pedido de um único produto já atendido direto do saldo em
+// estoque — atalho pra vender o que já está pronto sem passar pela
+// tela completa de novo pedido.
+export async function criarPedidoDoEstoque(
+  produtoId: string,
+  dadosBrutos: PedidoEstoqueFormValues,
+): Promise<ResultadoPedidoEstoque> {
+  const resultado = pedidoEstoqueSchema.safeParse(dadosBrutos);
+  if (!resultado.success) {
+    return {
+      success: false,
+      error: "Verifique os campos destacados.",
+      camposComErro: extrairErrosDeCampo(resultado.error.issues),
+    };
+  }
+
+  const produto = await prisma.produto.findUnique({ where: { id: produtoId } });
+  if (!produto) {
+    return { success: false, error: "Produto não encontrado." };
+  }
+
+  const saldoAtual = await calcularSaldoProduto(produtoId);
+  if (resultado.data.quantidade > saldoAtual) {
+    return {
+      success: false,
+      error: `Saldo insuficiente (disponível: ${saldoAtual}).`,
+      camposComErro: { quantidade: "Quantidade maior que o saldo disponível." },
+    };
+  }
+
+  const precoUnitario = valorParaNumero(resultado.data.precoUnitario);
+  const valorTotal = precoUnitario * resultado.data.quantidade;
+
+  const pedido = await prisma.$transaction(async (tx) => {
+    const criado = await tx.pedido.create({
+      data: {
+        clienteId: resultado.data.clienteId,
+        valorTotal,
+        itens: {
+          create: [
+            {
+              produtoId,
+              quantidade: resultado.data.quantidade,
+              precoUnitario,
+              custoUnitario: Number(produto.custo),
+              atendidoEstoque: true,
+            },
+          ],
+        },
+      },
+    });
+
+    await tx.movimentoEstoqueProduto.create({
+      data: {
+        produtoId,
+        tipo: "SAIDA",
+        quantidade: resultado.data.quantidade,
+        observacao: `Referente ao pedido #${criado.numero}`,
+      },
+    });
+
+    return criado;
+  });
+
+  revalidatePath("/pedidos");
+  revalidatePath("/estoque");
+  return { success: true, pedidoId: pedido.id };
 }
