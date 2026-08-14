@@ -3,12 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { precoParaNumero } from "@/lib/validations/moeda";
-import { darBaixaProducaoConcluida } from "@/lib/estoque";
+import { darBaixaProducaoConcluida, reverterBaixaProducaoConcluida } from "@/lib/estoque";
 import {
   criarOrdemAvulsaSchema,
   clienteRapidoSchema,
+  produtoRapidoSchema,
   type CriarOrdemAvulsaValues,
   type ClienteRapidoValues,
+  type ProdutoRapidoValues,
   type LinhaOrdemAvulsaValues,
 } from "@/lib/validations/ordemAvulsa";
 
@@ -32,6 +34,35 @@ export async function criarClienteRapido(
 
   revalidatePath("/clientes");
   return { success: true, cliente: { id: cliente.id, nome: cliente.razaoSocial } };
+}
+
+type ResultadoProdutoRapido =
+  | { success: true; produto: { id: string; nome: string; preco: number } }
+  | { success: false; error: string };
+
+export async function criarProdutoRapido(
+  dadosBrutos: ProdutoRapidoValues,
+): Promise<ResultadoProdutoRapido> {
+  const resultado = produtoRapidoSchema.safeParse(dadosBrutos);
+  if (!resultado.success) {
+    return { success: false, error: resultado.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const produto = await prisma.produto.create({
+    data: {
+      nome: resultado.data.nome,
+      tipo: resultado.data.tipo,
+      medidaId: resultado.data.medidaId,
+      preco: precoParaNumero(resultado.data.preco),
+      custo: precoParaNumero(resultado.data.custo),
+    },
+  });
+
+  revalidatePath("/produtos");
+  return {
+    success: true,
+    produto: { id: produto.id, nome: produto.nome, preco: Number(produto.preco) },
+  };
 }
 
 // Cria as linhas de uma submissão em lote. Cada linha vira produção
@@ -162,10 +193,26 @@ export async function concluirProducaoAvulsa(id: string) {
 }
 
 export async function cancelarItemOrdemAvulsa(id: string) {
-  const item = await prisma.itemOrdemAvulsa.findUnique({ where: { id } });
-  if (!item || item.status !== "AGUARDANDO") {
+  const item = await prisma.itemOrdemAvulsa.findUnique({
+    where: { id },
+    include: { ordemAvulsa: true, expedicao: true },
+  });
+  if (!item) {
     return;
+  }
+  // Já tem expedição gerada a partir dessa linha — cancelar deixaria a
+  // expedição órfã, então trava aqui (mesma lógica de excluirPedido).
+  if (item.expedicao) {
+    return;
+  }
+  if (item.status === "CONCLUIDO") {
+    await reverterBaixaProducaoConcluida(
+      item.produtoId,
+      item.quantidade,
+      `OP Avulsa #${item.ordemAvulsa.numero}`,
+    );
   }
   await prisma.itemOrdemAvulsa.delete({ where: { id } });
   revalidatePath("/producao");
+  revalidatePath("/estoque");
 }

@@ -54,6 +54,12 @@ preço de catálogo do produto (mesma regra de outros fluxos do
 sistema). No caminho avulso, fica só de referência — nunca afeta
 Faturamento.
 
+O campo Produto segue o mesmo padrão do Cliente: texto livre com
+autocomplete contra o catálogo existente e opção "Cadastrar '{texto}'
+como produto" ali mesmo (`criarProdutoRapido`), pedindo só tipo,
+medida e preço (custo default 0) — sem forçar sair da tela pra
+cadastrar produto novo antes de lançar a OP.
+
 ### Board de Produção mesclado, folha impressa unificada
 
 `/producao` busca `OrdemProducao` e `ItemOrdemAvulsa` juntos, mescla
@@ -74,13 +80,25 @@ dois fluxos. O recibo com canhoto virou um componente compartilhado
 `clienteSecundaria`/`clienteEndereco`, então esses campos somem do
 recibo sem lógica condicional extra no componente.
 
+### Cancelar OP em qualquer etapa, com estorno automático
+
+"Cancelar OP" aparece nas três colunas do board (Aguardando, Em
+produção, Concluído), nos dois fluxos. Cancelar uma OP já concluída
+estorna o estoque automaticamente via
+`reverterBaixaProducaoConcluida()` (saída do produto acabado, entrada
+de volta das matérias-primas da ficha técnica) — sempre lançando
+movimentos novos, nunca apagando o histórico de movimentos já
+existente. Testado localmente: saldo volta exatamente ao valor de
+antes da conclusão. Uma linha avulsa que já tem expedição gerada não
+pode mais ser cancelada (travado em `cancelarItemOrdemAvulsa`, mesma
+lógica de proteção que `excluirPedido` já usa pro fluxo formal) — isso
+evitaria deixar uma expedição órfã.
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP
   Avulsa #3" avulsa) — visualmente distinguíveis, nunca se confundem
   porque o rótulo já diz qual é qual.
-- Cancelar OP avulsa (`cancelarItemOrdemAvulsa`) só funciona com status
-  AGUARDANDO, mesma regra do fluxo formal.
 - `/expedicao` agora trata `pedido` como opcional e usa
   `itemOrdemAvulsa` como origem alternativa — telas que assumiam
   `expedicao.pedido` sempre existir foram ajustadas.

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { darBaixaProducaoConcluida } from "@/lib/estoque";
+import { darBaixaProducaoConcluida, reverterBaixaProducaoConcluida } from "@/lib/estoque";
 
 export async function gerarOrdemProducao(itemPedidoId: string) {
   const existente = await prisma.ordemProducao.findUnique({ where: { itemPedidoId } });
@@ -15,16 +15,28 @@ export async function gerarOrdemProducao(itemPedidoId: string) {
 }
 
 export async function cancelarOrdemProducao(id: string) {
-  const ordem = await prisma.ordemProducao.findUnique({ where: { id } });
-  if (!ordem || ordem.status !== "AGUARDANDO") {
+  const ordem = await prisma.ordemProducao.findUnique({
+    where: { id },
+    include: { itemPedido: true },
+  });
+  if (!ordem) {
     return;
   }
-  // Apaga de verdade em vez de marcar como cancelada — é pra desfazer um
-  // clique em "Gerar OP" por engano, então o botão "Gerar OP" volta a
-  // aparecer no pedido como se a OP nunca tivesse sido criada.
+  // Se já tinha sido concluída, o estoque foi movimentado — estorna
+  // antes de apagar. Apaga de verdade em vez de marcar como cancelada,
+  // então o botão "Gerar OP" volta a aparecer no pedido como se a OP
+  // nunca tivesse sido criada.
+  if (ordem.status === "CONCLUIDO") {
+    await reverterBaixaProducaoConcluida(
+      ordem.itemPedido.produtoId,
+      ordem.itemPedido.quantidade,
+      `OP #${ordem.numero}`,
+    );
+  }
   await prisma.ordemProducao.delete({ where: { id } });
   revalidatePath("/producao");
   revalidatePath("/pedidos");
+  revalidatePath("/estoque");
 }
 
 export async function iniciarProducao(id: string) {

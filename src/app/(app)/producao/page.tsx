@@ -304,38 +304,21 @@ export default async function ProducaoPage() {
                         </Button>
 
                         {coluna.status === "AGUARDANDO" && (
-                          <>
-                            <form
-                              action={async () => {
-                                "use server";
-                                if (cartao.origem === "formal") {
-                                  await iniciarProducao(cartao.id);
-                                } else {
-                                  await iniciarProducaoAvulsa(cartao.id);
-                                }
-                              }}
-                            >
-                              <Button type="submit" variant="outline" size="sm">
-                                Iniciar produção
-                                <ArrowRight />
-                              </Button>
-                            </form>
-                            <form
-                              action={async () => {
-                                "use server";
-                                if (cartao.origem === "formal") {
-                                  await cancelarOrdemProducao(cartao.id);
-                                } else {
-                                  await cancelarItemOrdemAvulsa(cartao.id);
-                                }
-                              }}
-                            >
-                              <Button type="submit" variant="destructive" size="sm">
-                                <X />
-                                Cancelar OP
-                              </Button>
-                            </form>
-                          </>
+                          <form
+                            action={async () => {
+                              "use server";
+                              if (cartao.origem === "formal") {
+                                await iniciarProducao(cartao.id);
+                              } else {
+                                await iniciarProducaoAvulsa(cartao.id);
+                              }
+                            }}
+                          >
+                            <Button type="submit" variant="outline" size="sm">
+                              Iniciar produção
+                              <ArrowRight />
+                            </Button>
+                          </form>
                         )}
 
                         {coluna.status === "EM_PRODUCAO" && (
@@ -375,6 +358,24 @@ export default async function ProducaoPage() {
                               </Button>
                             </form>
                           )}
+
+                        {!(cartao.origem === "avulsa" && cartao.temExpedicao) && (
+                          <form
+                            action={async () => {
+                              "use server";
+                              if (cartao.origem === "formal") {
+                                await cancelarOrdemProducao(cartao.id);
+                              } else {
+                                await cancelarItemOrdemAvulsa(cartao.id);
+                              }
+                            }}
+                          >
+                            <Button type="submit" variant="destructive" size="sm">
+                              <X />
+                              {coluna.status === "CONCLUIDO" ? "Cancelar OP (estorna estoque)" : "Cancelar OP"}
+                            </Button>
+                          </form>
+                        )}
                       </div>
                     </div>
                   ))

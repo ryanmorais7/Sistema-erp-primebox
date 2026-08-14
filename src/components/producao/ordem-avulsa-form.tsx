@@ -13,29 +13,26 @@ import {
 } from "@/lib/validations/ordemAvulsa";
 import { precoParaNumero, formatarPrecoBr } from "@/lib/validations/moeda";
 import { ClienteTextoField } from "@/components/producao/cliente-texto-field";
+import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 type Produto = { id: string; nome: string; preco: number };
 type Cliente = { id: string; razaoSocial: string; nomeFantasia: string | null };
+type Medida = { id: string; nome: string };
 
 type OrdemAvulsaFormProps = {
   produtos: Produto[];
   clientes: Cliente[];
+  medidas: Medida[];
 };
 
 const linhaVazia = {
   produtoId: "",
+  produtoTexto: "",
   quantidade: 1,
   clienteTexto: "",
   clienteId: undefined,
@@ -43,7 +40,7 @@ const linhaVazia = {
   precoUnitario: "",
 };
 
-export function OrdemAvulsaForm({ produtos, clientes }: OrdemAvulsaFormProps) {
+export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaFormProps) {
   const router = useRouter();
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const {
@@ -59,7 +56,6 @@ export function OrdemAvulsaForm({ produtos, clientes }: OrdemAvulsaFormProps) {
 
   const { fields, append, remove } = useFieldArray({ control, name: "linhas" });
   const linhasObservadas = useWatch({ control, name: "linhas" });
-  const produtosItems = Object.fromEntries(produtos.map((produto) => [produto.id, produto.nome]));
 
   async function aoSubmeter(dados: CriarOrdemAvulsaValues) {
     setErroGeral(null);
@@ -126,14 +122,16 @@ export function OrdemAvulsaForm({ produtos, clientes }: OrdemAvulsaFormProps) {
                 </Label>
                 <Controller
                   control={control}
-                  name={`linhas.${index}.produtoId`}
-                  render={({ field: selectField }) => (
-                    <Select
-                      items={produtosItems}
-                      value={selectField.value}
-                      onValueChange={(value) => {
-                        selectField.onChange(value);
-                        const produto = produtos.find((p) => p.id === value);
+                  name={`linhas.${index}.produtoTexto`}
+                  render={({ field: textoField }) => (
+                    <ProdutoTextoField
+                      texto={textoField.value ?? ""}
+                      produtoId={linhasObservadas?.[index]?.produtoId ?? ""}
+                      produtos={produtos}
+                      medidas={medidas}
+                      onChange={(texto, produto) => {
+                        textoField.onChange(texto);
+                        setValue(`linhas.${index}.produtoId`, produto?.id ?? "");
                         if (produto && !linhasObservadas?.[index]?.precoUnitario) {
                           setValue(
                             `linhas.${index}.precoUnitario`,
@@ -141,18 +139,7 @@ export function OrdemAvulsaForm({ produtos, clientes }: OrdemAvulsaFormProps) {
                           );
                         }
                       }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {produtos.map((produto) => (
-                          <SelectItem key={produto.id} value={produto.id}>
-                            {produto.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   )}
                 />
                 {errors.linhas?.[index]?.produtoId && (

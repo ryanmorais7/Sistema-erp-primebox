@@ -64,6 +64,37 @@ export async function darBaixaProducaoConcluida(
   }
 }
 
+// Estorna os efeitos de darBaixaProducaoConcluida — usado ao cancelar
+// uma OP que já tinha sido concluída (saída do produto acabado,
+// entrada de volta das matérias-primas). Sempre lança movimentos novos
+// em vez de apagar os antigos, pra manter o histórico rastreável.
+export async function reverterBaixaProducaoConcluida(
+  produtoId: string,
+  quantidade: number,
+  rotuloOP: string,
+) {
+  await prisma.movimentoEstoqueProduto.create({
+    data: {
+      produtoId,
+      tipo: "SAIDA",
+      quantidade,
+      observacao: `Cancelamento de produção já concluída — ${rotuloOP}`,
+    },
+  });
+
+  const fichaTecnica = await prisma.consumoMateriaPrima.findMany({ where: { produtoId } });
+  for (const consumo of fichaTecnica) {
+    await prisma.movimentoEstoqueMateriaPrima.create({
+      data: {
+        materiaPrimaId: consumo.materiaPrimaId,
+        tipo: "ENTRADA",
+        quantidade: Number(consumo.quantidade) * quantidade,
+        observacao: `Estorno de consumo — cancelamento da ${rotuloOP}`,
+      },
+    });
+  }
+}
+
 function acumularSaldos(
   grupos: { id: string; tipo: "ENTRADA" | "SAIDA"; soma: unknown }[],
 ): Map<string, number> {

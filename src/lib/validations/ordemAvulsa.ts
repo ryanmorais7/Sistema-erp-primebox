@@ -1,11 +1,16 @@
 import { z } from "zod";
+import { precoSchema, custoSchema } from "./moeda";
+import { TIPOS_PRODUTO } from "./produto";
 
 // Preço é sempre opcional aqui (formal ou avulsa) — se vazio, quem cria
 // a linha decide o fallback (preço de catálogo do produto).
 const precoOpcionalSchema = z.string().trim().optional();
 
 export const linhaOrdemAvulsaSchema = z.object({
-  produtoId: z.string().trim().min(1, "Selecione um produto"),
+  produtoId: z.string().trim().min(1, "Selecione ou cadastre um produto"),
+  // Só pra manter o texto digitado visível no campo — quem valida de
+  // verdade é produtoId.
+  produtoTexto: z.string().trim().optional(),
   quantidade: z
     .number()
     .int("Quantidade deve ser um número inteiro")
@@ -33,3 +38,13 @@ export const clienteRapidoSchema = z.object({
 });
 
 export type ClienteRapidoValues = z.infer<typeof clienteRapidoSchema>;
+
+export const produtoRapidoSchema = z.object({
+  nome: z.string().trim().min(1, "Informe o nome do produto"),
+  tipo: z.enum(TIPOS_PRODUTO),
+  medidaId: z.string().trim().min(1, "Selecione a medida"),
+  preco: precoSchema,
+  custo: custoSchema,
+});
+
+export type ProdutoRapidoValues = z.infer<typeof produtoRapidoSchema>;
