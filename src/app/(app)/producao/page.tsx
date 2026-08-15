@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ArrowLeft, X, Plus, List, Receipt, Truck, CalendarClock } from "lucide-react";
+import { ArrowRight, ArrowLeft, X, Plus, List, Receipt, Truck, CalendarClock, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import {
   iniciarProducao,
@@ -273,6 +273,18 @@ export default async function ProducaoPage() {
                           <Receipt />
                           Gerar recibo
                         </Button>
+
+                        {cartao.origem === "avulsa" && coluna.status === "AGUARDANDO" && (
+                          <Button
+                            render={<Link href={`/producao/avulsa/${cartao.id}/editar`} />}
+                            nativeButton={false}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Pencil />
+                            Editar
+                          </Button>
+                        )}
 
                         {cartao.origem === "avulsa" && (
                           <form

@@ -9,10 +9,12 @@ import {
   criarOrdemAvulsaSchema,
   clienteRapidoSchema,
   produtoRapidoSchema,
+  editarItemAvulsaSchema,
   type CriarOrdemAvulsaValues,
   type ClienteRapidoValues,
   type ProdutoRapidoValues,
   type LinhaOrdemAvulsaValues,
+  type EditarItemAvulsaValues,
 } from "@/lib/validations/ordemAvulsa";
 
 type ResultadoAcao = { success: true } | { success: false; error: string };
@@ -209,6 +211,73 @@ export async function criarOrdemAvulsa(
 
   revalidatePath("/producao");
   revalidatePath("/pedidos");
+  return { success: true };
+}
+
+// Edita uma OP avulsa já existente. Só permitido em AGUARDANDO — depois
+// que a produção inicia (ou pior, conclui e dá baixa no estoque), mudar
+// produto/quantidade deixaria os dados inconsistentes, então trava
+// (mesmo espírito da trava de cancelamento pós-expedição). Resolve o
+// produto igual a criarOrdemAvulsa: por id, por nome exato, ou cadastra
+// um produto novo a partir do texto digitado.
+export async function atualizarItemOrdemAvulsa(
+  id: string,
+  dadosBrutos: EditarItemAvulsaValues,
+): Promise<ResultadoAcao> {
+  const resultado = editarItemAvulsaSchema.safeParse(dadosBrutos);
+  if (!resultado.success) {
+    return { success: false, error: "Verifique os campos destacados." };
+  }
+
+  const item = await prisma.itemOrdemAvulsa.findUnique({ where: { id } });
+  if (!item) {
+    return { success: false, error: "OP não encontrada." };
+  }
+  if (item.status !== "AGUARDANDO") {
+    return { success: false, error: "Só é possível editar enquanto a OP está aguardando." };
+  }
+
+  const { produtoTexto, produtoId, quantidade, clienteTexto, clienteId, observacao, precoUnitario, dataProgramada } =
+    resultado.data;
+
+  const nomeNormalizado = normalizar(produtoTexto);
+  let produto = produtoId ? await prisma.produto.findUnique({ where: { id: produtoId } }) : null;
+  if (!produto) {
+    produto = await prisma.produto.findFirst({
+      where: { ativo: true, nome: { equals: nomeNormalizado, mode: "insensitive" } },
+    });
+  }
+  if (!produto) {
+    const medidas = await prisma.medida.findMany({ where: { ativo: true } });
+    const medidaId = inferirMedidaId(produtoTexto, medidas) ?? medidas[0]?.id;
+    if (!medidaId) {
+      return { success: false, error: "Não há nenhuma medida cadastrada no sistema pra usar como padrão." };
+    }
+    produto = await prisma.produto.create({
+      data: {
+        nome: formatarNomeBonito(produtoTexto),
+        tipo: "BASE",
+        medidaId,
+        preco: precoUnitario ? precoParaNumero(precoUnitario) : 0,
+        custo: 0,
+      },
+    });
+  }
+
+  await prisma.itemOrdemAvulsa.update({
+    where: { id },
+    data: {
+      produtoId: produto.id,
+      quantidade,
+      clienteTexto,
+      clienteId: clienteId || null,
+      observacao: observacao || null,
+      precoUnitario: precoUnitario ? precoParaNumero(precoUnitario) : null,
+      dataProgramada: dataProgramada ? new Date(`${dataProgramada}T00:00:00`) : null,
+    },
+  });
+
+  revalidatePath("/producao");
   return { success: true };
 }
 

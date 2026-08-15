@@ -284,6 +284,30 @@ no mesmo papel.
   Voltar → Concluir (JSX reordenado em `/producao`), sem mudar nenhum
   comportamento, só a ordem visual dos botões.
 
+## Atualização 2026-08-15 (parte 7) — editar OP avulsa
+
+Não existia nenhuma forma de corrigir uma OP avulsa depois de criada
+(só cancelar e recriar do zero). Adicionado:
+
+- **Nova rota `/producao/avulsa/[id]/editar`** e action
+  `atualizarItemOrdemAvulsa` (`ordem-avulsa/actions.ts`), com
+  `EditarItemAvulsaForm` — uma versão de linha única do formulário de
+  Criar OP (mesmos campos e mesmos componentes reaproveitados:
+  `ProdutoTextoField`, `ClienteTextoField`, máscara de preço). Resolve
+  o produto do mesmo jeito que a criação: por id, por nome exato, ou
+  cadastra um produto novo a partir do texto digitado.
+- **Só permitido enquanto a OP está "Aguardando"** — trava tanto na
+  action quanto na própria página (redireciona se o status já mudou).
+  Depois que a produção inicia (e principalmente depois de concluir,
+  quando já deu baixa no estoque), editar produto/quantidade deixaria
+  os dados inconsistentes com o que já foi de fato produzido/baixado —
+  mesma lógica de trava já usada em cancelar/voltar.
+- **Botão "Editar" no card**, visível só pra OP avulsa em Aguardando
+  (ao lado de "Gerar recibo"). Só pro lado avulso — Pedido formal já
+  tem seu próprio `/pedidos/[id]/editar`, embora esse hoje bloqueie
+  edição de pedidos cuja OP já foi criada (o que é sempre o caso nesse
+  fluxo); ajustar isso é uma decisão separada, fora do escopo daqui.
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP

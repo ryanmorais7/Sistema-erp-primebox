@@ -35,6 +35,15 @@ export const criarOrdemAvulsaSchema = z.object({
 export type LinhaOrdemAvulsaValues = z.infer<typeof linhaOrdemAvulsaSchema>;
 export type CriarOrdemAvulsaValues = z.infer<typeof criarOrdemAvulsaSchema>;
 
+// Edição de uma OP avulsa já existente — mesmos campos de uma linha,
+// mas sozinha (não faz parte de um array), já que cada OP avulsa
+// editável é sempre um ItemOrdemAvulsa isolado.
+export const editarItemAvulsaSchema = linhaOrdemAvulsaSchema.extend({
+  dataProgramada: z.string().trim().optional(),
+});
+
+export type EditarItemAvulsaValues = z.infer<typeof editarItemAvulsaSchema>;
+
 export const clienteRapidoSchema = z.object({
   razaoSocial: z.string().trim().min(1, "Informe o nome"),
   telefone: z
