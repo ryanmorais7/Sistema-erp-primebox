@@ -3,12 +3,14 @@ import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { AutoImprimir } from "@/components/pedidos/auto-imprimir";
 
 const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-const formatadorData = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" });
 
 type ReciboLinhaProps = {
   titulo: string;
   numeroLabel: string;
-  data: Date;
+  // Já formatada por quem chama — data de criação (timestamp real) e
+  // data programada (coluna @db.Date, só data) precisam de fusos
+  // horários diferentes pra não voltar um dia, então cada página decide.
+  dataFormatada: string;
   clienteNome: string;
   clienteSecundaria?: string | null;
   clienteEndereco?: string | null;
@@ -25,7 +27,7 @@ type ReciboLinhaProps = {
 export function ReciboLinha({
   titulo,
   numeroLabel,
-  data,
+  dataFormatada,
   clienteNome,
   clienteSecundaria,
   clienteEndereco,
@@ -67,7 +69,7 @@ export function ReciboLinha({
           </div>
           <div className="text-right">
             <p className="font-mono text-sm">{numeroLabel}</p>
-            <p className="text-sm text-muted-foreground">{formatadorData.format(data)}</p>
+            <p className="text-sm text-muted-foreground">{dataFormatada}</p>
           </div>
         </div>
 

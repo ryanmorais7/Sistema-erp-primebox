@@ -6,6 +6,15 @@ import { ReciboLinha } from "@/components/producao/recibo-linha";
 // Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
 export const dynamic = "force-dynamic";
 
+const formatadorDataHora = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" });
+// UTC fixo: dataProgramada é uma coluna @db.Date (só data, sem hora), e
+// formatar no fuso local poderia voltar um dia (meia-noite UTC vira dia
+// anterior em fusos negativos como o do Brasil).
+const formatadorDataProgramada = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "long",
+  timeZone: "UTC",
+});
+
 type PageProps = {
   params: Promise<{ id: string }>;
 };
@@ -71,7 +80,11 @@ export default async function ReciboFormalPage({ params }: PageProps) {
     <ReciboLinha
       titulo={`Recibo · Pedido #${item.pedido.numero}`}
       numeroLabel={`OP #${ordem.numero}`}
-      data={item.pedido.createdAt}
+      dataFormatada={
+        ordem.dataProgramada
+          ? formatadorDataProgramada.format(ordem.dataProgramada)
+          : formatadorDataHora.format(item.pedido.createdAt)
+      }
       clienteNome={nomeExibido}
       clienteSecundaria={clienteSecundaria || null}
       clienteEndereco={formatarEndereco(item.pedido.cliente)}

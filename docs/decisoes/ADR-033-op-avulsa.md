@@ -253,6 +253,37 @@ no mesmo papel.
   confirmada com o Ryan antes de implementar, pra não reverter o ADR-030
   sem querer.
 
+## Atualização 2026-08-15 (parte 6) — três bugs
+
+- **`dataProgramada` não existia no lado formal**: o campo único no
+  topo do Criar OP só era salvo em `ItemOrdemAvulsa` — linhas que
+  viravam Pedido formal (cliente já cadastrado) perdiam a data
+  silenciosamente. Adicionado `dataProgramada DateTime? @db.Date` em
+  `OrdemProducao` (migration
+  `20260815163710_adiciona_data_programada_ordem_producao`), espelhando
+  o campo já existente em `ItemOrdemAvulsa`, e `criarOrdemAvulsa` agora
+  grava o mesmo valor nos dois lados (`tx.ordemProducao.create` também
+  recebe `dataProgramada: dataProgramadaParsed`). Card formal e folha
+  impressa passam a mostrar a data corretamente pros dois fluxos.
+- **Recibo mostrava a data errada**: `/producao/recibo/avulsa/[id]` e
+  `/producao/recibo/formal/[id]` sempre mostravam a data de *criação*
+  (`ordemAvulsa.createdAt` / `pedido.createdAt`), nunca a
+  `dataProgramada` — então uma OP marcada pra semana que vem aparecia
+  no recibo com a data de hoje. Corrigido pra preferir
+  `dataProgramada` quando existir, caindo pra data de criação senão.
+  Nessa correção também apareceu um bug latente: `dataProgramada` é
+  `@db.Date` (só data, meia-noite UTC) e o formatador de
+  `ReciboLinha` usava o fuso local — formatar direto voltaria um dia
+  no horário do Brasil (mesma armadilha já documentada nas partes
+  anteriores pro board). `ReciboLinha` agora recebe a data **já
+  formatada** como string (prop `dataFormatada`, no lugar de `data:
+  Date`) — cada página escolhe o formatador certo: UTC fixo pra
+  `dataProgramada`, fuso local pra timestamp de criação.
+- **Ordem dos botões Concluir/Voltar invertida**: no card "Em
+  produção", "Concluir" aparecia antes de "Voltar". Trocado pra
+  Voltar → Concluir (JSX reordenado em `/producao`), sem mudar nenhum
+  comportamento, só a ordem visual dos botões.
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP

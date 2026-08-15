@@ -116,7 +116,7 @@ export default async function ProducaoPage() {
     grupo: ordem.itemPedido.pedido.clienteId,
     createdAt: ordem.createdAt,
     temExpedicao: false,
-    dataProgramada: null,
+    dataProgramada: ordem.dataProgramada,
     pago: true,
   }));
 
@@ -313,24 +313,6 @@ export default async function ProducaoPage() {
                           </form>
                         )}
 
-                        {coluna.status === "EM_PRODUCAO" && (
-                          <form
-                            action={async () => {
-                              "use server";
-                              if (cartao.origem === "formal") {
-                                await concluirProducao(cartao.id);
-                              } else {
-                                await concluirProducaoAvulsa(cartao.id);
-                              }
-                            }}
-                          >
-                            <Button type="submit" variant="outline" size="sm">
-                              Concluir
-                              <ArrowRight />
-                            </Button>
-                          </form>
-                        )}
-
                         {(coluna.status === "EM_PRODUCAO" || coluna.status === "CONCLUIDO") &&
                           !(cartao.origem === "avulsa" && cartao.temExpedicao) && (
                             <form
@@ -349,6 +331,24 @@ export default async function ProducaoPage() {
                               </Button>
                             </form>
                           )}
+
+                        {coluna.status === "EM_PRODUCAO" && (
+                          <form
+                            action={async () => {
+                              "use server";
+                              if (cartao.origem === "formal") {
+                                await concluirProducao(cartao.id);
+                              } else {
+                                await concluirProducaoAvulsa(cartao.id);
+                              }
+                            }}
+                          >
+                            <Button type="submit" variant="outline" size="sm">
+                              Concluir
+                              <ArrowRight />
+                            </Button>
+                          </form>
+                        )}
 
                         {coluna.status === "CONCLUIDO" &&
                           cartao.origem === "avulsa" &&

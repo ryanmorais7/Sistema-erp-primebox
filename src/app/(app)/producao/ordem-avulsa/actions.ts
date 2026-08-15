@@ -182,7 +182,9 @@ export async function criarOrdemAvulsa(
         include: { itens: true },
       });
       for (const item of pedido.itens) {
-        await tx.ordemProducao.create({ data: { itemPedidoId: item.id } });
+        await tx.ordemProducao.create({
+          data: { itemPedidoId: item.id, dataProgramada: dataProgramadaParsed },
+        });
       }
     }
 

@@ -143,6 +143,11 @@ model OrdemProducao {
   itemPedidoId String              @unique
   itemPedido   ItemPedido          @relation(fields: [itemPedidoId], references: [id], onDelete: Cascade)
   status       StatusOrdemProducao @default(AGUARDANDO)
+  // Mesmo campo e mesmo racional do ItemOrdemAvulsa.dataProgramada —
+  // preenchido pelo campo único "Data programada" no topo do Criar OP,
+  // pra linhas que viram Pedido formal (cliente já cadastrado) em vez de
+  // avulsa. Antes só existia no lado avulso; corrigido em 2026-08-15.
+  dataProgramada DateTime?           @db.Date
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 }
