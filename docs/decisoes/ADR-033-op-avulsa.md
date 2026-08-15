@@ -341,6 +341,39 @@ inteira. Resolvido:
   exatamente o caso de uso que faltava. "Limpar seleção" some com tudo.
 - Total de peças exibido passa a refletir a seleção quando há uma.
 
+## Atualização 2026-08-15 (parte 9) — Editar também no lado formal
+
+O botão "Editar" (parte 7) só existia pro lado avulso. Conferido: o
+Pedido formal criado por essa tela **não tinha nenhuma forma de
+edição** — `/pedidos/[id]/editar` já existia, mas bloqueia sempre que
+algum item já tem `ordemProducao`, e nesse fluxo a `OrdemProducao` é
+criada junto com o Pedido, sempre. Reaproveitar aquele editor
+diretamente não dava: ele faz `itens: { deleteMany: {}, create: [...] }`
+(substitui todos os itens do pedido de uma vez), e como
+`OrdemProducao` tem `onDelete: Cascade` a partir de `ItemPedido`, isso
+apagaria a(s) `OrdemProducao` existente(s) sem recriar nenhuma — o
+card sumiria do board de Produção depois de "editar".
+
+Resolvido com uma tela dedicada, espelhando exatamente o padrão já
+usado na avulsa:
+
+- **`atualizarOrdemProducao`** (`producao/actions.ts`) edita só a
+  linha (`ItemPedido`) daquela `OrdemProducao` — produto (por id, nome
+  exato, ou auto-cadastro a partir do texto, igual à avulsa),
+  quantidade, preço, custo e data programada — sem tocar nas outras
+  linhas do mesmo Pedido nem recriar a `OrdemProducao`. Recalcula
+  `Pedido.valorTotal` somando essa linha com o preço novo + as demais
+  linhas do pedido com o valor que já tinham.
+- **Mesma trava**: só permitido com a OP em "Aguardando".
+- **`EditarItemPedidoForm`** e rota `/producao/formal/[id]/editar` —
+  igual ao formulário avulso, exceto que o campo Cliente vem fixo
+  (somente leitura, com nota "pra trocar o cliente, edite o pedido
+  inteiro em Pedidos") em vez de editável, já que o cliente é do
+  Pedido inteiro, não da linha.
+- **Botão "Editar" no card** agora aparece nos dois lados (formal e
+  avulso) sempre que a OP está em Aguardando, apontando pra rota
+  certa conforme a origem.
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP

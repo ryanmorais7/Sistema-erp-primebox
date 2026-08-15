@@ -274,9 +274,17 @@ export default async function ProducaoPage() {
                           Gerar recibo
                         </Button>
 
-                        {cartao.origem === "avulsa" && coluna.status === "AGUARDANDO" && (
+                        {coluna.status === "AGUARDANDO" && (
                           <Button
-                            render={<Link href={`/producao/avulsa/${cartao.id}/editar`} />}
+                            render={
+                              <Link
+                                href={
+                                  cartao.origem === "formal"
+                                    ? `/producao/formal/${cartao.id}/editar`
+                                    : `/producao/avulsa/${cartao.id}/editar`
+                                }
+                              />
+                            }
                             nativeButton={false}
                             variant="outline"
                             size="sm"

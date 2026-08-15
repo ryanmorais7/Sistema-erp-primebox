@@ -26,3 +26,22 @@ export const pedidoSchema = z.object({
 
 export type ItemPedidoFormValues = z.infer<typeof itemPedidoSchema>;
 export type PedidoFormValues = z.infer<typeof pedidoSchema>;
+
+// Edição de uma única linha (ItemPedido/OrdemProducao) direto do card de
+// Produção — diferente do PedidoForm normal, que edita o pedido inteiro
+// de uma vez. Produto por texto livre (igual à OP avulsa) porque essa
+// linha pode ter vindo de "Criar OP" com produto digitado/auto-cadastrado.
+export const editarItemPedidoSchema = z.object({
+  produtoTexto: z.string().trim().min(1, "Informe o produto"),
+  produtoId: z.string().trim().optional(),
+  quantidade: z
+    .number()
+    .int("Quantidade deve ser um número inteiro")
+    .positive("Quantidade deve ser maior que zero")
+    .max(100000, "Quantidade muito alta"),
+  precoUnitario: precoSchema,
+  custoUnitario: custoSchema,
+  dataProgramada: z.string().trim().optional(),
+});
+
+export type EditarItemPedidoValues = z.infer<typeof editarItemPedidoSchema>;
