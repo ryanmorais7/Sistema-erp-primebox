@@ -196,6 +196,7 @@ export async function criarOrdemAvulsa(
               clienteTexto: linha.clienteTexto,
               observacao: linha.observacao || null,
               precoUnitario: linha.precoUnitario ? precoParaNumero(linha.precoUnitario) : null,
+              dataProgramada: linha.dataProgramada ? new Date(`${linha.dataProgramada}T00:00:00`) : null,
             })),
           },
         },

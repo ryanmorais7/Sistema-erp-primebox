@@ -37,6 +37,17 @@ const colunas = [
 ] as const;
 
 const formatadorData = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
+// UTC fixo: dataProgramada é uma coluna @db.Date (só data, sem hora), e
+// formatar no fuso local poderia voltar um dia (meia-noite UTC vira dia
+// anterior em fusos negativos como o do Brasil).
+const formatadorDataProgramada = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "UTC",
+});
+function formatarDataProgramada(data: Date) {
+  return formatadorDataProgramada.format(data);
+}
 
 function textoProduto(item: {
   nome: string;
@@ -67,6 +78,7 @@ type Cartao = {
   grupo: string;
   createdAt: Date;
   temExpedicao: boolean;
+  dataProgramada: Date | null;
 }
 
 function normalizar(texto: string) {
@@ -108,6 +120,7 @@ export default async function ProducaoPage() {
     grupo: ordem.itemPedido.pedido.clienteId,
     createdAt: ordem.createdAt,
     temExpedicao: false,
+    dataProgramada: null,
   }));
 
   const cartoesAvulsos: Cartao[] = itensAvulsos.map((item) => ({
@@ -123,6 +136,7 @@ export default async function ProducaoPage() {
     grupo: item.clienteId ?? `avulsa:${normalizar(item.clienteTexto)}`,
     createdAt: item.createdAt,
     temExpedicao: !!item.expedicao,
+    dataProgramada: item.dataProgramada,
   }));
 
   const todosCartoes = [...cartoesFormais, ...cartoesAvulsos].sort(
@@ -282,6 +296,11 @@ export default async function ProducaoPage() {
                       <p className="text-sm text-muted-foreground">
                         {cartao.quantidade}x {cartao.produtoTexto}
                       </p>
+                      {cartao.dataProgramada && (
+                        <p className="text-xs font-medium text-brand">
+                          Programado pra {formatarDataProgramada(cartao.dataProgramada)}
+                        </p>
+                      )}
 
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <Button

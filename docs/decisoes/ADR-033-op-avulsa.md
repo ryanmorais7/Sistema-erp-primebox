@@ -70,6 +70,19 @@ texto (reaproveita `inferirMedidaId` da importação de planilha,
 ADR-031), tipo "Base" e custo 0 por padrão — preço vem do que foi
 digitado na linha, ou 0. Fica editável depois em `/produtos`.
 
+### Ajustes de usabilidade no formulário
+
+Preço usa uma máscara de centavos só-dígito (`mascararMoeda`, estilo
+maquininha: "15000" digitado vira "150,00"), em vez de texto livre —
+evita letra misturada com número. Quantidade começa em branco em vez
+de pré-preenchida com 1. Cada linha ganhou um campo opcional **Data
+programada** (`dataProgramada DateTime? @db.Date` em
+`ItemOrdemAvulsa`, só no caminho avulso) pra agendar produção pra uma
+data futura sem precisar criar a OP só no dia — aparece no cartão do
+board ("Programado pra 17/08"), formatado sempre em UTC pra não voltar
+um dia por causa do fuso horário do Brasil. Por enquanto é só
+informativo: não filtra nem ordena o board.
+
 ### Board de Produção mesclado, folha impressa unificada
 
 `/producao` busca `OrdemProducao` e `ItemOrdemAvulsa` juntos, mescla

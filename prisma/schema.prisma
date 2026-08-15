@@ -177,6 +177,10 @@ model ItemOrdemAvulsa {
   // Preço opcional, só pra referência (recibo/consulta) — não entra no
   // Faturamento por período, que continua 100% baseado em Pedido.
   precoUnitario Decimal? @db.Decimal(10, 2)
+  // Data pra qual a produção está programada — opcional, em branco
+  // significa "sem data específica" (produção imediata/hoje). Só
+  // informativo por enquanto, não filtra nem ordena o board.
+  dataProgramada DateTime? @db.Date
   status        StatusOrdemProducao @default(AGUARDANDO)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

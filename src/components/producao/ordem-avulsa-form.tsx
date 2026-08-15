@@ -11,7 +11,8 @@ import {
   criarOrdemAvulsaSchema,
   type CriarOrdemAvulsaValues,
 } from "@/lib/validations/ordemAvulsa";
-import { precoParaNumero, formatarPrecoBr } from "@/lib/validations/moeda";
+import { formatarPrecoBr } from "@/lib/validations/moeda";
+import { mascararMoeda } from "@/lib/mascaras";
 import { ClienteTextoField } from "@/components/producao/cliente-texto-field";
 import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
 import { Button } from "@/components/ui/button";
@@ -33,11 +34,12 @@ type OrdemAvulsaFormProps = {
 const linhaVazia = {
   produtoId: "",
   produtoTexto: "",
-  quantidade: 1,
+  quantidade: undefined as unknown as number,
   clienteTexto: "",
   clienteId: undefined,
   observacao: "",
   precoUnitario: "",
+  dataProgramada: "",
 };
 
 export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaFormProps) {
@@ -68,14 +70,6 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
     router.refresh();
   }
 
-  function formatarPrecoAoSair(index: number, valor: string) {
-    if (!valor.trim()) return;
-    const numero = precoParaNumero(valor);
-    if (Number.isFinite(numero) && numero > 0) {
-      setValue(`linhas.${index}.precoUnitario`, formatarPrecoBr(numero));
-    }
-  }
-
   return (
     <form onSubmit={handleSubmit(aoSubmeter)} className="flex flex-col gap-6">
       <Card>
@@ -87,7 +81,7 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
           {fields.map((field, index) => (
             <div
               key={field.id}
-              className="grid gap-3 border-b pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[5rem_1fr_1fr_1fr_7rem_auto] sm:items-start"
+              className="grid gap-3 border-b pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[5rem_1fr_1fr_1fr_7rem_8.5rem_auto] sm:items-start"
             >
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
@@ -188,16 +182,19 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
                   name={`linhas.${index}.precoUnitario`}
                   render={({ field: precoField }) => (
                     <Input
-                      placeholder="Catálogo"
+                      placeholder="0,00"
+                      inputMode="numeric"
                       value={precoField.value ?? ""}
-                      onChange={precoField.onChange}
-                      onBlur={(e) => {
-                        precoField.onBlur();
-                        formatarPrecoAoSair(index, e.target.value);
-                      }}
+                      onChange={(e) => precoField.onChange(mascararMoeda(e.target.value))}
+                      onBlur={precoField.onBlur}
                     />
                   )}
                 />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Data programada</Label>
+                <Input type="date" {...register(`linhas.${index}.dataProgramada`)} />
               </div>
 
               <div className="flex items-end pb-0.5">

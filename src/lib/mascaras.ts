@@ -35,3 +35,13 @@ export function mascararTelefone(valor: string): string {
   if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
+
+// Só aceita dígitos, tratados como centavos (estilo POS/maquininha): vai
+// digitando da direita pra esquerda, sem deixar passar letra nenhuma.
+// "150" -> "1,50"; "15000" -> "150,00".
+export function mascararMoeda(valor: string): string {
+  const d = apenasDigitos(valor);
+  if (!d) return "";
+  const numero = Number(d) / 100;
+  return numero.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
