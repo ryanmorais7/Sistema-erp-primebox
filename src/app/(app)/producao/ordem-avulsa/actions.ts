@@ -238,6 +238,39 @@ export async function concluirProducaoAvulsa(id: string) {
   revalidatePath("/estoque");
 }
 
+// Volta um passo (Em produção → Aguardando, Concluído → Em produção),
+// sem apagar a linha — mesma lógica de voltarOrdemProducao no fluxo
+// formal. Bloqueia se já tem expedição gerada (mesma trava do cancelar).
+export async function voltarProducaoAvulsa(id: string) {
+  const item = await prisma.itemOrdemAvulsa.findUnique({
+    where: { id },
+    include: { ordemAvulsa: true, expedicao: true },
+  });
+  if (!item) {
+    return;
+  }
+
+  if (item.status === "EM_PRODUCAO") {
+    await prisma.itemOrdemAvulsa.update({ where: { id }, data: { status: "AGUARDANDO" } });
+    revalidatePath("/producao");
+    return;
+  }
+
+  if (item.status === "CONCLUIDO") {
+    if (item.expedicao) {
+      return;
+    }
+    await reverterBaixaProducaoConcluida(
+      item.produtoId,
+      item.quantidade,
+      `OP Avulsa #${item.ordemAvulsa.numero}`,
+    );
+    await prisma.itemOrdemAvulsa.update({ where: { id }, data: { status: "EM_PRODUCAO" } });
+    revalidatePath("/producao");
+    revalidatePath("/estoque");
+  }
+}
+
 export async function cancelarItemOrdemAvulsa(id: string) {
   const item = await prisma.itemOrdemAvulsa.findUnique({
     where: { id },

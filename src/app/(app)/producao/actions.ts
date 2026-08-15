@@ -68,3 +68,34 @@ export async function concluirProducao(id: string) {
   revalidatePath("/producao");
   revalidatePath("/estoque");
 }
+
+// Volta um passo (Em produção → Aguardando, Concluído → Em produção),
+// sem apagar a OP — pra quando desistiu de ter iniciado/concluído sem
+// querer, sem precisar cancelar a OP inteira. Voltar de Concluído
+// estorna o estoque do mesmo jeito que cancelar faria.
+export async function voltarOrdemProducao(id: string) {
+  const ordem = await prisma.ordemProducao.findUnique({
+    where: { id },
+    include: { itemPedido: true },
+  });
+  if (!ordem) {
+    return;
+  }
+
+  if (ordem.status === "EM_PRODUCAO") {
+    await prisma.ordemProducao.update({ where: { id }, data: { status: "AGUARDANDO" } });
+    revalidatePath("/producao");
+    return;
+  }
+
+  if (ordem.status === "CONCLUIDO") {
+    await reverterBaixaProducaoConcluida(
+      ordem.itemPedido.produtoId,
+      ordem.itemPedido.quantidade,
+      `OP #${ordem.numero}`,
+    );
+    await prisma.ordemProducao.update({ where: { id }, data: { status: "EM_PRODUCAO" } });
+    revalidatePath("/producao");
+    revalidatePath("/estoque");
+  }
+}

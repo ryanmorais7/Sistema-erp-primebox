@@ -1,15 +1,17 @@
 import Link from "next/link";
-import { ArrowRight, Box, X, Plus, List, Receipt, Truck } from "lucide-react";
+import { ArrowRight, ArrowLeft, Box, X, Plus, List, Receipt, Truck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import {
   iniciarProducao,
   concluirProducao,
   cancelarOrdemProducao,
+  voltarOrdemProducao,
 } from "./actions";
 import {
   iniciarProducaoAvulsa,
   concluirProducaoAvulsa,
   cancelarItemOrdemAvulsa,
+  voltarProducaoAvulsa,
 } from "./ordem-avulsa/actions";
 import { gerarExpedicaoAvulsa } from "@/app/(app)/expedicao/actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -174,6 +176,11 @@ export default async function ProducaoPage() {
     teal: "bg-positive-soft/60",
   };
 
+  // Poucas linhas: fonte grande, dá pra ler de longe no chão de fábrica.
+  // Muitas linhas: reduz proporcionalmente pra caber numa página só.
+  const fonteFolha =
+    linhas.length <= 4 ? "text-xl" : linhas.length <= 7 ? "text-base" : linhas.length <= 10 ? "text-sm" : "text-xs";
+
   return (
     <div className="flex flex-col gap-6 print:gap-4">
       <div className="print:hidden">
@@ -215,7 +222,9 @@ export default async function ProducaoPage() {
           </div>
           <p className="font-heading text-lg font-semibold text-brand">Produção</p>
           <div className="text-right">
-            <p className="font-mono text-sm font-semibold">OP {formatadorData.format(new Date())}</p>
+            <p className="font-mono text-sm font-semibold">
+              Impresso em {formatadorData.format(new Date())}
+            </p>
             <p className="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
               Uso interno · Fábrica
             </p>
@@ -235,17 +244,23 @@ export default async function ProducaoPage() {
                   <TableHead className="text-background">Produto</TableHead>
                   <TableHead className="text-background">Cliente</TableHead>
                   <TableHead className="text-background">Observação</TableHead>
+                  <TableHead className="text-background text-center">Feito</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {linhas.map(({ cartao, corGrupo }) => (
                   <TableRow key={`${cartao.origem}-${cartao.id}`} className={corGrupoClasses[corGrupo]}>
-                    <TableCell className="font-mono font-semibold">{cartao.quantidade}</TableCell>
-                    <TableCell className="font-medium">{cartao.produtoTexto}</TableCell>
+                    <TableCell className={`font-mono font-semibold ${fonteFolha}`}>
+                      {cartao.quantidade}
+                    </TableCell>
+                    <TableCell className={`font-medium ${fonteFolha}`}>{cartao.produtoTexto}</TableCell>
                     <TableCell className="text-muted-foreground italic">
                       {cartao.clienteLabel}
                     </TableCell>
                     <TableCell className="text-brand">{cartao.observacao}</TableCell>
+                    <TableCell>
+                      <div className="mx-auto size-7 rounded-sm border-2 border-foreground/70" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -295,6 +310,9 @@ export default async function ProducaoPage() {
                       )}
                       <p className="text-sm text-muted-foreground">
                         {cartao.quantidade}x {cartao.produtoTexto}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Criada em {formatadorData.format(cartao.createdAt)}
                       </p>
                       {cartao.dataProgramada && (
                         <p className="text-xs font-medium text-brand">
@@ -357,6 +375,25 @@ export default async function ProducaoPage() {
                             </Button>
                           </form>
                         )}
+
+                        {(coluna.status === "EM_PRODUCAO" || coluna.status === "CONCLUIDO") &&
+                          !(cartao.origem === "avulsa" && cartao.temExpedicao) && (
+                            <form
+                              action={async () => {
+                                "use server";
+                                if (cartao.origem === "formal") {
+                                  await voltarOrdemProducao(cartao.id);
+                                } else {
+                                  await voltarProducaoAvulsa(cartao.id);
+                                }
+                              }}
+                            >
+                              <Button type="submit" variant="outline" size="sm">
+                                <ArrowLeft />
+                                Voltar
+                              </Button>
+                            </form>
+                          )}
 
                         {coluna.status === "CONCLUIDO" &&
                           cartao.origem === "avulsa" &&

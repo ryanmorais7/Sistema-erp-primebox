@@ -20,11 +20,12 @@ pra clientes recorrentes (histórico, cobrança), mas não pode ser o
 `OrdemAvulsa` (numeração própria "OP Avulsa #N") e `ItemOrdemAvulsa`
 (quantidade, produto, `clienteTexto` livre, `clienteId` opcional só
 informativo, observação, preço opcional, status próprio — mesmo enum
-`StatusOrdemProducao` do fluxo formal). Faturamento por período e o
-relatório "Por cliente" continuam consultando só `Pedido`/`Cliente` —
-nunca tocam nessas tabelas novas, então produção avulsa não aparece
-nesses relatórios nem polui um cliente real com nomes avulsos
-diferentes.
+`StatusOrdemProducao` do fluxo formal). O relatório "Por cliente"
+continua consultando só `Pedido`/`Cliente` — nunca toca nessas tabelas
+novas, então produção avulsa não polui um cliente real com nomes
+avulsos diferentes. **Atualização 2026-08-15:** "Faturamento por
+período" passou a somar também os itens avulsos concluídos — ver seção
+mais abaixo.
 
 `Expedicao.pedidoId` virou opcional e ganhou `itemOrdemAvulsaId`
 opcional (mutuamente exclusivos, garantido na camada de ação, não no
@@ -51,8 +52,8 @@ individualmente:
 
 Preço é opcional nos dois casos; se vazio no caminho formal, cai no
 preço de catálogo do produto (mesma regra de outros fluxos do
-sistema). No caminho avulso, fica só de referência — nunca afeta
-Faturamento.
+sistema). No caminho avulso, fica só de referência pro recibo — não
+gera cobrança automática nem afeta Estoque além da baixa já descrita.
 
 O campo Produto segue o mesmo padrão do Cliente: texto livre com
 autocomplete contra o catálogo existente e opção "Cadastrar '{texto}'
@@ -116,6 +117,39 @@ antes da conclusão. Uma linha avulsa que já tem expedição gerada não
 pode mais ser cancelada (travado em `cancelarItemOrdemAvulsa`, mesma
 lógica de proteção que `excluirPedido` já usa pro fluxo formal) — isso
 evitaria deixar uma expedição órfã.
+
+## Atualização 2026-08-15
+
+Ajustes de uso real depois de o Pedro/Ryan testarem o board no dia a
+dia:
+
+- **Botão "Voltar"** (`voltarOrdemProducao`/`voltarProducaoAvulsa`):
+  volta um passo (Em produção → Aguardando, Concluído → Em produção)
+  sem apagar a OP — reaproveita `reverterBaixaProducaoConcluida()` pra
+  estornar o estoque quando volta de Concluído. Existe pra não
+  precisar cancelar a OP inteira só porque desistiu de ter
+  iniciado/concluído por engano. Mesma trava de expedição já existente
+  no cancelar.
+- **Data de criação visível no card** ("Criada em DD/MM"): a data no
+  topo da folha impressa é só a data de impressão daquele lote (por
+  isso o rótulo virou "Impresso em"), não a data de lançamento de cada
+  OP — sem isso não dava pra saber qual item tava mais atrasado
+  (parado em Aguardando, ou em Concluído esperando gerar expedição).
+- **Faturamento por período passou a somar avulso**: decisão explícita
+  do Pedro/Ryan, revertendo o isolamento original — ele precisa do
+  total do dia incluindo avulso, mesmo sabendo que mistura com o
+  relatório oficial por Pedido. A data usada é `updatedAt` do
+  `ItemOrdemAvulsa` no momento em que vira CONCLUIDO (mesma convenção
+  de "data de faturamento" já usada pra Pedido, ADR-009). O relatório
+  "Por cliente" **não** mudou — continua só formal, já que a maioria
+  das linhas avulsas não tem `clienteId` real pra agrupar.
+- **Folha de produção da fábrica** (`/producao`, tabela de cima —
+  diferente do recibo com canhoto): fonte de Quantidade/Produto agora
+  escala pelo número de linhas (grande com poucas linhas, menor com
+  10+, pra caber numa página só) e ganhou uma coluna "Feito" com um
+  quadrado vazio (~28px) pra marcar à caneta — sem campo de assinatura
+  nem responsável, porque esse controle já fica registrado no sistema
+  quando o Pedro marca como concluído na tela.
 
 ## Consequências
 
