@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +39,6 @@ const linhaVazia = {
   clienteId: undefined,
   observacao: "",
   precoUnitario: "",
-  dataProgramada: "",
 };
 
 export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaFormProps) {
@@ -53,8 +52,17 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
     formState: { errors, isSubmitting },
   } = useForm<CriarOrdemAvulsaValues>({
     resolver: zodResolver(criarOrdemAvulsaSchema),
-    defaultValues: { linhas: [linhaVazia] },
+    defaultValues: { dataProgramada: "", linhas: [linhaVazia] },
   });
+
+  // Pedro tá acostumado com Excel e às vezes aperta Enter sem querer
+  // enquanto preenche — sem isso, o navegador submete o formulário
+  // como se tivesse clicado em "Criar OP".
+  function bloquearEnter(e: KeyboardEvent<HTMLFormElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+    }
+  }
 
   const { fields, append, remove } = useFieldArray({ control, name: "linhas" });
   const linhasObservadas = useWatch({ control, name: "linhas" });
@@ -71,9 +79,18 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="flex flex-col gap-6">
+    <form
+      onSubmit={handleSubmit(aoSubmeter)}
+      onKeyDown={bloquearEnter}
+      className="flex flex-col gap-6"
+    >
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
+          <div className="flex flex-col gap-2 sm:max-w-xs">
+            <Label className="text-xs">Data programada (opcional, vale pra OP inteira)</Label>
+            <Input type="date" {...register("dataProgramada")} />
+          </div>
+
           {errors.linhas?.root && (
             <p className="text-sm text-destructive">{errors.linhas.root.message}</p>
           )}
@@ -81,7 +98,7 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
           {fields.map((field, index) => (
             <div
               key={field.id}
-              className="grid gap-3 border-b pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[5rem_1fr_1fr_1fr_7rem_8.5rem_auto] sm:items-start"
+              className="grid gap-3 border-b pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[5rem_1fr_1fr_1fr_7rem_auto] sm:items-start"
             >
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs">
@@ -190,11 +207,6 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
                     />
                   )}
                 />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Data programada</Label>
-                <Input type="date" {...register(`linhas.${index}.dataProgramada`)} />
               </div>
 
               <div className="flex items-end pb-0.5">

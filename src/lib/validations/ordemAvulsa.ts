@@ -21,13 +21,14 @@ export const linhaOrdemAvulsaSchema = z.object({
   clienteId: z.string().trim().optional(),
   observacao: z.string().trim().optional(),
   precoUnitario: precoOpcionalSchema,
-  // Formato "AAAA-MM-DD" (input type="date"). Em branco = sem data
-  // específica (produção imediata). Só se aplica ao caminho avulso —
-  // linhas que viram Pedido formal não têm esse campo hoje.
-  dataProgramada: z.string().trim().optional(),
 });
 
 export const criarOrdemAvulsaSchema = z.object({
+  // Um campo só pra OP inteira (não por linha) — a maioria das OPs tem
+  // uma data de produção só. Formato "AAAA-MM-DD" (input type="date").
+  // Em branco = sem data específica. Só se aplica às linhas que viram
+  // avulsas — linhas que viram Pedido formal não têm esse campo hoje.
+  dataProgramada: z.string().trim().optional(),
   linhas: z.array(linhaOrdemAvulsaSchema).min(1, "Adicione pelo menos uma linha"),
 });
 

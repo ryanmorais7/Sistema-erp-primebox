@@ -103,26 +103,33 @@ export default async function PainelPage() {
   const meses = ultimosMeses(6);
   const inicioJanela = dataBr(`${meses[0].ano}-${String(meses[0].mes).padStart(2, "0")}-01`);
 
-  const [pedidosRecentes, pedidosCriadosNoPeriodo, faturadosNoPeriodo] = await Promise.all([
-    prisma.pedido.findMany({
-      include: { cliente: true },
-      orderBy: { numero: "desc" },
-      take: 5,
-    }),
-    // Base para "pedidos em carteira" e "clientes ativos" por mês —
-    // agrupados pela data de criação do pedido.
-    prisma.pedido.findMany({
-      where: { createdAt: { gte: inicioJanela } },
-      select: { createdAt: true, clienteId: true, status: true, valorTotal: true },
-    }),
-    // updatedAt é a data de faturamento: um pedido faturado nunca mais
-    // é editado, então o momento da transição pra FATURADO é confiável
-    // (mesma convenção do relatório de faturamento por dia, ver ADR-009).
-    prisma.pedido.findMany({
-      where: { status: "FATURADO", updatedAt: { gte: inicioJanela } },
-      select: { updatedAt: true, valorTotal: true },
-    }),
-  ]);
+  const [pedidosRecentes, pedidosCriadosNoPeriodo, faturadosNoPeriodo, avulsosNoPeriodo] =
+    await Promise.all([
+      prisma.pedido.findMany({
+        include: { cliente: true },
+        orderBy: { numero: "desc" },
+        take: 5,
+      }),
+      // Base para "pedidos em carteira" e "clientes ativos" por mês —
+      // agrupados pela data de criação do pedido.
+      prisma.pedido.findMany({
+        where: { createdAt: { gte: inicioJanela } },
+        select: { createdAt: true, clienteId: true, status: true, valorTotal: true },
+      }),
+      // updatedAt é a data de faturamento: um pedido faturado nunca mais
+      // é editado, então o momento da transição pra FATURADO é confiável
+      // (mesma convenção do relatório de faturamento por dia, ver ADR-009).
+      prisma.pedido.findMany({
+        where: { status: "FATURADO", updatedAt: { gte: inicioJanela } },
+        select: { updatedAt: true, valorTotal: true },
+      }),
+      // OP avulsa concluída também conta como ganho da empresa — mesma
+      // convenção usada em "Faturamento por período" (ADR-033).
+      prisma.itemOrdemAvulsa.findMany({
+        where: { status: "CONCLUIDO", updatedAt: { gte: inicioJanela } },
+        select: { updatedAt: true, precoUnitario: true, quantidade: true },
+      }),
+    ]);
 
   const clientesPorMes = new Map<string, Set<string>>();
   const carteiraPorMes = new Map<string, { pedidos: number; valor: number }>();
@@ -147,6 +154,13 @@ export default async function PainelPage() {
     const atual = faturamentoPorMes.get(chave) ?? { pedidos: 0, valor: 0 };
     atual.pedidos += 1;
     atual.valor += Number(pedido.valorTotal);
+    faturamentoPorMes.set(chave, atual);
+  }
+  for (const item of avulsosNoPeriodo) {
+    const chave = chaveMesBr(item.updatedAt);
+    const atual = faturamentoPorMes.get(chave) ?? { pedidos: 0, valor: 0 };
+    atual.pedidos += 1;
+    atual.valor += item.precoUnitario ? Number(item.precoUnitario) * item.quantidade : 0;
     faturamentoPorMes.set(chave, atual);
   }
 

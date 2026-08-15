@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, Pencil, Check, X } from "lucide-react";
+import { ClipboardList, Check, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoCliente, excluirCliente } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -112,6 +112,7 @@ export default async function ClientesPage({ searchParams }: PageProps) {
                 <TableHead>Razão social</TableHead>
                 <TableHead>Documento</TableHead>
                 <TableHead>Telefone</TableHead>
+                <TableHead>Bairro</TableHead>
                 <TableHead>Cidade/UF</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -121,10 +122,13 @@ export default async function ClientesPage({ searchParams }: PageProps) {
               {clientes.map((cliente) => (
                 <TableRow key={cliente.id}>
                   <TableCell className="font-medium">
-                    {cliente.nomeFantasia || cliente.razaoSocial}
+                    <Link href={`/clientes/${cliente.id}/editar`} className="hover:underline">
+                      {cliente.nomeFantasia || cliente.razaoSocial}
+                    </Link>
                   </TableCell>
                   <TableCell>{formatarDocumento(cliente.cnpj, cliente.cpf)}</TableCell>
                   <TableCell>{cliente.telefone}</TableCell>
+                  <TableCell>{cliente.bairro || "—"}</TableCell>
                   <TableCell>
                     {cliente.cidade ? `${cliente.cidade}/${cliente.estado ?? ""}` : "—"}
                   </TableCell>
@@ -145,16 +149,6 @@ export default async function ClientesPage({ searchParams }: PageProps) {
                       title="Ver pedidos"
                     >
                       <ClipboardList />
-                    </Button>
-                    <Button
-                      render={<Link href={`/clientes/${cliente.id}/editar`} />}
-                      nativeButton={false}
-                      variant="outline"
-                      size="icon-sm"
-                      aria-label="Editar cliente"
-                      title="Editar"
-                    >
-                      <Pencil />
                     </Button>
                     <form
                       action={async () => {

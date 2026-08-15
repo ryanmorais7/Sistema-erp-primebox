@@ -82,7 +82,8 @@ export async function criarOrdemAvulsa(
   if (!resultado.success) {
     return { success: false, error: "Verifique as linhas destacadas." };
   }
-  const { linhas } = resultado.data;
+  const { linhas, dataProgramada } = resultado.data;
+  const dataProgramadaParsed = dataProgramada ? new Date(`${dataProgramada}T00:00:00`) : null;
 
   const [produtosAtivos, medidas] = await Promise.all([
     prisma.produto.findMany({ where: { ativo: true } }),
@@ -196,7 +197,7 @@ export async function criarOrdemAvulsa(
               clienteTexto: linha.clienteTexto,
               observacao: linha.observacao || null,
               precoUnitario: linha.precoUnitario ? precoParaNumero(linha.precoUnitario) : null,
-              dataProgramada: linha.dataProgramada ? new Date(`${linha.dataProgramada}T00:00:00`) : null,
+              dataProgramada: dataProgramadaParsed,
             })),
           },
         },

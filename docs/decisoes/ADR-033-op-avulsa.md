@@ -151,6 +151,36 @@ dia:
   nem responsável, porque esse controle já fica registrado no sistema
   quando o Pedro marca como concluído na tela.
 
+## Atualização 2026-08-15 (parte 2)
+
+Mais uma rodada de ajustes de uso real:
+
+- **Data programada virou um campo único no topo do formulário**
+  (`dataProgramada` subiu de `linhaOrdemAvulsaSchema` pra
+  `criarOrdemAvulsaSchema`), em vez de um campo por linha. Na prática
+  quase toda OP tem uma data de produção só — ter que repetir por
+  linha era fricção sem ganho. Só se aplica às linhas que viram
+  avulsas; linhas que viram Pedido formal não têm esse campo (Pedido
+  não guarda data programada).
+- **Enter não submete mais o formulário** de Criar OP
+  (`ordem-avulsa-form.tsx`, `onKeyDown` no `<form>` bloqueando
+  `Enter`). O Pedro preenche por hábito de Excel e às vezes apertava
+  Enter sem querer, iniciando a OP antes de terminar de preencher —
+  agora só o clique no botão laranja "Criar OP" submete.
+- **"Impresso em" some da impressão** (`print:hidden` em
+  `/producao`), mas continua visível na tela — o rótulo foi adicionado
+  na atualização anterior pra resolver a ambiguidade da data no topo
+  da folha, mas imprimir essa hora/data junto com a logo não ficava
+  bom no papel.
+- **Painel (dashboard) também soma avulso no gráfico de faturamento
+  mensal**: mesma lógica que "Faturamento por período" já usava desde
+  a atualização anterior (soma `ItemOrdemAvulsa` CONCLUIDO por
+  `updatedAt`), agora replicada no card/gráfico da página inicial —
+  o Pedro deixou claro que toda produção, avulsa ou não, precisa
+  contar pro ganho diário/mensal/anual da empresa. "Pedidos em
+  carteira", "valor em carteira" e "clientes ativos" continuam só
+  formais (avulso não tem carteira nem cliente confiável pra contar).
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP

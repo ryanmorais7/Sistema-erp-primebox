@@ -222,7 +222,7 @@ export default async function ProducaoPage() {
           </div>
           <p className="font-heading text-lg font-semibold text-brand">Produção</p>
           <div className="text-right">
-            <p className="font-mono text-sm font-semibold">
+            <p className="font-mono text-sm font-semibold print:hidden">
               Impresso em {formatadorData.format(new Date())}
             </p>
             <p className="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
