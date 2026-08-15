@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ArrowLeft, Box, X, Plus, List, Receipt, Truck } from "lucide-react";
+import { ArrowRight, ArrowLeft, X, Plus, List, Receipt, Truck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import {
   iniciarProducao,
@@ -16,18 +16,11 @@ import {
 import { gerarExpedicaoAvulsa } from "@/app/(app)/expedicao/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
+import { FolhaProducao, type LinhaFolha } from "@/components/producao/folha-producao";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
 import type { TipoProduto } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 // Lista ordens de produção ao vivo do banco; nunca deve ser pré-renderizada no build.
 export const dynamic = "force-dynamic";
@@ -37,19 +30,6 @@ const colunas = [
   { status: "EM_PRODUCAO", titulo: "Em produção" },
   { status: "CONCLUIDO", titulo: "Concluído" },
 ] as const;
-
-const formatadorData = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
-// UTC fixo: dataProgramada é uma coluna @db.Date (só data, sem hora), e
-// formatar no fuso local poderia voltar um dia (meia-noite UTC vira dia
-// anterior em fusos negativos como o do Brasil).
-const formatadorDataProgramada = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "2-digit",
-  timeZone: "UTC",
-});
-function formatarDataProgramada(data: Date) {
-  return formatadorDataProgramada.format(data);
-}
 
 function textoProduto(item: {
   nome: string;
@@ -171,30 +151,20 @@ export default async function ProducaoPage() {
 
   const totalPecas = pendentes.reduce((total, cartao) => total + cartao.quantidade, 0);
 
-  // Se todo mundo que tá sendo impresso agora é da mesma data programada,
-  // usa ela no cabeçalho (inclusive impressa em papel — é o que diz pro
-  // funcionário da fábrica pra qual dia é essa folha). Sem isso (nenhuma
-  // data programada, ou datas diferentes misturadas), cai de volta pro
-  // comportamento antigo: só a data/hora de impressão, visível na tela.
-  const datasProgramadasDistintas = new Set(
-    pendentes
-      .map((cartao) => cartao.dataProgramada?.getTime())
-      .filter((valor): valor is number => valor != null),
-  );
-  const dataProgramadaUnica =
-    datasProgramadasDistintas.size === 1
-      ? new Date([...datasProgramadasDistintas][0])
-      : null;
-
-  const corGrupoClasses: Record<string, string> = {
-    peach: "bg-accent/40",
-    teal: "bg-positive-soft/60",
-  };
-
   // Poucas linhas: fonte grande, dá pra ler de longe no chão de fábrica.
   // Muitas linhas: reduz proporcionalmente pra caber numa página só.
   const fonteFolha =
     linhas.length <= 4 ? "text-xl" : linhas.length <= 7 ? "text-base" : linhas.length <= 10 ? "text-sm" : "text-xs";
+
+  const linhasFolha: LinhaFolha[] = linhas.map(({ cartao, corGrupo }) => ({
+    id: `${cartao.origem}-${cartao.id}`,
+    quantidade: cartao.quantidade,
+    produtoTexto: cartao.produtoTexto,
+    clienteLabel: cartao.clienteLabel,
+    observacao: cartao.observacao,
+    corGrupo,
+    dataProgramadaIso: cartao.dataProgramada ? cartao.dataProgramada.toISOString() : null,
+  }));
 
   return (
     <div className="flex flex-col gap-6 print:gap-4">
@@ -221,81 +191,7 @@ export default async function ProducaoPage() {
         />
       </div>
 
-      <div className="rounded-lg border p-6 print:border-none print:p-0">
-        <div className="flex items-start justify-between border-b pb-4 print:pb-2">
-          <div className="flex items-center gap-2">
-            <div
-              className="flex size-8 items-center justify-center rounded-lg"
-              style={{
-                background:
-                  "linear-gradient(155deg, color-mix(in oklch, var(--brand) 100%, white 22%), var(--brand) 55%, color-mix(in oklch, var(--brand) 100%, black 22%))",
-              }}
-            >
-              <Box className="size-4 text-white" strokeWidth={1.8} />
-            </div>
-            <p className="font-heading text-lg font-semibold">PrimeBox</p>
-          </div>
-          <p className="font-heading text-lg font-semibold text-brand">Produção</p>
-          <div className="text-right">
-            {dataProgramadaUnica ? (
-              <p className="font-mono text-sm font-semibold">
-                Programado pra {formatarDataProgramada(dataProgramadaUnica)}
-              </p>
-            ) : (
-              <p className="font-mono text-sm font-semibold print:hidden">
-                Impresso em {formatadorData.format(new Date())}
-              </p>
-            )}
-            <p className="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-              Uso interno · Fábrica
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          {linhas.length === 0 ? (
-            <p className="py-6 text-sm text-muted-foreground">
-              Nenhuma peça pendente de produção no momento.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-foreground hover:bg-foreground print:bg-foreground">
-                  <TableHead className="text-background">Quant.</TableHead>
-                  <TableHead className="text-background">Produto</TableHead>
-                  <TableHead className="text-background">Cliente</TableHead>
-                  <TableHead className="text-background">Observação</TableHead>
-                  <TableHead className="text-background text-center">Feito</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {linhas.map(({ cartao, corGrupo }) => (
-                  <TableRow key={`${cartao.origem}-${cartao.id}`} className={corGrupoClasses[corGrupo]}>
-                    <TableCell className={`font-mono font-semibold ${fonteFolha}`}>
-                      {cartao.quantidade}
-                    </TableCell>
-                    <TableCell className={`font-medium ${fonteFolha}`}>{cartao.produtoTexto}</TableCell>
-                    <TableCell className="text-muted-foreground italic">
-                      {cartao.clienteLabel}
-                    </TableCell>
-                    <TableCell className="text-brand">{cartao.observacao}</TableCell>
-                    <TableCell>
-                      <div className="mx-auto size-7 rounded-sm border-2 border-foreground/70" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-
-        {linhas.length > 0 && (
-          <div className="mt-4 flex items-center gap-3 border-t pt-4">
-            <p className="text-2xl font-bold">{totalPecas}</p>
-            <p className="text-sm text-muted-foreground">Total de peças nesta OP</p>
-          </div>
-        )}
-      </div>
+      <FolhaProducao linhas={linhasFolha} totalPecas={totalPecas} fonteFolha={fonteFolha} />
 
       <div className="grid gap-4 lg:grid-cols-3 print:hidden">
         {colunas.map((coluna) => {

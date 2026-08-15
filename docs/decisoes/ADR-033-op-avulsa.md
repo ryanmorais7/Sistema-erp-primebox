@@ -201,10 +201,32 @@ Mais um ajuste no card e na folha, depois de testar a impressão real:
   já mostra "17", sem depender de quando foi de fato impresso). Sem
   data programada (ou com datas diferentes misturadas na mesma folha),
   cai de volta pro comportamento anterior: "Impresso em {hoje}",
-  visível só na tela (`print:hidden`). Essa mistura de datas diferentes
-  na mesma folha ainda não tem um tratamento mais fino — hoje o board
-  do Pedro raramente tem mais de 1-2 itens pendentes ao mesmo tempo, e
-  quando isso mudar pode valer a pena revisitar.
+  visível só na tela (`print:hidden`).
+
+## Atualização 2026-08-15 (parte 4)
+
+Testando com duas OPs de datas diferentes (17 e 19) na folha ao mesmo
+tempo, apareceu o problema previsto na atualização anterior: o
+cabeçalho caía pro "Impresso em hoje" (esperado, já que as datas não
+batem), mas não tinha como imprimir só uma das duas — clicar em
+"Imprimir" mandava a folha inteira, misturando OPs de dias diferentes
+no mesmo papel.
+
+- **Linha da folha agora é clicável, e filtra o que vai pra
+  impressão**: virou um componente cliente (`FolhaProducao`, em
+  `src/components/producao/folha-producao.tsx` — extraído de
+  `/producao/page.tsx`, que agora só monta os dados e passa como
+  prop). Clicar numa linha da tabela: (1) destaca ela na tela com uma
+  borda, (2) troca o cabeçalho pra mostrar a data programada *daquela
+  linha* especificamente (em vez de exigir que todas as linhas
+  pendentes compartilhem a mesma data), (3) esconde as outras linhas
+  só na impressão (`print:hidden` por linha) — assim dá pra imprimir a
+  OP do dia 17 sozinha, depois clicar na do dia 19 e imprimir de novo.
+  Clicar de novo na mesma linha desmarca e volta a imprimir tudo junto
+  (comportamento padrão, sem seleção). Total de peças também passa a
+  refletir só a linha selecionada quando há uma.
+- **Coluna Cliente não é mais itálico** na folha impressa — era só
+  estética, sem motivo funcional, e dificultava a leitura no papel.
 
 ## Consequências
 
