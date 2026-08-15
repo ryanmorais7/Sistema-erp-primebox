@@ -556,3 +556,35 @@ Kanban preservado mas movido pra dentro dela.
   de sucesso e o botão Cancelar trocados de `/producao` pra
   `/producao/kanban`, já que `/producao` deixou de ser uma tela de
   ações e virou a entrada por mês.
+
+## Atualização 2026-08-15 (parte 14) — agenda semanal substitui o Kanban como visão panorâmica
+
+Pedro pensa a produção por dia, não por status — a agenda semanal
+(faixa de 6 colunas, segunda a sábado) virou a visão panorâmica
+principal, no lugar do Kanban, acessível a partir de `/producao`
+("Ver semana", que substituiu o antigo botão "Ver quadro (Kanban)"
+naquela tela).
+
+- **`/producao/semana` (novo)** — 6 colunas (segunda a sábado, sem
+  domingo), navegação `?inicio=YYYY-MM-DD` (segunda-feira da semana
+  exibida; datas fora de segunda são normalizadas pro início da
+  semana correspondente). Cada coluna: dia da semana + data, bolinha
+  cinza (`#E4DFD4`) ou amarela (`#D6A537` — mesmo critério do alerta
+  do nível 1: concluída sem expedição naquele dia), total de
+  peças/clientes ou "Nada ainda" com opacidade reduzida se vazio, e
+  destaque copper (`border-brand`, borda dupla) no dia de hoje.
+  Clicar em qualquer coluna abre `/producao/{ano}/{mes}/{dia}`
+  (mesma tela "OP do dia" já existente), com ou sem OP.
+- **Estado vazio da tela "OP do dia" ganhou ação** — antes só
+  mostrava texto ("Nenhuma OP programada"); agora tem um botão
+  "Criar OP para este dia" que leva pra `/producao/nova?data=YYYY-MM-DD`
+  com a data já pré-preenchida no formulário (`OrdemAvulsaForm` ganhou
+  a prop `dataProgramadaInicial`, usada como `defaultValues.dataProgramada`
+  do react-hook-form).
+- **Kanban deixou de ter um botão de destaque na tela de mês** — o
+  Pedro pediu explicitamente que ele parasse de aparecer como "visão
+  principal ou secundária", já que a agenda semanal cobre essa
+  necessidade. Continua 100% funcional e acessível direto por
+  `/producao/kanban` e pelo botão "Ver no quadro" já existente na tela
+  "OP do dia" (nível 3) — nada foi removido do Kanban em si, só o link
+  de destaque no nível 1.

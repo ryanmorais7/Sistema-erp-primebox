@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   LayoutGrid,
   Box,
+  Plus,
 } from "lucide-react";
 import {
   iniciarProducao,
@@ -149,7 +150,17 @@ export default async function ProducaoOpDoDiaPage({ params }: PageProps) {
         />
 
         {grupos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma OP programada nesse dia.</p>
+          <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed p-6">
+            <p className="text-sm text-muted-foreground">Nenhuma OP programada para este dia.</p>
+            <Button
+              render={<Link href={`/producao/nova?data=${ano}-${mes}-${dia}`} />}
+              nativeButton={false}
+              className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
+            >
+              <Plus />
+              Criar OP para este dia
+            </Button>
+          </div>
         ) : (
           <div className="flex flex-col gap-3">
             {grupos.map((grupo) => (

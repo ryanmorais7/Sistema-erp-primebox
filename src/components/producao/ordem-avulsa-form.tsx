@@ -29,6 +29,7 @@ type OrdemAvulsaFormProps = {
   produtos: Produto[];
   clientes: Cliente[];
   medidas: Medida[];
+  dataProgramadaInicial?: string;
 };
 
 const linhaVazia = {
@@ -41,7 +42,12 @@ const linhaVazia = {
   precoUnitario: "",
 };
 
-export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaFormProps) {
+export function OrdemAvulsaForm({
+  produtos,
+  clientes,
+  medidas,
+  dataProgramadaInicial,
+}: OrdemAvulsaFormProps) {
   const router = useRouter();
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const {
@@ -52,7 +58,7 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
     formState: { errors, isSubmitting },
   } = useForm<CriarOrdemAvulsaValues>({
     resolver: zodResolver(criarOrdemAvulsaSchema),
-    defaultValues: { dataProgramada: "", linhas: [linhaVazia] },
+    defaultValues: { dataProgramada: dataProgramadaInicial ?? "", linhas: [linhaVazia] },
   });
 
   // Pedro tá acostumado com Excel e às vezes aperta Enter sem querer

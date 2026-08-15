@@ -5,7 +5,14 @@ import { PageHeader } from "@/components/layout/page-header";
 // Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
 export const dynamic = "force-dynamic";
 
-export default async function NovaOrdemAvulsaPage() {
+type PageProps = {
+  searchParams: Promise<{ data?: string }>;
+};
+
+export default async function NovaOrdemAvulsaPage({ searchParams }: PageProps) {
+  const { data } = await searchParams;
+  const dataProgramadaInicial = data && /^\d{4}-\d{2}-\d{2}$/.test(data) ? data : undefined;
+
   const [produtos, clientes, medidas] = await Promise.all([
     prisma.produto.findMany({
       where: { ativo: true },
@@ -38,7 +45,12 @@ export default async function NovaOrdemAvulsaPage() {
         &quot;Avulso&quot;), vira uma OP avulsa, fora do fluxo formal de Pedidos. Se você escolher ou
         cadastrar um cliente, essa linha vira um Pedido formal de verdade, do jeito de sempre.
       </p>
-      <OrdemAvulsaForm produtos={produtosComPrecoNumero} clientes={clientes} medidas={medidas} />
+      <OrdemAvulsaForm
+        produtos={produtosComPrecoNumero}
+        clientes={clientes}
+        medidas={medidas}
+        dataProgramadaInicial={dataProgramadaInicial}
+      />
     </div>
   );
 }

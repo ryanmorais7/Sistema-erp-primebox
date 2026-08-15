@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { List, Plus, ChevronLeft, ChevronRight, ArrowRight, LayoutGrid } from "lucide-react";
+import { List, Plus, ChevronLeft, ChevronRight, ArrowRight, CalendarRange } from "lucide-react";
 import { buscarCartoesProducao } from "@/lib/producaoCartoes";
 import { PageHeader } from "@/components/layout/page-header";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
@@ -135,9 +135,9 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
             <ChevronRight />
           </Button>
         </div>
-        <Button render={<Link href="/producao/kanban" />} nativeButton={false} variant="outline" size="sm">
-          <LayoutGrid />
-          Ver quadro (Kanban)
+        <Button render={<Link href="/producao/semana" />} nativeButton={false} variant="outline" size="sm">
+          <CalendarRange />
+          Ver semana
         </Button>
       </div>
 
