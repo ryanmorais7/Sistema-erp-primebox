@@ -4,6 +4,15 @@ import { AutoImprimir } from "@/components/pedidos/auto-imprimir";
 
 const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
+export type ItemRecibo = {
+  produtoNome: string;
+  medidaNome?: string | null;
+  tecidoCor?: string | null;
+  quantidade: number;
+  precoUnitario?: number | null;
+  observacao?: string | null;
+};
+
 type ReciboLinhaProps = {
   titulo: string;
   numeroLabel: string;
@@ -14,12 +23,12 @@ type ReciboLinhaProps = {
   clienteNome: string;
   clienteSecundaria?: string | null;
   clienteEndereco?: string | null;
-  produtoNome: string;
-  medidaNome?: string | null;
-  tecidoCor?: string | null;
-  quantidade: number;
-  precoUnitario?: number | null;
-  observacao?: string | null;
+  // Um recibo pode cobrir vários itens da mesma OP (ex: 3 produtos
+  // diferentes pro mesmo cliente) — sempre um array, mesmo quando é 1 só.
+  itens: ItemRecibo[];
+  // Observação geral do pedido (Pedido.observacoes, formal) — diferente
+  // da observação por item (avulsa), mostrada dentro de cada linha.
+  observacaoGeral?: string | null;
   representanteNome: string;
   autoImprimir: boolean;
 };
@@ -31,15 +40,17 @@ export function ReciboLinha({
   clienteNome,
   clienteSecundaria,
   clienteEndereco,
-  produtoNome,
-  medidaNome,
-  tecidoCor,
-  quantidade,
-  precoUnitario,
-  observacao,
+  itens,
+  observacaoGeral,
   representanteNome,
   autoImprimir,
 }: ReciboLinhaProps) {
+  const totalQuantidade = itens.reduce((total, item) => total + item.quantidade, 0);
+  const temPreco = itens.some((item) => item.precoUnitario != null);
+  const totalGeral = itens.reduce(
+    (total, item) => total + (item.precoUnitario ?? 0) * item.quantidade,
+    0,
+  );
   return (
     <div className="flex flex-col gap-6 print:gap-4">
       <AutoImprimir ativo={autoImprimir} />
@@ -84,30 +95,57 @@ export function ReciboLinha({
           {clienteEndereco && <p className="text-sm text-muted-foreground">{clienteEndereco}</p>}
         </div>
 
-        <div className="mt-6 grid gap-2 rounded-lg border p-4 sm:grid-cols-2">
-          <div>
-            <p className="text-xs text-muted-foreground">Produto</p>
-            <p className="font-medium">{produtoNome}</p>
-            {(medidaNome || tecidoCor) && (
-              <p className="text-sm text-muted-foreground">
-                {[medidaNome, tecidoCor].filter(Boolean).join(" · ")}
-              </p>
-            )}
-          </div>
-          <div className="sm:text-right">
-            <p className="text-xs text-muted-foreground">Quantidade</p>
-            <p className="font-medium">{quantidade}</p>
-            {precoUnitario != null && (
-              <p className="text-sm text-muted-foreground">
-                {formatadorMoeda.format(precoUnitario)}/un ·{" "}
-                {formatadorMoeda.format(precoUnitario * quantidade)}
-              </p>
-            )}
-          </div>
+        <div className="mt-6 flex flex-col gap-3 rounded-lg border p-4">
+          {itens.map((item, index) => (
+            <div
+              key={index}
+              className={
+                "flex flex-wrap items-start justify-between gap-2" +
+                (index > 0 ? " border-t pt-3" : "")
+              }
+            >
+              <div>
+                <p className="text-xs text-muted-foreground">Produto</p>
+                <p className="font-medium">{item.produtoNome}</p>
+                {(item.medidaNome || item.tecidoCor) && (
+                  <p className="text-sm text-muted-foreground">
+                    {[item.medidaNome, item.tecidoCor].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {item.observacao && (
+                  <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
+                    {item.observacao}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Quantidade</p>
+                <p className="font-medium">{item.quantidade}</p>
+                {item.precoUnitario != null && (
+                  <p className="text-sm text-muted-foreground">
+                    {formatadorMoeda.format(item.precoUnitario)}/un ·{" "}
+                    {formatadorMoeda.format(item.precoUnitario * item.quantidade)}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {itens.length > 1 && (
+            <div className="flex items-start justify-between gap-2 border-t pt-3">
+              <p className="text-sm font-medium">Total</p>
+              <div className="text-right">
+                <p className="font-medium">{totalQuantidade} peças</p>
+                {temPreco && (
+                  <p className="text-sm text-muted-foreground">{formatadorMoeda.format(totalGeral)}</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {observacao && (
-          <p className="mt-4 text-sm whitespace-pre-wrap text-muted-foreground">{observacao}</p>
+        {observacaoGeral && (
+          <p className="mt-4 text-sm whitespace-pre-wrap text-muted-foreground">{observacaoGeral}</p>
         )}
       </div>
 

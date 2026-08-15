@@ -45,3 +45,15 @@ export const editarItemPedidoSchema = z.object({
 });
 
 export type EditarItemPedidoValues = z.infer<typeof editarItemPedidoSchema>;
+
+// Edição em lote — todas as linhas (OrdemProducao) do card agrupado de
+// um mesmo Pedido, de uma vez. Cliente não entra aqui porque é do
+// Pedido inteiro, não de uma linha (mostrado só leitura no formulário).
+// Campo "itemId" (não "id") pra não colidir com a chave interna que
+// useFieldArray injeta como "id" em cada linha.
+export const editarGrupoPedidoSchema = z.object({
+  linhas: z.array(editarItemPedidoSchema.extend({ itemId: z.string() })).min(1),
+});
+
+export type LinhaGrupoPedidoValues = z.infer<typeof editarGrupoPedidoSchema>["linhas"][number];
+export type EditarGrupoPedidoValues = z.infer<typeof editarGrupoPedidoSchema>;

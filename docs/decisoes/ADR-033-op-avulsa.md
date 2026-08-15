@@ -374,6 +374,89 @@ usado na avulsa:
   avulso) sempre que a OP está em Aguardando, apontando pra rota
   certa conforme a origem.
 
+## Atualização 2026-08-15 (parte 10) — cards agrupados por OP no board
+
+O Ryan reportou que o board mostrava "um card por item" como se fosse
+um bug em relação a uma suposta versão já agrupada. Investigado antes
+de mexer em código: não existia em lugar nenhum do sistema um card
+agrupado — era um mal-entendido. Perguntei se ele queria reverter a
+decisão anterior (parte 6, "manter como está") e criar esse
+agrupamento agora; confirmado que sim.
+
+Diferente da decisão anterior (que tratava "1 card por item, espelhando
+o padrão do fluxo formal" como correto), esta reverte isso: agora o
+board agrupa por OP inteira (`OrdemAvulsa`/`Pedido`) **dentro de cada
+coluna**. Como itens da mesma OP podem estar em status diferentes (um
+já iniciado, outro ainda aguardando), a mesma OP pode aparecer como
+**dois cards, um em cada coluna** — cada um só com os itens daquele
+status. Isso evita ter que inventar um "status geral da OP" e mantém a
+semântica das colunas (uma coluna = um status) intacta.
+
+- **Card agrupado**: número da OP + badge "avulsa" (se for o caso) +
+  nome do(s) cliente(s) (junta os nomes com "·" se a OP tiver clientes
+  diferentes — só acontece se linhas de clientes diferentes foram
+  criadas na mesma submissão do formulário) + resumo "N itens · N
+  peças". Dentro, uma linha por item com seus próprios botões de
+  status (Iniciar produção/Concluir/Voltar) e, na avulsa,
+  Pago/Pendente — continuam por item de propósito, porque produtos
+  diferentes da mesma OP podem progredir em ritmos diferentes.
+- **Ações no nível da OP** (rodapé do card, não mais por item): Gerar
+  recibo, Editar (só em Aguardando) e Cancelar OP.
+- **Recibo consolidado**: `ReciboLinha` deixou de receber um produto
+  só (`produtoNome`/`quantidade`/etc.) e passou a receber `itens:
+  ItemRecibo[]` — sempre um array, mesmo com 1 item. Novas rotas
+  `/producao/recibo/avulsa-grupo/[ordemAvulsaId]` e
+  `/producao/recibo/formal-grupo/[pedidoId]` mostram todos os itens da
+  OP inteira num recibo só, com um canhoto único no final, em vez de
+  precisar imprimir um papel por produto. As rotas antigas de recibo
+  por item continuam existindo (`recibo/avulsa/[id]`,
+  `recibo/formal/[id]`), só não ficaram mais linkadas do card.
+- **Edição em lote**: `EditarGrupoAvulsaForm`/`EditarGrupoPedidoForm`
+  (rotas `/producao/avulsa/grupo/[ordemAvulsaId]/editar` e
+  `/producao/formal/grupo/[pedidoId]/editar`) editam de uma vez só
+  todas as linhas da OP que estão em "Aguardando" — mesmos campos do
+  editor de item único, sem opção de adicionar/remover linha. As
+  actions (`atualizarGrupoAvulsa`, `atualizarGrupoOrdemProducao`)
+  reaproveitam a mesma lógica de resolução de produto do editor
+  individual (extraída pra uma função `resolverProdutoAvulso`/
+  `resolverProdutoFormal` compartilhada, depois de repetir esse bloco
+  pela terceira vez). Pulam silenciosamente qualquer linha que não
+  esteja mais em "Aguardando" (pode ter mudado de status entre abrir o
+  formulário e salvar) em vez de travar o resto.
+  **Cuidado de implementação**: os campos usam `itemId` (não `id`)
+  pra identificar a linha, porque `useFieldArray` do react-hook-form
+  já injeta um `id` interno próprio em cada linha do array — nomear o
+  campo real de "id" faria colidir e perder o valor.
+- **Cancelamento em lote**: `cancelarGrupoAvulsa`/
+  `cancelarGrupoOrdemProducao` recebem uma lista de ids e chamam a
+  action de cancelar individual pra cada um (que já trava sozinha se
+  algum item tiver expedição gerada) — sem transação nova, só laço.
+
+Testado localmente: OP avulsa com 3 linhas pro mesmo cliente vira 1
+card "3 itens · 23 peças"; editar em lote e depois iniciar produção
+de 1 item divide certinho em dois cards (2 itens numa coluna, 1 na
+outra); cancelar OP no card restante apaga só aqueles itens, sem
+mexer no que já tinha mudado de coluna; mesmo fluxo testado também no
+lado formal (Pedido com 2 itens pro mesmo cliente cadastrado).
+
+## Atualização 2026-08-15 (parte 11) — pago/pendente também no formal
+
+O controle de pago/pendente (parte 5) só existia pro lado avulso, por
+decisão explícita do Ryan na época. Depois de ver "Editar" já estendido
+pros dois lados (parte 9), pediu o mesmo pro pago/pendente. Mesmo
+padrão de sempre:
+
+- **Campo `pago Boolean @default(false)` em `ItemPedido`** (migration
+  `20260815201602_adiciona_pago_item_pedido`), espelhando
+  `ItemOrdemAvulsa.pago` — mesmo racional: independente do status
+  Em carteira/Faturado do Pedido (que é sobre faturamento, não sobre o
+  dinheiro ter entrado).
+- **`alternarPagamentoPedido`** (`producao/actions.ts`) recebe o id da
+  `OrdemProducao` (mesma convenção de todas as outras ações do card
+  formal) e resolve o `ItemPedido` por trás pra atualizar.
+- Botão "Pago"/"Pendente" no card não é mais exclusivo da avulsa —
+  aparece em qualquer item, dos dois lados.
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP

@@ -16,7 +16,7 @@ const formatadorDataProgramada = new Intl.DateTimeFormat("pt-BR", {
 });
 
 type PageProps = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ pedidoId: string }>;
 };
 
 function formatarDocumento(cnpj: string | null, cpf: string | null) {
@@ -42,62 +42,63 @@ function formatarEndereco(cliente: {
   return partes.length ? partes.join(", ") : null;
 }
 
-export default async function ReciboFormalPage({ params }: PageProps) {
-  const { id } = await params;
+// Recibo com todos os itens de um Pedido formal juntos — mesmo racional
+// do recibo agrupado da OP avulsa, ver ADR-033.
+export default async function ReciboFormalGrupoPage({ params }: PageProps) {
+  const { pedidoId } = await params;
   const sessao = await verificarSessao();
 
-  // O botão "Gerar recibo" em /producao passa o id da OrdemProducao (é o
-  // identificador usado pelas outras ações do card nesse fluxo), não o
-  // do ItemPedido — busca por aqui pra não desalinhar.
-  const ordem = await prisma.ordemProducao.findUnique({
-    where: { id },
+  const pedido = await prisma.pedido.findUnique({
+    where: { id: pedidoId },
     include: {
-      itemPedido: {
-        include: {
-          produto: { include: { medida: true } },
-          pedido: { include: { cliente: true } },
-        },
-      },
+      cliente: true,
+      itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
     },
   });
 
-  if (!ordem) {
+  if (!pedido || pedido.itens.length === 0) {
     notFound();
   }
-  const item = ordem.itemPedido;
 
-  const nomeExibido = item.pedido.cliente.nomeFantasia || item.pedido.cliente.razaoSocial;
-  const documento = formatarDocumento(item.pedido.cliente.cnpj, item.pedido.cliente.cpf);
+  const nomeExibido = pedido.cliente.nomeFantasia || pedido.cliente.razaoSocial;
+  const documento = formatarDocumento(pedido.cliente.cnpj, pedido.cliente.cpf);
   const clienteSecundaria = [
-    item.pedido.cliente.nomeFantasia ? item.pedido.cliente.razaoSocial : null,
+    pedido.cliente.nomeFantasia ? pedido.cliente.razaoSocial : null,
     documento,
-    item.pedido.cliente.telefone,
+    pedido.cliente.telefone,
   ]
     .filter(Boolean)
     .join(" · ");
 
+  const dataProgramadas = [
+    ...new Set(
+      pedido.itens
+        .map((item) => item.ordemProducao?.dataProgramada?.getTime())
+        .filter((v): v is number => v != null),
+    ),
+  ];
+  const dataProgramadaComum = dataProgramadas.length === 1 ? new Date(dataProgramadas[0]) : null;
+
   return (
     <ReciboLinha
-      titulo={`Recibo · Pedido #${item.pedido.numero}`}
-      numeroLabel={`OP #${ordem.numero}`}
+      titulo={`Recibo · Pedido #${pedido.numero}`}
+      numeroLabel={`Pedido #${pedido.numero}`}
       dataFormatada={
-        ordem.dataProgramada
-          ? formatadorDataProgramada.format(ordem.dataProgramada)
-          : formatadorDataHora.format(item.pedido.createdAt)
+        dataProgramadaComum
+          ? formatadorDataProgramada.format(dataProgramadaComum)
+          : formatadorDataHora.format(pedido.createdAt)
       }
       clienteNome={nomeExibido}
       clienteSecundaria={clienteSecundaria || null}
-      clienteEndereco={formatarEndereco(item.pedido.cliente)}
-      itens={[
-        {
-          produtoNome: item.produto.nome,
-          medidaNome: item.produto.medida.nome,
-          tecidoCor: [item.produto.tecido, item.produto.cor].filter(Boolean).join(" / ") || null,
-          quantidade: item.quantidade,
-          precoUnitario: Number(item.precoUnitario),
-        },
-      ]}
-      observacaoGeral={item.pedido.observacoes}
+      clienteEndereco={formatarEndereco(pedido.cliente)}
+      itens={pedido.itens.map((item) => ({
+        produtoNome: item.produto.nome,
+        medidaNome: item.produto.medida.nome,
+        tecidoCor: [item.produto.tecido, item.produto.cor].filter(Boolean).join(" / ") || null,
+        quantidade: item.quantidade,
+        precoUnitario: Number(item.precoUnitario),
+      }))}
+      observacaoGeral={pedido.observacoes}
       representanteNome={sessao.nome}
       autoImprimir={false}
     />

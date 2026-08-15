@@ -4,13 +4,14 @@ import { prisma } from "@/lib/prisma";
 import {
   iniciarProducao,
   concluirProducao,
-  cancelarOrdemProducao,
+  cancelarGrupoOrdemProducao,
   voltarOrdemProducao,
+  alternarPagamentoPedido,
 } from "./actions";
 import {
   iniciarProducaoAvulsa,
   concluirProducaoAvulsa,
-  cancelarItemOrdemAvulsa,
+  cancelarGrupoAvulsa,
   voltarProducaoAvulsa,
   alternarPagamentoAvulsa,
 } from "./ordem-avulsa/actions";
@@ -68,12 +69,16 @@ type Cartao = {
   clienteHref: string | null;
   observacao: string;
   grupo: string;
+  // Id da OP inteira (OrdemAvulsa ou Pedido) — usado pra agrupar vários
+  // itens da mesma OP num card só no board (ver ADR-033). Diferente de
+  // `grupo` acima, que agrupa por cliente só pra alternar cor na folha.
+  grupoOpId: string;
   createdAt: Date;
   temExpedicao: boolean;
   dataProgramada: Date | null;
-  // Só faz sentido pra avulsa — Pedido formal já tem seu próprio status
-  // (Em carteira/Faturado), então esse campo fica sempre `true` (não
-  // exibido) pros cartões formais.
+  // Controle de pagamento — independente do status Em carteira/Faturado
+  // do Pedido (que é sobre faturamento, não sobre o dinheiro ter
+  // entrado). Existe pros dois lados, ver ADR-033.
   pago: boolean;
 }
 
@@ -114,10 +119,11 @@ export default async function ProducaoPage() {
     clienteHref: `/pedidos/${ordem.itemPedido.pedido.id}`,
     observacao: ordem.itemPedido.pedido.observacoes || "",
     grupo: ordem.itemPedido.pedido.clienteId,
+    grupoOpId: ordem.itemPedido.pedidoId,
     createdAt: ordem.createdAt,
     temExpedicao: false,
     dataProgramada: ordem.dataProgramada,
-    pago: true,
+    pago: ordem.itemPedido.pago,
   }));
 
   const cartoesAvulsos: Cartao[] = itensAvulsos.map((item) => ({
@@ -131,6 +137,7 @@ export default async function ProducaoPage() {
     clienteHref: item.clienteId ? `/clientes/${item.clienteId}/editar` : null,
     observacao: item.observacao || "",
     grupo: item.clienteId ?? `avulsa:${normalizar(item.clienteTexto)}`,
+    grupoOpId: item.ordemAvulsaId,
     createdAt: item.createdAt,
     temExpedicao: !!item.expedicao,
     dataProgramada: item.dataProgramada,
@@ -212,6 +219,18 @@ export default async function ProducaoPage() {
       <div className="grid gap-4 lg:grid-cols-3 print:hidden">
         {colunas.map((coluna) => {
           const cartoesDaColuna = todosCartoes.filter((cartao) => cartao.status === coluna.status);
+
+          // Agrupa por OP inteira (OrdemAvulsa/Pedido) — vários itens da
+          // mesma OP viram um card só, com uma linha por item dentro,
+          // igual o Kanban sempre deveria ter feito (ver ADR-033).
+          const gruposMap = new Map<string, Cartao[]>();
+          for (const cartao of cartoesDaColuna) {
+            const grupo = gruposMap.get(cartao.grupoOpId) ?? [];
+            grupo.push(cartao);
+            gruposMap.set(cartao.grupoOpId, grupo);
+          }
+          const grupos = [...gruposMap.values()];
+
           return (
             <div key={coluna.status} className="rounded-lg border">
               <div className="flex items-center justify-between border-b p-3">
@@ -219,185 +238,226 @@ export default async function ProducaoPage() {
                 <Badge variant="secondary">{cartoesDaColuna.length}</Badge>
               </div>
               <div className="flex flex-col gap-3 p-3">
-                {cartoesDaColuna.length === 0 ? (
+                {grupos.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhuma ordem aqui.</p>
                 ) : (
-                  cartoesDaColuna.map((cartao) => (
-                    <div key={`${cartao.origem}-${cartao.id}`} className="rounded-lg border p-3">
-                      <div className="flex items-center gap-1.5">
-                        <p className="font-mono text-xs text-muted-foreground">
-                          {cartao.numeroLabel}
+                  grupos.map((itensDoGrupo) => {
+                    const primeiro = itensDoGrupo[0];
+                    const totalPecasGrupo = itensDoGrupo.reduce(
+                      (total, cartao) => total + cartao.quantidade,
+                      0,
+                    );
+                    const clientesDistintos = [
+                      ...new Set(itensDoGrupo.map((cartao) => cartao.clienteLabel)),
+                    ];
+                    const multiplosClientes = clientesDistintos.length > 1;
+                    const clienteLabelGrupo = multiplosClientes
+                      ? clientesDistintos.join(" · ")
+                      : clientesDistintos[0];
+                    const clienteHrefGrupo = multiplosClientes ? null : primeiro.clienteHref;
+                    const idsDoGrupo = itensDoGrupo.map((cartao) => cartao.id);
+
+                    return (
+                      <div key={primeiro.grupoOpId} className="rounded-lg border p-3">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-mono text-xs text-muted-foreground">
+                            {primeiro.numeroLabel}
+                          </p>
+                          {primeiro.origem === "avulsa" && (
+                            <Badge variant="secondary" className="h-4 px-1.5 text-[0.6rem]">
+                              avulsa
+                            </Badge>
+                          )}
+                        </div>
+                        {clienteHrefGrupo ? (
+                          <Link href={clienteHrefGrupo} className="font-medium hover:underline">
+                            {clienteLabelGrupo}
+                          </Link>
+                        ) : (
+                          <p className="font-medium">{clienteLabelGrupo}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {itensDoGrupo.length} {itensDoGrupo.length === 1 ? "item" : "itens"} ·{" "}
+                          {totalPecasGrupo} peças
                         </p>
-                        {cartao.origem === "avulsa" && (
-                          <Badge variant="secondary" className="h-4 px-1.5 text-[0.6rem]">
-                            avulsa
-                          </Badge>
-                        )}
-                        {cartao.dataProgramada && (
-                          <Badge
-                            variant="outline"
-                            className="h-4 gap-1 border-brand/40 px-1.5 text-[0.6rem] text-brand"
-                          >
-                            <CalendarClock className="size-2.5" />
-                            {formatadorDataProgramada.format(cartao.dataProgramada)}
-                          </Badge>
-                        )}
-                      </div>
-                      {cartao.clienteHref ? (
-                        <Link href={cartao.clienteHref} className="font-medium hover:underline">
-                          {cartao.clienteLabel}
-                        </Link>
-                      ) : (
-                        <p className="font-medium">{cartao.clienteLabel}</p>
-                      )}
-                      <p className="text-sm text-muted-foreground">
-                        {cartao.quantidade}x {cartao.produtoTexto}
-                      </p>
 
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <Button
-                          render={
-                            <Link
-                              href={
-                                cartao.origem === "formal"
-                                  ? `/producao/recibo/formal/${cartao.id}`
-                                  : `/producao/recibo/avulsa/${cartao.id}`
-                              }
-                              target="_blank"
-                            />
-                          }
-                          nativeButton={false}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Receipt />
-                          Gerar recibo
-                        </Button>
+                        <div className="mt-2 flex flex-col gap-2">
+                          {itensDoGrupo.map((cartao) => (
+                            <div
+                              key={`${cartao.origem}-${cartao.id}`}
+                              className="rounded-md bg-muted/40 p-2"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                                <p className="text-sm">
+                                  {cartao.quantidade}x {cartao.produtoTexto}
+                                  {multiplosClientes && (
+                                    <span className="text-muted-foreground">
+                                      {" "}
+                                      · {cartao.clienteLabel}
+                                    </span>
+                                  )}
+                                </p>
+                                {cartao.dataProgramada && (
+                                  <Badge
+                                    variant="outline"
+                                    className="h-4 gap-1 border-brand/40 px-1.5 text-[0.6rem] text-brand"
+                                  >
+                                    <CalendarClock className="size-2.5" />
+                                    {formatadorDataProgramada.format(cartao.dataProgramada)}
+                                  </Badge>
+                                )}
+                              </div>
 
-                        {coluna.status === "AGUARDANDO" && (
+                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                <form
+                                  action={async () => {
+                                    "use server";
+                                    if (cartao.origem === "formal") {
+                                      await alternarPagamentoPedido(cartao.id, !cartao.pago);
+                                    } else {
+                                      await alternarPagamentoAvulsa(cartao.id, !cartao.pago);
+                                    }
+                                  }}
+                                >
+                                  <Button
+                                    type="submit"
+                                    size="xs"
+                                    className={
+                                      cartao.pago
+                                        ? "bg-positive-soft text-positive hover:bg-positive-soft/80"
+                                        : "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                                    }
+                                  >
+                                    {cartao.pago ? "Pago" : "Pendente"}
+                                  </Button>
+                                </form>
+
+                                {coluna.status === "AGUARDANDO" && (
+                                  <form
+                                    action={async () => {
+                                      "use server";
+                                      if (cartao.origem === "formal") {
+                                        await iniciarProducao(cartao.id);
+                                      } else {
+                                        await iniciarProducaoAvulsa(cartao.id);
+                                      }
+                                    }}
+                                  >
+                                    <Button type="submit" variant="outline" size="xs">
+                                      Iniciar produção
+                                      <ArrowRight />
+                                    </Button>
+                                  </form>
+                                )}
+
+                                {(coluna.status === "EM_PRODUCAO" || coluna.status === "CONCLUIDO") &&
+                                  !(cartao.origem === "avulsa" && cartao.temExpedicao) && (
+                                    <form
+                                      action={async () => {
+                                        "use server";
+                                        if (cartao.origem === "formal") {
+                                          await voltarOrdemProducao(cartao.id);
+                                        } else {
+                                          await voltarProducaoAvulsa(cartao.id);
+                                        }
+                                      }}
+                                    >
+                                      <Button type="submit" variant="outline" size="xs">
+                                        <ArrowLeft />
+                                        Voltar
+                                      </Button>
+                                    </form>
+                                  )}
+
+                                {coluna.status === "EM_PRODUCAO" && (
+                                  <form
+                                    action={async () => {
+                                      "use server";
+                                      if (cartao.origem === "formal") {
+                                        await concluirProducao(cartao.id);
+                                      } else {
+                                        await concluirProducaoAvulsa(cartao.id);
+                                      }
+                                    }}
+                                  >
+                                    <Button type="submit" variant="outline" size="xs">
+                                      Concluir
+                                      <ArrowRight />
+                                    </Button>
+                                  </form>
+                                )}
+
+                                {coluna.status === "CONCLUIDO" &&
+                                  cartao.origem === "avulsa" &&
+                                  !cartao.temExpedicao && (
+                                    <form
+                                      action={async () => {
+                                        "use server";
+                                        await gerarExpedicaoAvulsa(cartao.id);
+                                      }}
+                                    >
+                                      <Button
+                                        type="submit"
+                                        size="xs"
+                                        className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
+                                      >
+                                        <Truck />
+                                        Gerar expedição
+                                      </Button>
+                                    </form>
+                                  )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
                           <Button
                             render={
                               <Link
                                 href={
-                                  cartao.origem === "formal"
-                                    ? `/producao/formal/${cartao.id}/editar`
-                                    : `/producao/avulsa/${cartao.id}/editar`
+                                  primeiro.origem === "formal"
+                                    ? `/producao/recibo/formal-grupo/${primeiro.grupoOpId}`
+                                    : `/producao/recibo/avulsa-grupo/${primeiro.grupoOpId}`
                                 }
+                                target="_blank"
                               />
                             }
                             nativeButton={false}
                             variant="outline"
                             size="sm"
                           >
-                            <Pencil />
-                            Editar
+                            <Receipt />
+                            Gerar recibo
                           </Button>
-                        )}
 
-                        {cartao.origem === "avulsa" && (
-                          <form
-                            action={async () => {
-                              "use server";
-                              await alternarPagamentoAvulsa(cartao.id, !cartao.pago);
-                            }}
-                          >
+                          {coluna.status === "AGUARDANDO" && (
                             <Button
-                              type="submit"
+                              render={
+                                <Link
+                                  href={
+                                    primeiro.origem === "formal"
+                                      ? `/producao/formal/grupo/${primeiro.grupoOpId}/editar`
+                                      : `/producao/avulsa/grupo/${primeiro.grupoOpId}/editar`
+                                  }
+                                />
+                              }
+                              nativeButton={false}
+                              variant="outline"
                               size="sm"
-                              className={
-                                cartao.pago
-                                  ? "bg-positive-soft text-positive hover:bg-positive-soft/80"
-                                  : "bg-destructive/10 text-destructive hover:bg-destructive/20"
-                              }
                             >
-                              {cartao.pago ? "Pago" : "Pendente"}
+                              <Pencil />
+                              Editar
                             </Button>
-                          </form>
-                        )}
-
-                        {coluna.status === "AGUARDANDO" && (
-                          <form
-                            action={async () => {
-                              "use server";
-                              if (cartao.origem === "formal") {
-                                await iniciarProducao(cartao.id);
-                              } else {
-                                await iniciarProducaoAvulsa(cartao.id);
-                              }
-                            }}
-                          >
-                            <Button type="submit" variant="outline" size="sm">
-                              Iniciar produção
-                              <ArrowRight />
-                            </Button>
-                          </form>
-                        )}
-
-                        {(coluna.status === "EM_PRODUCAO" || coluna.status === "CONCLUIDO") &&
-                          !(cartao.origem === "avulsa" && cartao.temExpedicao) && (
-                            <form
-                              action={async () => {
-                                "use server";
-                                if (cartao.origem === "formal") {
-                                  await voltarOrdemProducao(cartao.id);
-                                } else {
-                                  await voltarProducaoAvulsa(cartao.id);
-                                }
-                              }}
-                            >
-                              <Button type="submit" variant="outline" size="sm">
-                                <ArrowLeft />
-                                Voltar
-                              </Button>
-                            </form>
                           )}
 
-                        {coluna.status === "EM_PRODUCAO" && (
                           <form
                             action={async () => {
                               "use server";
-                              if (cartao.origem === "formal") {
-                                await concluirProducao(cartao.id);
+                              if (primeiro.origem === "formal") {
+                                await cancelarGrupoOrdemProducao(idsDoGrupo);
                               } else {
-                                await concluirProducaoAvulsa(cartao.id);
-                              }
-                            }}
-                          >
-                            <Button type="submit" variant="outline" size="sm">
-                              Concluir
-                              <ArrowRight />
-                            </Button>
-                          </form>
-                        )}
-
-                        {coluna.status === "CONCLUIDO" &&
-                          cartao.origem === "avulsa" &&
-                          !cartao.temExpedicao && (
-                            <form
-                              action={async () => {
-                                "use server";
-                                await gerarExpedicaoAvulsa(cartao.id);
-                              }}
-                            >
-                              <Button
-                                type="submit"
-                                size="sm"
-                                className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
-                              >
-                                <Truck />
-                                Gerar expedição
-                              </Button>
-                            </form>
-                          )}
-
-                        {!(cartao.origem === "avulsa" && cartao.temExpedicao) && (
-                          <form
-                            action={async () => {
-                              "use server";
-                              if (cartao.origem === "formal") {
-                                await cancelarOrdemProducao(cartao.id);
-                              } else {
-                                await cancelarItemOrdemAvulsa(cartao.id);
+                                await cancelarGrupoAvulsa(idsDoGrupo);
                               }
                             }}
                           >
@@ -406,10 +466,10 @@ export default async function ProducaoPage() {
                               {coluna.status === "CONCLUIDO" ? "Cancelar OP (estorna estoque)" : "Cancelar OP"}
                             </Button>
                           </form>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

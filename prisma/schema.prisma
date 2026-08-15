@@ -127,6 +127,11 @@ model ItemPedido {
   // (ver ADR de conexão Estoque + Pedidos). Mutuamente exclusivo com
   // ordemProducao na prática, mas não modelado como tal no banco.
   atendidoEstoque Boolean @default(false)
+  // Mesmo campo e mesmo racional do ItemOrdemAvulsa.pago (ver ADR-033) —
+  // controle simples e binário de pagamento, independente do status
+  // Em carteira/Faturado do Pedido (que é sobre faturamento, não sobre
+  // o dinheiro ter entrado de fato). Estendido do avulso pro formal.
+  pago Boolean @default(false)
 
   ordemProducao OrdemProducao?
 }

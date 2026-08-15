@@ -44,6 +44,26 @@ export const editarItemAvulsaSchema = linhaOrdemAvulsaSchema.extend({
 
 export type EditarItemAvulsaValues = z.infer<typeof editarItemAvulsaSchema>;
 
+// Edição em lote — todos os itens do card agrupado (mesma OP, mesmo
+// status) de uma vez só. Cada linha carrega seu próprio itemId pra
+// saber qual ItemOrdemAvulsa atualizar (nome "itemId", não "id", pra
+// não colidir com a chave interna que useFieldArray já injeta como
+// "id" em cada linha); não dá pra adicionar/remover linha aqui, só
+// editar as que já existem.
+export const editarGrupoAvulsaSchema = z.object({
+  linhas: z
+    .array(
+      linhaOrdemAvulsaSchema.extend({
+        itemId: z.string(),
+        dataProgramada: z.string().trim().optional(),
+      }),
+    )
+    .min(1),
+});
+
+export type LinhaGrupoAvulsaValues = z.infer<typeof editarGrupoAvulsaSchema>["linhas"][number];
+export type EditarGrupoAvulsaValues = z.infer<typeof editarGrupoAvulsaSchema>;
+
 export const clienteRapidoSchema = z.object({
   razaoSocial: z.string().trim().min(1, "Informe o nome"),
   telefone: z

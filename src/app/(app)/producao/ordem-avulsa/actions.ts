@@ -10,11 +10,13 @@ import {
   clienteRapidoSchema,
   produtoRapidoSchema,
   editarItemAvulsaSchema,
+  editarGrupoAvulsaSchema,
   type CriarOrdemAvulsaValues,
   type ClienteRapidoValues,
   type ProdutoRapidoValues,
   type LinhaOrdemAvulsaValues,
   type EditarItemAvulsaValues,
+  type EditarGrupoAvulsaValues,
 } from "@/lib/validations/ordemAvulsa";
 
 type ResultadoAcao = { success: true } | { success: false; error: string };
@@ -214,12 +216,47 @@ export async function criarOrdemAvulsa(
   return { success: true };
 }
 
+// Resolve o produto de uma linha (id, nome exato, ou cadastra um novo a
+// partir do texto digitado) — mesma lógica usada por criarOrdemAvulsa,
+// atualizarItemOrdemAvulsa e atualizarGrupoAvulsa, extraída aqui pra não
+// repetir pela terceira vez.
+async function resolverProdutoAvulso(
+  produtoTexto: string,
+  produtoId: string | undefined,
+  precoUnitario: string | undefined,
+): Promise<{ id: string } | { erro: string }> {
+  const nomeNormalizado = normalizar(produtoTexto);
+  let produto = produtoId ? await prisma.produto.findUnique({ where: { id: produtoId } }) : null;
+  if (!produto) {
+    produto = await prisma.produto.findFirst({
+      where: { ativo: true, nome: { equals: nomeNormalizado, mode: "insensitive" } },
+    });
+  }
+  if (produto) {
+    return { id: produto.id };
+  }
+
+  const medidas = await prisma.medida.findMany({ where: { ativo: true } });
+  const medidaId = inferirMedidaId(produtoTexto, medidas) ?? medidas[0]?.id;
+  if (!medidaId) {
+    return { erro: "Não há nenhuma medida cadastrada no sistema pra usar como padrão." };
+  }
+  const criado = await prisma.produto.create({
+    data: {
+      nome: formatarNomeBonito(produtoTexto),
+      tipo: "BASE",
+      medidaId,
+      preco: precoUnitario ? precoParaNumero(precoUnitario) : 0,
+      custo: 0,
+    },
+  });
+  return { id: criado.id };
+}
+
 // Edita uma OP avulsa já existente. Só permitido em AGUARDANDO — depois
 // que a produção inicia (ou pior, conclui e dá baixa no estoque), mudar
 // produto/quantidade deixaria os dados inconsistentes, então trava
-// (mesmo espírito da trava de cancelamento pós-expedição). Resolve o
-// produto igual a criarOrdemAvulsa: por id, por nome exato, ou cadastra
-// um produto novo a partir do texto digitado.
+// (mesmo espírito da trava de cancelamento pós-expedição).
 export async function atualizarItemOrdemAvulsa(
   id: string,
   dadosBrutos: EditarItemAvulsaValues,
@@ -240,28 +277,9 @@ export async function atualizarItemOrdemAvulsa(
   const { produtoTexto, produtoId, quantidade, clienteTexto, clienteId, observacao, precoUnitario, dataProgramada } =
     resultado.data;
 
-  const nomeNormalizado = normalizar(produtoTexto);
-  let produto = produtoId ? await prisma.produto.findUnique({ where: { id: produtoId } }) : null;
-  if (!produto) {
-    produto = await prisma.produto.findFirst({
-      where: { ativo: true, nome: { equals: nomeNormalizado, mode: "insensitive" } },
-    });
-  }
-  if (!produto) {
-    const medidas = await prisma.medida.findMany({ where: { ativo: true } });
-    const medidaId = inferirMedidaId(produtoTexto, medidas) ?? medidas[0]?.id;
-    if (!medidaId) {
-      return { success: false, error: "Não há nenhuma medida cadastrada no sistema pra usar como padrão." };
-    }
-    produto = await prisma.produto.create({
-      data: {
-        nome: formatarNomeBonito(produtoTexto),
-        tipo: "BASE",
-        medidaId,
-        preco: precoUnitario ? precoParaNumero(precoUnitario) : 0,
-        custo: 0,
-      },
-    });
+  const produto = await resolverProdutoAvulso(produtoTexto, produtoId, precoUnitario);
+  if ("erro" in produto) {
+    return { success: false, error: produto.erro };
   }
 
   await prisma.itemOrdemAvulsa.update({
@@ -276,6 +294,46 @@ export async function atualizarItemOrdemAvulsa(
       dataProgramada: dataProgramada ? new Date(`${dataProgramada}T00:00:00`) : null,
     },
   });
+
+  revalidatePath("/producao");
+  return { success: true };
+}
+
+// Mesma edição, em lote — todos os itens do card agrupado de uma vez.
+// Cada linha traz seu próprio id; qualquer uma fora de "Aguardando" é
+// pulada (não trava as outras, só não aplica a mudança nela).
+export async function atualizarGrupoAvulsa(
+  dadosBrutos: EditarGrupoAvulsaValues,
+): Promise<ResultadoAcao> {
+  const resultado = editarGrupoAvulsaSchema.safeParse(dadosBrutos);
+  if (!resultado.success) {
+    return { success: false, error: "Verifique os campos destacados." };
+  }
+
+  for (const linha of resultado.data.linhas) {
+    const item = await prisma.itemOrdemAvulsa.findUnique({ where: { id: linha.itemId } });
+    if (!item || item.status !== "AGUARDANDO") {
+      continue;
+    }
+
+    const produto = await resolverProdutoAvulso(linha.produtoTexto, linha.produtoId, linha.precoUnitario);
+    if ("erro" in produto) {
+      return { success: false, error: produto.erro };
+    }
+
+    await prisma.itemOrdemAvulsa.update({
+      where: { id: linha.itemId },
+      data: {
+        produtoId: produto.id,
+        quantidade: linha.quantidade,
+        clienteTexto: linha.clienteTexto,
+        clienteId: linha.clienteId || null,
+        observacao: linha.observacao || null,
+        precoUnitario: linha.precoUnitario ? precoParaNumero(linha.precoUnitario) : null,
+        dataProgramada: linha.dataProgramada ? new Date(`${linha.dataProgramada}T00:00:00`) : null,
+      },
+    });
+  }
 
   revalidatePath("/producao");
   return { success: true };
@@ -373,4 +431,14 @@ export async function cancelarItemOrdemAvulsa(id: string) {
   await prisma.itemOrdemAvulsa.delete({ where: { id } });
   revalidatePath("/producao");
   revalidatePath("/estoque");
+}
+
+// Cancela de uma vez todos os itens do card agrupado (mesma OP, mesmo
+// status) — mesma lógica de cancelarItemOrdemAvulsa, só que em lote,
+// pra não precisar cancelar linha por linha quando quer descartar a OP
+// inteira. Itens com expedição são pulados (não travam os outros).
+export async function cancelarGrupoAvulsa(ids: string[]) {
+  for (const id of ids) {
+    await cancelarItemOrdemAvulsa(id);
+  }
 }
