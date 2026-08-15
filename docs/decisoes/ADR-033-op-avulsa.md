@@ -492,3 +492,67 @@ linhas eram a mesma unidade de produção. Corrigido:
 - `/expedicao` agora trata `pedido` como opcional e usa
   `itemOrdemAvulsa` como origem alternativa — telas que assumiam
   `expedicao.pedido` sempre existir foram ajustadas.
+
+## Atualização 2026-08-15 (parte 13) — navegação Mês → Dia → OP do dia vira a tela principal
+
+O Kanban (Aguardando/Em produção/Concluído) era a única forma de ver a
+produção. Pedro pediu uma entrada por calendário — mês → dia → OP do
+dia — com ações por linha (Recibo, Expedição) direto na tela do dia, e
+que essa navegação virasse a rota principal de `/producao`, com o
+Kanban preservado mas movido pra dentro dela.
+
+- **`src/lib/producaoCartoes.ts` (novo)** — extrai a busca+mapeamento
+  de `Cartao[]` (que antes vivia só dentro do `page.tsx` do board) pra
+  um módulo compartilhado. Motivo direto: as 4 telas novas (mês, dias
+  do mês, OP do dia, Kanban) precisam do mesmo formato de dado. De
+  quebra, corrigiu um bug real: `temExpedicao` dos cards formais
+  estava hardcoded em `false` (o include do Prisma não trazia
+  `pedido.expedicao`) — agora traz, e o alerta de "concluída esperando
+  expedição" fica correto pros dois lados (formal e avulsa).
+- **Cada cartão ganhou `diaChave`** — `dataProgramada` (quando
+  setada) ou, na falta dela, `createdAt` convertido pro fuso de São
+  Paulo (`Intl.DateTimeFormat("en-CA", {timeZone: "America/Sao_Paulo"})`,
+  que já devolve `"YYYY-MM-DD"`). Garante que todo item sempre cai em
+  exatamente um dia na navegação nova, mesmo os criados sem data
+  programada explícita.
+- **Kanban movido pra `/producao/kanban`**, conteúdo/lógica interna
+  intocados (nenhum botão, drag-and-drop — que não existe em lugar
+  nenhum do código, todas as transições de status são botão/form — ou
+  fluxo removido). Só ganhou um botão novo "Ver por mês" voltando pra
+  `/producao`, e o `PageHeader` virou "Produção · Quadro".
+- **`/producao` (nível 1, mês)** — barra de ação (Ver fila / Criar OP
+  / Imprimir), alerta branco só para OPs **concluídas sem expedição**
+  (sem variante vermelha/atrasada — Pedro não trabalha com esse
+  conceito no dia a dia), card escuro "Hoje" com resumo do dia e atalho
+  direto pra `/producao/{ano}/{mes}/{dia}` de hoje (pula a navegação
+  por mês/dia), e grade dos 12 meses do ano com contagem de OPs/peças
+  (`?ano=` pra navegar entre anos).
+- **`/producao/[ano]/[mes]` (nível 2, dias)** — lista os dias do mês
+  que têm OP, cada um com resumo (OPs/clientes/peças), linkando pro
+  dia.
+- **`/producao/[ano]/[mes]/[dia]` (nível 3, OP do dia)** — cabeçalho
+  do grupo de OP ganha fundo amarelo (`#FBF2D3`) + badge "✓ Concluída"
+  (`#F7E5B8`/`#8A6A16`) quando todos os itens da OP estão concluídos;
+  Editar some do cabeçalho quando nenhum item está mais aguardando.
+  Tabela de itens ganhou colunas **Recibo** (ícone, rota já existente
+  de recibo por item) e **Expedição** (ícone caminhão `#0F6E56` — gera
+  expedição daquele item específico; mostra "Já gerada" depois).
+- **Expedição por linha reaproveita as actions existentes**
+  (`gerarExpedicao`/`gerarExpedicaoAvulsa`), sem mudança de schema —
+  ambas já criam um registro `Expedicao` novo via FK opcional+única
+  (`pedidoId`/`itemOrdemAvulsaId`), sem tocar no registro original de
+  Produção. Nuance: do lado formal, expedição é por **Pedido inteiro**
+  (não por linha) — `gerarExpedicao` foi chamado com o `grupoOpId` do
+  cartão, que é o `pedidoId`; do lado avulsa é por item mesmo.
+- **Separação tela/impressão é real, no DOM, não só CSS de esconder
+  coluna**: a tela do dia tem dois blocos JSX distintos —
+  `print:hidden` (tudo interativo: Recibo/Expedição/Editar/Cancelar/
+  badge) e `hidden print:block` (só Quant./Produto/Cliente/Observação/
+  Feito, agrupado por OP, igual a folha antiga). Testado com
+  `page.emulateMedia({media: "print"})`: nenhum elemento interativo
+  aparece no modo impressão, e a folha impressa continua idêntica à
+  de antes.
+- Formulários de criar/editar OP (avulsa e formal) tiveram o redirect
+  de sucesso e o botão Cancelar trocados de `/producao` pra
+  `/producao/kanban`, já que `/producao` deixou de ser uma tela de
+  ações e virou a entrada por mês.

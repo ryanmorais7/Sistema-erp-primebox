@@ -59,7 +59,7 @@ export function EditarItemPedidoForm({
       setErroGeral(resultado.error);
       return;
     }
-    router.push("/producao");
+    router.push("/producao/kanban");
     router.refresh();
   }
 
@@ -183,7 +183,7 @@ export function EditarItemPedidoForm({
       {erroGeral && <p className="text-sm text-destructive">{erroGeral}</p>}
 
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={() => router.push("/producao")}>
+        <Button type="button" variant="outline" onClick={() => router.push("/producao/kanban")}>
           Cancelar
         </Button>
         <Button
