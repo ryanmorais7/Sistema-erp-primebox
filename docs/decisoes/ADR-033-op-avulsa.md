@@ -308,6 +308,39 @@ Não existia nenhuma forma de corrigir uma OP avulsa depois de criada
   edição de pedidos cuja OP já foi criada (o que é sempre o caso nesse
   fluxo); ajustar isso é uma decisão separada, fora do escopo daqui.
 
+## Atualização 2026-08-15 (parte 8) — esclarecimento e seleção múltipla
+
+O Ryan reportou como "bug crítico" o board mostrando "OP Avulsa #20"
+repetida em cards separados com status/cancelar individuais, achando
+que o schema estava criando OPs raiz duplicadas em vez de uma só com
+vários itens. Investigado antes de mexer em qualquer código: **não é
+bug** — `OrdemAvulsa` já tem `itens ItemOrdemAvulsa[]`, e
+`criarOrdemAvulsa` já agrupa todas as linhas avulsas de uma submissão
+numa única chamada `tx.ordemAvulsa.create({ itens: { create: [...] } })`.
+O "OP Avulsa #20" repetido é o mesmo número, do mesmo registro pai — o
+board só mostra **um card por item**, não por OP, de propósito, espelhando
+o mesmo padrão que o fluxo formal já usa (`OrdemProducao` por
+`ItemPedido`, não por `Pedido`). Confirmado com o Ryan: manter como
+está.
+
+O problema real (confirmado com um cenário reproduzido: duas OPs
+avulsas diferentes, clientes diferentes, ambas programadas pro mesmo
+dia) era a impressão **não conseguir juntar linhas do mesmo dia vindas
+de OPs diferentes** — só dava pra imprimir uma linha por vez ou a folha
+inteira. Resolvido:
+
+- **`FolhaProducao` trocou de seleção única pra seleção múltipla**:
+  clicar numa linha agora adiciona/remove ela de um `Set` (não
+  substitui uma seleção anterior). Cabeçalho mostra a data programada
+  quando todas as linhas selecionadas (ou, sem seleção, todas as
+  linhas pendentes) compartilham a mesma data; senão cai pro "Impresso
+  em hoje", igual antes.
+- **Atalho "Selecionar dia DD/MM"**: um botão por data distinta
+  presente na folha, que marca de uma vez todas as linhas daquele dia
+  — independente de quantas OPs/clientes diferentes elas vieram —,
+  exatamente o caso de uso que faltava. "Limpar seleção" some com tudo.
+- Total de peças exibido passa a refletir a seleção quando há uma.
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP

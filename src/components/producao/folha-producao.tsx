@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Box } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const formatadorData = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
@@ -37,23 +38,56 @@ const corGrupoClasses: Record<string, string> = {
 };
 
 export function FolhaProducao({ linhas, totalPecas, fonteFolha }: FolhaProducaoProps) {
-  const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
-  const linhaSelecionada = linhas.find((linha) => linha.id === selecionadoId) ?? null;
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const linhasSelecionadas = linhas.filter((linha) => selecionados.has(linha.id));
+  const temSelecao = selecionados.size > 0;
 
   // Sem seleção: se todas as linhas pendentes tiverem a mesma data
   // programada, usa ela; senão cai pro "Impresso em hoje" (comportamento
-  // antigo). Com uma linha selecionada, a data mostrada é sempre a dela
-  // — clicar numa OP do dia 19 já troca o cabeçalho pra 19, sem precisar
-  // que todo o resto da folha compartilhe a mesma data.
-  const datasDistintas = new Set(linhas.map((linha) => linha.dataProgramadaIso).filter(Boolean));
-  const dataProgramadaGeral = datasDistintas.size === 1 ? [...datasDistintas][0] : null;
-  const dataProgramadaExibida = linhaSelecionada
-    ? linhaSelecionada.dataProgramadaIso
-    : dataProgramadaGeral;
-
-  function selecionar(id: string) {
-    setSelecionadoId((atual) => (atual === id ? null : id));
+  // antigo). Com seleção, a data mostrada é a das linhas selecionadas —
+  // só quando todas compartilham a mesma; misturando datas diferentes
+  // na seleção também cai pro "Impresso em hoje".
+  function dataComumOuNula(conjunto: LinhaFolha[]): string | null {
+    const distintas = new Set(conjunto.map((linha) => linha.dataProgramadaIso).filter(Boolean));
+    return distintas.size === 1 ? [...distintas][0]! : null;
   }
+  const dataProgramadaExibida = temSelecao
+    ? dataComumOuNula(linhasSelecionadas)
+    : dataComumOuNula(linhas);
+
+  // Datas distintas presentes na folha (pra oferecer um atalho "selecionar
+  // dia X" — sem isso, juntar todas as linhas de um mesmo dia que vieram
+  // de OPs/clientes diferentes exigiria clicar linha por linha).
+  const datasNaFolha = [
+    ...new Set(
+      linhas.map((linha) => linha.dataProgramadaIso).filter((v): v is string => v != null),
+    ),
+  ].sort();
+
+  function alternarLinha(id: string) {
+    setSelecionados((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(id)) {
+        novo.delete(id);
+      } else {
+        novo.add(id);
+      }
+      return novo;
+    });
+  }
+
+  function selecionarDia(dataIso: string) {
+    const idsDoDia = linhas.filter((linha) => linha.dataProgramadaIso === dataIso).map((linha) => linha.id);
+    setSelecionados(new Set(idsDoDia));
+  }
+
+  function limparSelecao() {
+    setSelecionados(new Set());
+  }
+
+  const totalPecasExibido = temSelecao
+    ? linhasSelecionadas.reduce((total, linha) => total + linha.quantidade, 0)
+    : totalPecas;
 
   return (
     <div className="rounded-lg border p-6 print:border-none print:p-0">
@@ -95,9 +129,28 @@ export function FolhaProducao({ linhas, totalPecas, fonteFolha }: FolhaProducaoP
         ) : (
           <>
             {linhas.length > 1 && (
-              <p className="mb-2 text-xs text-muted-foreground print:hidden">
-                Clique numa linha pra imprimir só ela (clique de novo pra voltar a imprimir todas).
-              </p>
+              <div className="mb-2 flex flex-wrap items-center gap-2 print:hidden">
+                <p className="text-xs text-muted-foreground">
+                  Clique numa ou mais linhas pra imprimir só elas.
+                </p>
+                {datasNaFolha.length > 1 &&
+                  datasNaFolha.map((dataIso) => (
+                    <Button
+                      key={dataIso}
+                      type="button"
+                      variant="outline"
+                      size="xs"
+                      onClick={() => selecionarDia(dataIso)}
+                    >
+                      Selecionar dia {formatadorDataProgramada.format(new Date(dataIso))}
+                    </Button>
+                  ))}
+                {temSelecao && (
+                  <Button type="button" variant="outline" size="xs" onClick={limparSelecao}>
+                    Limpar seleção ({selecionados.size})
+                  </Button>
+                )}
+              </div>
             )}
             <Table>
               <TableHeader>
@@ -111,12 +164,12 @@ export function FolhaProducao({ linhas, totalPecas, fonteFolha }: FolhaProducaoP
               </TableHeader>
               <TableBody>
                 {linhas.map((linha) => {
-                  const estaSelecionada = linha.id === selecionadoId;
-                  const escondidaNaImpressao = selecionadoId != null && !estaSelecionada;
+                  const estaSelecionada = selecionados.has(linha.id);
+                  const escondidaNaImpressao = temSelecao && !estaSelecionada;
                   return (
                     <TableRow
                       key={linha.id}
-                      onClick={() => selecionar(linha.id)}
+                      onClick={() => alternarLinha(linha.id)}
                       className={cn(
                         corGrupoClasses[linha.corGrupo],
                         "cursor-pointer print:cursor-auto",
@@ -144,11 +197,9 @@ export function FolhaProducao({ linhas, totalPecas, fonteFolha }: FolhaProducaoP
 
       {linhas.length > 0 && (
         <div className="mt-4 flex items-center gap-3 border-t pt-4">
-          <p className="text-2xl font-bold">
-            {linhaSelecionada ? linhaSelecionada.quantidade : totalPecas}
-          </p>
+          <p className="text-2xl font-bold">{totalPecasExibido}</p>
           <p className="text-sm text-muted-foreground">
-            {linhaSelecionada ? "Peças nesta OP" : "Total de peças nesta OP"}
+            {temSelecao ? "Peças selecionadas" : "Total de peças nesta OP"}
           </p>
         </div>
       )}

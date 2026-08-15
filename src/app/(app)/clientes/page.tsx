@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { ClipboardList, Check, X } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { alternarAtivoCliente, excluirCliente } from "./actions";
+import { excluirCliente } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { BotaoExcluir } from "@/components/ui/botao-excluir";
+import { BadgeStatusClicavel } from "@/components/clientes/badge-status-clicavel";
 import {
   Table,
   TableBody,
@@ -106,71 +105,59 @@ export default async function ClientesPage({ searchParams }: PageProps) {
         </p>
       ) : (
         <div className="rounded-lg border">
-          <Table>
+          <Table className="table-fixed text-xs">
             <TableHeader>
               <TableRow>
-                <TableHead>Razão social</TableHead>
-                <TableHead>Documento</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Bairro</TableHead>
-                <TableHead>Cidade/UF</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="w-[25%] px-2 py-1.5">Razão social</TableHead>
+                <TableHead className="w-[15%] px-2 py-1.5">Documento</TableHead>
+                <TableHead className="w-[12%] px-2 py-1.5">Telefone</TableHead>
+                <TableHead className="w-[12%] px-2 py-1.5">Bairro</TableHead>
+                <TableHead className="w-[13%] px-2 py-1.5">Cidade/UF</TableHead>
+                <TableHead className="w-[9%] px-2 py-1.5">Status</TableHead>
+                <TableHead className="w-[14%] px-2 py-1.5 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {clientes.map((cliente) => (
                 <TableRow key={cliente.id}>
-                  <TableCell className="font-medium">
+                  <TableCell className="px-2 py-1.5 font-medium whitespace-normal break-words">
                     <Link href={`/clientes/${cliente.id}/editar`} className="hover:underline">
                       {cliente.nomeFantasia || cliente.razaoSocial}
                     </Link>
                   </TableCell>
-                  <TableCell>{formatarDocumento(cliente.cnpj, cliente.cpf)}</TableCell>
-                  <TableCell>{cliente.telefone}</TableCell>
-                  <TableCell>{cliente.bairro || "—"}</TableCell>
-                  <TableCell>
+                  <TableCell className="px-2 py-1.5 whitespace-normal break-words">
+                    {formatarDocumento(cliente.cnpj, cliente.cpf)}
+                  </TableCell>
+                  <TableCell className="px-2 py-1.5 whitespace-normal break-words">
+                    {cliente.telefone}
+                  </TableCell>
+                  <TableCell className="px-2 py-1.5 whitespace-normal break-words">
+                    {cliente.bairro || "—"}
+                  </TableCell>
+                  <TableCell className="px-2 py-1.5 whitespace-normal break-words">
                     {cliente.cidade ? `${cliente.cidade}/${cliente.estado ?? ""}` : "—"}
                   </TableCell>
-                  <TableCell>
-                    {cliente.ativo ? (
-                      <Badge className="bg-positive-soft text-positive">Ativo</Badge>
-                    ) : (
-                      <Badge variant="secondary">Inativo</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="flex justify-end gap-2">
-                    <Button
-                      render={<Link href={`/relatorios/clientes?clienteId=${cliente.id}`} />}
-                      nativeButton={false}
-                      variant="outline"
-                      size="icon-sm"
-                      aria-label="Ver pedidos do cliente"
-                      title="Ver pedidos"
-                    >
-                      <ClipboardList />
-                    </Button>
-                    <form
-                      action={async () => {
-                        "use server";
-                        await alternarAtivoCliente(cliente.id, !cliente.ativo);
-                      }}
-                    >
-                      <Button
-                        type="submit"
-                        variant="outline"
-                        size="icon-sm"
-                        aria-label={cliente.ativo ? "Desativar cliente" : "Ativar cliente"}
-                        title={cliente.ativo ? "Desativar" : "Ativar"}
-                      >
-                        {cliente.ativo ? <X /> : <Check />}
-                      </Button>
-                    </form>
-                    <BotaoExcluir
-                      acao={excluirCliente.bind(null, cliente.id)}
-                      confirmacao={`Excluir "${cliente.nomeFantasia || cliente.razaoSocial}" permanentemente? Essa ação não pode ser desfeita.`}
-                      label="Excluir cliente"
+                  <TableCell className="px-2 py-1.5">
+                    <BadgeStatusClicavel
+                      clienteId={cliente.id}
+                      nome={cliente.nomeFantasia || cliente.razaoSocial}
+                      ativo={cliente.ativo}
                     />
+                  </TableCell>
+                  <TableCell className="px-2 py-1.5">
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        href={`/relatorios/clientes?clienteId=${cliente.id}`}
+                        className="font-medium text-[#C9622B] hover:underline"
+                      >
+                        Relatório
+                      </Link>
+                      <BotaoExcluir
+                        acao={excluirCliente.bind(null, cliente.id)}
+                        confirmacao={`Excluir "${cliente.nomeFantasia || cliente.razaoSocial}" permanentemente? Essa ação não pode ser desfeita.`}
+                        label="Excluir cliente"
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
