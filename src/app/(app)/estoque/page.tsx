@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PackagePlus, PackageMinus, Pencil, X, ShoppingCart, PackageX } from "lucide-react";
+import { PackagePlus, PackageMinus, X, ShoppingCart, PackageX } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoMateriaPrima } from "./actions";
 import { alternarAtivoProduto } from "@/app/(app)/produtos/actions";
@@ -123,7 +123,11 @@ export default async function EstoquePage() {
                     const minimo = Number(produto.estoqueMinimo);
                     return (
                       <TableRow key={produto.id}>
-                        <TableCell className="font-medium">{produto.nome}</TableCell>
+                        <TableCell className="font-medium">
+                          <Link href={`/produtos/${produto.id}/editar`} className="hover:underline">
+                            {produto.nome}
+                          </Link>
+                        </TableCell>
                         <TableCell className="text-right">{saldo}</TableCell>
                         <TableCell className="text-right text-muted-foreground">
                           {minimo}
@@ -210,7 +214,12 @@ export default async function EstoquePage() {
                         className={baixo ? "bg-destructive/5 hover:bg-destructive/10" : undefined}
                       >
                         <TableCell className="font-medium">
-                          {materiaPrima.nome}
+                          <Link
+                            href={`/estoque/materia-prima/${materiaPrima.id}/editar`}
+                            className="hover:underline"
+                          >
+                            {materiaPrima.nome}
+                          </Link>
                           <span className="block text-xs text-muted-foreground">
                             unidade: {materiaPrima.unidade}
                           </span>
@@ -243,18 +252,6 @@ export default async function EstoquePage() {
                           <BotoesMovimento
                             hrefBase={`/estoque/movimentar/materia-prima/${materiaPrima.id}`}
                           />
-                          <Button
-                            render={
-                              <Link href={`/estoque/materia-prima/${materiaPrima.id}/editar`} />
-                            }
-                            nativeButton={false}
-                            variant="outline"
-                            size="icon-sm"
-                            aria-label="Editar matéria-prima"
-                            title="Editar"
-                          >
-                            <Pencil />
-                          </Button>
                           <form
                             action={async () => {
                               "use server";

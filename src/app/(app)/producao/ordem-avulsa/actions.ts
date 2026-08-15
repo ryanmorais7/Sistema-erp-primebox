@@ -210,6 +210,13 @@ export async function criarOrdemAvulsa(
   return { success: true };
 }
 
+// Controle simples de pagamento, independente do status de produção —
+// ver comentário do campo `pago` no schema.
+export async function alternarPagamentoAvulsa(id: string, pago: boolean) {
+  await prisma.itemOrdemAvulsa.update({ where: { id }, data: { pago } });
+  revalidatePath("/producao");
+}
+
 export async function iniciarProducaoAvulsa(id: string) {
   const item = await prisma.itemOrdemAvulsa.findUnique({ where: { id } });
   if (!item || item.status !== "AGUARDANDO") {

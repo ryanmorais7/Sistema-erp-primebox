@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ArrowLeft, X, Plus, List, Receipt, Truck } from "lucide-react";
+import { ArrowRight, ArrowLeft, X, Plus, List, Receipt, Truck, CalendarClock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import {
   iniciarProducao,
@@ -12,6 +12,7 @@ import {
   concluirProducaoAvulsa,
   cancelarItemOrdemAvulsa,
   voltarProducaoAvulsa,
+  alternarPagamentoAvulsa,
 } from "./ordem-avulsa/actions";
 import { gerarExpedicaoAvulsa } from "@/app/(app)/expedicao/actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -30,6 +31,15 @@ const colunas = [
   { status: "EM_PRODUCAO", titulo: "Em produção" },
   { status: "CONCLUIDO", titulo: "Concluído" },
 ] as const;
+
+// UTC fixo: dataProgramada é uma coluna @db.Date (só data, sem hora), e
+// formatar no fuso local poderia voltar um dia (meia-noite UTC vira dia
+// anterior em fusos negativos como o do Brasil).
+const formatadorDataProgramada = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "UTC",
+});
 
 function textoProduto(item: {
   nome: string;
@@ -61,6 +71,10 @@ type Cartao = {
   createdAt: Date;
   temExpedicao: boolean;
   dataProgramada: Date | null;
+  // Só faz sentido pra avulsa — Pedido formal já tem seu próprio status
+  // (Em carteira/Faturado), então esse campo fica sempre `true` (não
+  // exibido) pros cartões formais.
+  pago: boolean;
 }
 
 function normalizar(texto: string) {
@@ -103,6 +117,7 @@ export default async function ProducaoPage() {
     createdAt: ordem.createdAt,
     temExpedicao: false,
     dataProgramada: null,
+    pago: true,
   }));
 
   const cartoesAvulsos: Cartao[] = itensAvulsos.map((item) => ({
@@ -119,6 +134,7 @@ export default async function ProducaoPage() {
     createdAt: item.createdAt,
     temExpedicao: !!item.expedicao,
     dataProgramada: item.dataProgramada,
+    pago: item.pago,
   }));
 
   const todosCartoes = [...cartoesFormais, ...cartoesAvulsos].sort(
@@ -217,6 +233,15 @@ export default async function ProducaoPage() {
                             avulsa
                           </Badge>
                         )}
+                        {cartao.dataProgramada && (
+                          <Badge
+                            variant="outline"
+                            className="h-4 gap-1 border-brand/40 px-1.5 text-[0.6rem] text-brand"
+                          >
+                            <CalendarClock className="size-2.5" />
+                            {formatadorDataProgramada.format(cartao.dataProgramada)}
+                          </Badge>
+                        )}
                       </div>
                       {cartao.clienteHref ? (
                         <Link href={cartao.clienteHref} className="font-medium hover:underline">
@@ -248,6 +273,27 @@ export default async function ProducaoPage() {
                           <Receipt />
                           Gerar recibo
                         </Button>
+
+                        {cartao.origem === "avulsa" && (
+                          <form
+                            action={async () => {
+                              "use server";
+                              await alternarPagamentoAvulsa(cartao.id, !cartao.pago);
+                            }}
+                          >
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className={
+                                cartao.pago
+                                  ? "bg-positive-soft text-positive hover:bg-positive-soft/80"
+                                  : "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                              }
+                            >
+                              {cartao.pago ? "Pago" : "Pendente"}
+                            </Button>
+                          </form>
+                        )}
 
                         {coluna.status === "AGUARDANDO" && (
                           <form

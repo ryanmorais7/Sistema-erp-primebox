@@ -174,9 +174,16 @@ model ItemOrdemAvulsa {
   clienteId     String?
   cliente       Cliente? @relation(fields: [clienteId], references: [id])
   observacao    String?
-  // Preço opcional, só pra referência (recibo/consulta) — não entra no
-  // Faturamento por período, que continua 100% baseado em Pedido.
+  // Preço opcional, só pra referência (recibo/consulta) — mesmo assim
+  // entra no Faturamento por período e no Painel quando concluído (ver
+  // ADR-033), igual a um Pedido faturado.
   precoUnitario Decimal? @db.Decimal(10, 2)
+  // Se o cliente já pagou essa venda avulsa — controle simples e binário
+  // (sem vencimento/atraso), separado do status de produção: concluir a
+  // produção já conta como ganho no Painel independente disso, então
+  // esse campo é só pra saber se o dinheiro já entrou de fato. Padrão
+  // pendente porque produção avulsa raramente é paga por antecipado.
+  pago          Boolean @default(false)
   // Data pra qual a produção está programada — opcional, em branco
   // significa "sem data específica" (produção imediata/hoje). Só
   // informativo por enquanto, não filtra nem ordena o board.

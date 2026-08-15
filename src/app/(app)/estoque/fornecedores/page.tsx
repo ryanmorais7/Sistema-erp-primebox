@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, X, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoFornecedor, excluirFornecedor } from "../actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -51,7 +51,11 @@ export default async function FornecedoresPage() {
             <TableBody>
               {fornecedores.map((fornecedor) => (
                 <TableRow key={fornecedor.id}>
-                  <TableCell className="font-medium">{fornecedor.nome}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link href={`/estoque/fornecedores/${fornecedor.id}/editar`} className="hover:underline">
+                      {fornecedor.nome}
+                    </Link>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {fornecedor._count.precos}
                   </TableCell>
@@ -63,16 +67,6 @@ export default async function FornecedoresPage() {
                     )}
                   </TableCell>
                   <TableCell className="flex justify-end gap-2">
-                    <Button
-                      render={<Link href={`/estoque/fornecedores/${fornecedor.id}/editar`} />}
-                      nativeButton={false}
-                      variant="outline"
-                      size="icon-sm"
-                      aria-label="Editar fornecedor"
-                      title="Editar"
-                    >
-                      <Pencil />
-                    </Button>
                     <form
                       action={async () => {
                         "use server";

@@ -228,6 +228,31 @@ no mesmo papel.
 - **Coluna Cliente não é mais itálico** na folha impressa — era só
   estética, sem motivo funcional, e dificultava a leitura no papel.
 
+## Atualização 2026-08-15 (parte 5)
+
+- **Card volta a mostrar a data programada**, mas como uma etiqueta
+  compacta ao lado da badge "avulsa" (ex: "📅 21/08"), não mais como
+  linha separada abaixo do cliente (removida na parte 3).
+- **Campo `pago` (Boolean, padrão `false`) em `ItemOrdemAvulsa`**
+  (migration `20260815160924_adiciona_pago_item_avulsa`): controle
+  simples e binário de "o cliente já pagou essa venda avulsa", sem
+  vencimento/atraso — só pago ou pendente. Aparece como um botão no
+  card (verde "Pago" / vermelho "Pendente", `alternarPagamentoAvulsa`)
+  em qualquer status da OP. Existe **independente** do status de
+  produção: concluir a produção já conta como ganho no Painel de
+  qualquer forma (ver parte 1), então esse campo é só pra saber se o
+  dinheiro entrou de fato — não bloqueia nem afeta nenhum outro fluxo.
+  Só existe pro lado avulso; Pedido formal já tem seu próprio status
+  (`Em carteira`/`Faturado`) e não ganhou esse campo.
+
+  Vale registrar o contexto: um badge parecido (Pago/Pendente/Atrasado)
+  existiu antes na tela do Pedido formal e foi **removido de propósito**
+  em 12/08 (ver ADR-030) por dar a impressão de etapa obrigatória antes
+  da expedição. Este aqui é deliberadamente mais simples (sem
+  vencimento/atraso, só binário) e escopado só pro avulso — decisão
+  confirmada com o Ryan antes de implementar, pra não reverter o ADR-030
+  sem querer.
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP
