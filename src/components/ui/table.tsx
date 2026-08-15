@@ -4,17 +4,74 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+// Tabelas longas (ex: Clientes com 100+ linhas) empurram a barra de
+// rolagem horizontal nativa lá pro fim da tabela — o usuário precisa
+// descer a página inteira só pra conseguir rolar pros lados e ver
+// colunas/botões escondidos. Essa barra espelhada no topo resolve isso,
+// só aparecendo quando a tabela realmente não cabe na largura disponível.
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+  const topoRef = React.useRef<HTMLDivElement>(null)
+  const baixoRef = React.useRef<HTMLDivElement>(null)
+  const origemSync = React.useRef<"topo" | "baixo" | null>(null)
+  const [scrollWidth, setScrollWidth] = React.useState(0)
+  const [temOverflow, setTemOverflow] = React.useState(false)
+
+  React.useEffect(() => {
+    const baixo = baixoRef.current
+    if (!baixo) return
+
+    const atualizar = () => {
+      setScrollWidth(baixo.scrollWidth)
+      setTemOverflow(baixo.scrollWidth > baixo.clientWidth + 1)
+    }
+    atualizar()
+
+    const observer = new ResizeObserver(atualizar)
+    observer.observe(baixo)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
-      <table
-        data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
+    <div data-slot="table-container" className="w-full">
+      {temOverflow && (
+        <div
+          ref={topoRef}
+          className="overflow-x-auto overflow-y-hidden [scrollbar-color:var(--muted-foreground)_var(--muted)] [scrollbar-width:auto] [&::-webkit-scrollbar]:h-4 [&::-webkit-scrollbar-track]:bg-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground"
+          style={{ height: 16 }}
+          onScroll={() => {
+            if (origemSync.current === "baixo") {
+              origemSync.current = null
+              return
+            }
+            origemSync.current = "topo"
+            if (baixoRef.current && topoRef.current) {
+              baixoRef.current.scrollLeft = topoRef.current.scrollLeft
+            }
+          }}
+        >
+          <div style={{ width: scrollWidth, height: 1 }} />
+        </div>
+      )}
+      <div
+        ref={baixoRef}
+        className="relative w-full overflow-x-auto"
+        onScroll={() => {
+          if (origemSync.current === "topo") {
+            origemSync.current = null
+            return
+          }
+          origemSync.current = "baixo"
+          if (baixoRef.current && topoRef.current) {
+            topoRef.current.scrollLeft = baixoRef.current.scrollLeft
+          }
+        }}
+      >
+        <table
+          data-slot="table"
+          className={cn("w-full caption-bottom text-sm", className)}
+          {...props}
+        />
+      </div>
     </div>
   )
 }

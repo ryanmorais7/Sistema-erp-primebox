@@ -171,6 +171,21 @@ export default async function ProducaoPage() {
 
   const totalPecas = pendentes.reduce((total, cartao) => total + cartao.quantidade, 0);
 
+  // Se todo mundo que tá sendo impresso agora é da mesma data programada,
+  // usa ela no cabeçalho (inclusive impressa em papel — é o que diz pro
+  // funcionário da fábrica pra qual dia é essa folha). Sem isso (nenhuma
+  // data programada, ou datas diferentes misturadas), cai de volta pro
+  // comportamento antigo: só a data/hora de impressão, visível na tela.
+  const datasProgramadasDistintas = new Set(
+    pendentes
+      .map((cartao) => cartao.dataProgramada?.getTime())
+      .filter((valor): valor is number => valor != null),
+  );
+  const dataProgramadaUnica =
+    datasProgramadasDistintas.size === 1
+      ? new Date([...datasProgramadasDistintas][0])
+      : null;
+
   const corGrupoClasses: Record<string, string> = {
     peach: "bg-accent/40",
     teal: "bg-positive-soft/60",
@@ -222,9 +237,15 @@ export default async function ProducaoPage() {
           </div>
           <p className="font-heading text-lg font-semibold text-brand">Produção</p>
           <div className="text-right">
-            <p className="font-mono text-sm font-semibold print:hidden">
-              Impresso em {formatadorData.format(new Date())}
-            </p>
+            {dataProgramadaUnica ? (
+              <p className="font-mono text-sm font-semibold">
+                Programado pra {formatarDataProgramada(dataProgramadaUnica)}
+              </p>
+            ) : (
+              <p className="font-mono text-sm font-semibold print:hidden">
+                Impresso em {formatadorData.format(new Date())}
+              </p>
+            )}
             <p className="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
               Uso interno · Fábrica
             </p>
@@ -311,14 +332,6 @@ export default async function ProducaoPage() {
                       <p className="text-sm text-muted-foreground">
                         {cartao.quantidade}x {cartao.produtoTexto}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Criada em {formatadorData.format(cartao.createdAt)}
-                      </p>
-                      {cartao.dataProgramada && (
-                        <p className="text-xs font-medium text-brand">
-                          Programado pra {formatarDataProgramada(cartao.dataProgramada)}
-                        </p>
-                      )}
 
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <Button

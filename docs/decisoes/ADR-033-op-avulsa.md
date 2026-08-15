@@ -181,6 +181,31 @@ Mais uma rodada de ajustes de uso real:
   carteira", "valor em carteira" e "clientes ativos" continuam só
   formais (avulso não tem carteira nem cliente confiável pra contar).
 
+## Atualização 2026-08-15 (parte 3)
+
+Mais um ajuste no card e na folha, depois de testar a impressão real:
+
+- **Card do board não mostra mais "Criada em"/"Programado pra"**: as
+  duas linhas de data foram removidas do card do kanban
+  (`/producao`). O card ficou só com número da OP, cliente, produto e
+  ações — a data programada virou responsabilidade só do cabeçalho da
+  folha impressa (ver próximo item), não precisa se repetir em cada
+  card.
+- **Cabeçalho da folha (`Impresso em` / `Uso interno · Fábrica`) agora
+  reflete a data programada, e volta a aparecer na impressão**: se
+  todas as linhas pendentes que estão sendo impressas têm a mesma
+  `dataProgramada`, o cabeçalho mostra "Programado pra DD/MM" — visível
+  tanto na tela quanto no papel, porque é justamente essa informação
+  que o funcionário da fábrica precisa ver quando imprimir a folha
+  (criar hoje uma OP pra segunda-feira, e só clicar em imprimir no dia
+  já mostra "17", sem depender de quando foi de fato impresso). Sem
+  data programada (ou com datas diferentes misturadas na mesma folha),
+  cai de volta pro comportamento anterior: "Impresso em {hoje}",
+  visível só na tela (`print:hidden`). Essa mistura de datas diferentes
+  na mesma folha ainda não tem um tratamento mais fino — hoje o board
+  do Pedro raramente tem mais de 1-2 itens pendentes ao mesmo tempo, e
+  quando isso mudar pode valer a pena revisitar.
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP

@@ -67,6 +67,19 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
   const { fields, append, remove } = useFieldArray({ control, name: "linhas" });
   const linhasObservadas = useWatch({ control, name: "linhas" });
 
+  // Com uma linha só não dá pra remover (precisa sobrar pelo menos uma) —
+  // em vez de deixar o botão de lixeira desabilitado (parecendo quebrado),
+  // vira um botão "Limpar" que zera os campos dessa linha.
+  function limparLinha(index: number) {
+    setValue(`linhas.${index}.produtoId`, "");
+    setValue(`linhas.${index}.produtoTexto`, "");
+    setValue(`linhas.${index}.quantidade`, undefined as unknown as number);
+    setValue(`linhas.${index}.clienteTexto`, "");
+    setValue(`linhas.${index}.clienteId`, undefined);
+    setValue(`linhas.${index}.observacao`, "");
+    setValue(`linhas.${index}.precoUnitario`, "");
+  }
+
   async function aoSubmeter(dados: CriarOrdemAvulsaValues) {
     setErroGeral(null);
     const resultado = await criarOrdemAvulsa(dados);
@@ -210,17 +223,22 @@ export function OrdemAvulsaForm({ produtos, clientes, medidas }: OrdemAvulsaForm
               </div>
 
               <div className="flex items-end pb-0.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  disabled={fields.length === 1}
-                  onClick={() => remove(index)}
-                  aria-label="Remover linha"
-                  title="Remover linha"
-                >
-                  <Trash2 />
-                </Button>
+                {fields.length === 1 ? (
+                  <Button type="button" variant="outline" size="sm" onClick={() => limparLinha(index)}>
+                    Limpar
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    onClick={() => remove(index)}
+                    aria-label="Remover linha"
+                    title="Remover linha"
+                  >
+                    <Trash2 />
+                  </Button>
+                )}
               </div>
             </div>
           ))}
