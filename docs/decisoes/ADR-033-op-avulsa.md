@@ -457,6 +457,33 @@ padrão de sempre:
 - Botão "Pago"/"Pendente" no card não é mais exclusivo da avulsa —
   aparece em qualquer item, dos dois lados.
 
+## Atualização 2026-08-15 (parte 12) — folha impressa agrupada por OP
+
+A tabela de seleção/impressão (`FolhaProducao`) alternava cor por
+**cliente**, mas listava as linhas soltas — uma OP com itens de dois
+clientes diferentes não tinha nenhuma indicação visual de que aquelas
+linhas eram a mesma unidade de produção. Corrigido:
+
+- **`LinhaFolha` ganhou `opGrupoId`/`opNumeroLabel`** (o mesmo
+  `grupoOpId`/`numeroLabel` que o board já usa pra agrupar cards —
+  parte 10). O campo antigo `Cartao.grupo` (agrupava por cliente, só
+  usado pra alternar cor na folha) foi removido — não fazia mais
+  sentido depois dessa mudança, e nada mais lia ele.
+- **Tabela agora tem uma linha de cabeçalho por OP** ("OP Avulsa #24 ·
+  2 itens · 13 peças"), clicável — clicar nela seleciona/desmarca de
+  uma vez todas as linhas daquela OP (mesmo toggle usado pro board:
+  se já estava tudo selecionado, desmarca tudo; senão, marca tudo).
+  Clicar numa linha individual dentro do grupo continua funcionando
+  igual antes (`stopPropagation` pra não disparar o clique do
+  cabeçalho junto).
+- **"Selecionar dia X" continua funcionando**, agora dentro da
+  estrutura agrupada — selecionar um dia marca as linhas de todas as
+  OPs daquele dia, cada uma ainda com seu próprio cabeçalho visível
+  (testado: dia com 2 OPs diferentes marcou as duas, cada uma
+  destacada, com o total certo).
+- Cor alternada (peach/teal) trocou de "por cliente" pra "por OP",
+  consistente com o resto da mudança.
+
 ## Consequências
 
 - Duas sequências de numeração de OP coexistem ("OP #7" formal, "OP

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Box } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,11 @@ export type LinhaFolha = {
   observacao: string;
   corGrupo: "peach" | "teal";
   dataProgramadaIso: string | null;
+  // Id da OP inteira (OrdemAvulsa/Pedido) e o rótulo dela ("OP #7" /
+  // "OP Avulsa #3") — usados pra agrupar as linhas por OP na tabela,
+  // igual o board já faz (ver ADR-033), em vez de uma lista solta.
+  opGrupoId: string;
+  opNumeroLabel: string;
 };
 
 type FolhaProducaoProps = {
@@ -64,6 +69,17 @@ export function FolhaProducao({ linhas, totalPecas, fonteFolha }: FolhaProducaoP
     ),
   ].sort();
 
+  // Agrupa por OP (não por cliente, não achatado) — cada grupo vira um
+  // cabeçalho clicável "OP #N · X itens" seguido das linhas daquela OP,
+  // mesmo que os itens sejam de clientes diferentes.
+  const gruposMap = new Map<string, LinhaFolha[]>();
+  for (const linha of linhas) {
+    const grupo = gruposMap.get(linha.opGrupoId) ?? [];
+    grupo.push(linha);
+    gruposMap.set(linha.opGrupoId, grupo);
+  }
+  const grupos = [...gruposMap.values()];
+
   function alternarLinha(id: string) {
     setSelecionados((atual) => {
       const novo = new Set(atual);
@@ -71,6 +87,21 @@ export function FolhaProducao({ linhas, totalPecas, fonteFolha }: FolhaProducaoP
         novo.delete(id);
       } else {
         novo.add(id);
+      }
+      return novo;
+    });
+  }
+
+  function alternarGrupo(idsDoGrupo: string[]) {
+    setSelecionados((atual) => {
+      const todosJaSelecionados = idsDoGrupo.every((id) => atual.has(id));
+      const novo = new Set(atual);
+      for (const id of idsDoGrupo) {
+        if (todosJaSelecionados) {
+          novo.delete(id);
+        } else {
+          novo.add(id);
+        }
       }
       return novo;
     });
@@ -131,7 +162,7 @@ export function FolhaProducao({ linhas, totalPecas, fonteFolha }: FolhaProducaoP
             {linhas.length > 1 && (
               <div className="mb-2 flex flex-wrap items-center gap-2 print:hidden">
                 <p className="text-xs text-muted-foreground">
-                  Clique numa ou mais linhas pra imprimir só elas.
+                  Clique numa OP, ou numa linha, pra imprimir só ela.
                 </p>
                 {datasNaFolha.length > 1 &&
                   datasNaFolha.map((dataIso) => (
@@ -163,30 +194,69 @@ export function FolhaProducao({ linhas, totalPecas, fonteFolha }: FolhaProducaoP
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {linhas.map((linha) => {
-                  const estaSelecionada = selecionados.has(linha.id);
-                  const escondidaNaImpressao = temSelecao && !estaSelecionada;
+                {grupos.map((linhasDoGrupo) => {
+                  const primeira = linhasDoGrupo[0];
+                  const idsDoGrupo = linhasDoGrupo.map((linha) => linha.id);
+                  const totalPecasGrupo = linhasDoGrupo.reduce(
+                    (total, linha) => total + linha.quantidade,
+                    0,
+                  );
+                  const grupoTotalmenteSelecionado = idsDoGrupo.every((id) => selecionados.has(id));
+                  const grupoParcialmenteSelecionado =
+                    !grupoTotalmenteSelecionado && idsDoGrupo.some((id) => selecionados.has(id));
+                  const grupoEscondidoNaImpressao =
+                    temSelecao && !idsDoGrupo.some((id) => selecionados.has(id));
+
                   return (
-                    <TableRow
-                      key={linha.id}
-                      onClick={() => alternarLinha(linha.id)}
-                      className={cn(
-                        corGrupoClasses[linha.corGrupo],
-                        "cursor-pointer print:cursor-auto",
-                        estaSelecionada && "outline outline-2 -outline-offset-2 outline-brand print:outline-none",
-                        escondidaNaImpressao && "print:hidden",
-                      )}
-                    >
-                      <TableCell className={`font-mono font-semibold ${fonteFolha}`}>
-                        {linha.quantidade}
-                      </TableCell>
-                      <TableCell className={`font-medium ${fonteFolha}`}>{linha.produtoTexto}</TableCell>
-                      <TableCell className="text-muted-foreground">{linha.clienteLabel}</TableCell>
-                      <TableCell className="text-brand">{linha.observacao}</TableCell>
-                      <TableCell>
-                        <div className="mx-auto size-7 rounded-sm border-2 border-foreground/70" />
-                      </TableCell>
-                    </TableRow>
+                    <Fragment key={primeira.opGrupoId}>
+                      <TableRow
+                        onClick={() => alternarGrupo(idsDoGrupo)}
+                        className={cn(
+                          "cursor-pointer bg-foreground/5 hover:bg-foreground/10 print:cursor-auto print:bg-foreground/5",
+                          grupoTotalmenteSelecionado &&
+                            "outline outline-2 -outline-offset-2 outline-brand print:outline-none",
+                          grupoParcialmenteSelecionado && "outline outline-1 -outline-offset-1 outline-brand/40",
+                          grupoEscondidoNaImpressao && "print:hidden",
+                        )}
+                      >
+                        <TableCell colSpan={5} className="py-1.5 text-xs font-semibold tracking-wide">
+                          {primeira.opNumeroLabel} · {linhasDoGrupo.length}{" "}
+                          {linhasDoGrupo.length === 1 ? "item" : "itens"} · {totalPecasGrupo} peças
+                        </TableCell>
+                      </TableRow>
+                      {linhasDoGrupo.map((linha) => {
+                        const estaSelecionada = selecionados.has(linha.id);
+                        const escondidaNaImpressao = temSelecao && !estaSelecionada;
+                        return (
+                          <TableRow
+                            key={linha.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              alternarLinha(linha.id);
+                            }}
+                            className={cn(
+                              corGrupoClasses[linha.corGrupo],
+                              "cursor-pointer print:cursor-auto",
+                              estaSelecionada &&
+                                "outline outline-2 -outline-offset-2 outline-brand print:outline-none",
+                              escondidaNaImpressao && "print:hidden",
+                            )}
+                          >
+                            <TableCell className={`font-mono font-semibold ${fonteFolha}`}>
+                              {linha.quantidade}
+                            </TableCell>
+                            <TableCell className={`font-medium ${fonteFolha}`}>
+                              {linha.produtoTexto}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{linha.clienteLabel}</TableCell>
+                            <TableCell className="text-brand">{linha.observacao}</TableCell>
+                            <TableCell>
+                              <div className="mx-auto size-7 rounded-sm border-2 border-foreground/70" />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </Fragment>
                   );
                 })}
               </TableBody>

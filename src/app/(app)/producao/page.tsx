@@ -68,10 +68,9 @@ type Cartao = {
   clienteLabel: string;
   clienteHref: string | null;
   observacao: string;
-  grupo: string;
   // Id da OP inteira (OrdemAvulsa ou Pedido) — usado pra agrupar vários
-  // itens da mesma OP num card só no board (ver ADR-033). Diferente de
-  // `grupo` acima, que agrupa por cliente só pra alternar cor na folha.
+  // itens da mesma OP num card só no board, e na folha impressa (ver
+  // ADR-033).
   grupoOpId: string;
   createdAt: Date;
   temExpedicao: boolean;
@@ -80,10 +79,6 @@ type Cartao = {
   // do Pedido (que é sobre faturamento, não sobre o dinheiro ter
   // entrado). Existe pros dois lados, ver ADR-033.
   pago: boolean;
-}
-
-function normalizar(texto: string) {
-  return texto.trim().toLowerCase();
 }
 
 export default async function ProducaoPage() {
@@ -118,7 +113,6 @@ export default async function ProducaoPage() {
       ordem.itemPedido.pedido.cliente.nomeFantasia || ordem.itemPedido.pedido.cliente.razaoSocial,
     clienteHref: `/pedidos/${ordem.itemPedido.pedido.id}`,
     observacao: ordem.itemPedido.pedido.observacoes || "",
-    grupo: ordem.itemPedido.pedido.clienteId,
     grupoOpId: ordem.itemPedido.pedidoId,
     createdAt: ordem.createdAt,
     temExpedicao: false,
@@ -136,7 +130,6 @@ export default async function ProducaoPage() {
     clienteLabel: item.clienteTexto,
     clienteHref: item.clienteId ? `/clientes/${item.clienteId}/editar` : null,
     observacao: item.observacao || "",
-    grupo: item.clienteId ?? `avulsa:${normalizar(item.clienteTexto)}`,
     grupoOpId: item.ordemAvulsaId,
     createdAt: item.createdAt,
     temExpedicao: !!item.expedicao,
@@ -148,26 +141,28 @@ export default async function ProducaoPage() {
     (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
   );
 
-  // Agrupa por cliente (ou pelo texto livre da linha avulsa) e ordena por
-  // ordem de chegada (FIFO), pra alternar cor por grupo na folha impressa.
+  // Agrupa por OP inteira (não por cliente) e ordena por ordem de
+  // chegada (FIFO), pra alternar cor por OP na folha impressa — mesmo
+  // agrupamento que o board já usa (ver ADR-033), não por cliente.
   const pendentesBrutos = todosCartoes.filter((cartao) => cartao.status !== "CONCLUIDO");
   const primeiraOcorrenciaPorGrupo = new Map<string, number>();
   pendentesBrutos.forEach((cartao, index) => {
-    if (!primeiraOcorrenciaPorGrupo.has(cartao.grupo)) {
-      primeiraOcorrenciaPorGrupo.set(cartao.grupo, index);
+    if (!primeiraOcorrenciaPorGrupo.has(cartao.grupoOpId)) {
+      primeiraOcorrenciaPorGrupo.set(cartao.grupoOpId, index);
     }
   });
   const pendentes = [...pendentesBrutos].sort(
-    (a, b) => primeiraOcorrenciaPorGrupo.get(a.grupo)! - primeiraOcorrenciaPorGrupo.get(b.grupo)!,
+    (a, b) =>
+      primeiraOcorrenciaPorGrupo.get(a.grupoOpId)! - primeiraOcorrenciaPorGrupo.get(b.grupoOpId)!,
   );
 
   const linhas: { cartao: Cartao; corGrupo: "peach" | "teal" }[] = [];
   let grupoAnterior: string | null = null;
   let indiceGrupo = -1;
   for (const cartao of pendentes) {
-    if (cartao.grupo !== grupoAnterior) {
+    if (cartao.grupoOpId !== grupoAnterior) {
       indiceGrupo++;
-      grupoAnterior = cartao.grupo;
+      grupoAnterior = cartao.grupoOpId;
     }
     linhas.push({ cartao, corGrupo: indiceGrupo % 2 === 0 ? "peach" : "teal" });
   }
@@ -187,6 +182,8 @@ export default async function ProducaoPage() {
     observacao: cartao.observacao,
     corGrupo,
     dataProgramadaIso: cartao.dataProgramada ? cartao.dataProgramada.toISOString() : null,
+    opGrupoId: cartao.grupoOpId,
+    opNumeroLabel: cartao.numeroLabel,
   }));
 
   return (
