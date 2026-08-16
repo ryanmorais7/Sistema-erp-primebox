@@ -717,3 +717,25 @@ deveria ficar. Comparado ponto a ponto contra a implementação da parte
 - **Pendência ainda em aberto** (mesma da parte 15, não resolvida
   ainda): o controle de Pago/Pendente por item não tem mais lugar na
   navegação principal.
+
+## Atualização 2026-08-16 (parte 17) — folha de impressão sai da tela principal
+
+Pedro pediu pra tirar a `FolhaProducao` do topo de `/producao` — ela
+não é um dos 6 blocos do PDF, e visualmente competia como "conteúdo
+principal" da tela, quando o objetivo dela era só ser o que sai ao
+imprimir. `/producao` (nível 1) agora tem só: passos, cabeçalho, alerta,
+card Hoje, card do mês, card da semana — nada mais.
+
+- **`/producao/imprimir` (novo)** — a `FolhaProducao` (lista corrida,
+  seleção por dia, cor por cliente) morou pra cá, com um link "‹
+  Voltar pra Produção" e o próprio botão Imprimir. Mesma lógica de
+  dados que antes vivia em `/producao/page.tsx` (todos os itens
+  pendentes do sistema inteiro).
+- **Botão "Imprimir" do nível 1 virou um link** pra `/producao/imprimir`
+  em vez de chamar `window.print()` direto na tela de mês — não fazia
+  mais sentido apertar Imprimir ali sem ter mais nada pra imprimir na
+  própria tela.
+- De quebra, corrigido um bug pequeno notado no print enviado pelo
+  Pedro: o card "Hoje" tinha uma classe `capitalize` sobrando de uma
+  versão anterior, que virava "16 De Agosto" (com D maiúsculo) —
+  removida.

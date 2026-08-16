@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { List, Plus, ArrowRight, Folder } from "lucide-react";
-import { buscarCartoesProducao, coresAlternadasPorCliente, type Cartao } from "@/lib/producaoCartoes";
+import { List, Plus, ArrowRight, Folder, Printer } from "lucide-react";
+import { buscarCartoesProducao } from "@/lib/producaoCartoes";
 import { PageHeader } from "@/components/layout/page-header";
 import { NavegacaoPassos } from "@/components/producao/navegacao-passos";
 import { AgendaSemanalCard } from "@/components/producao/agenda-semanal-card";
-import { ImprimirButton } from "@/components/pedidos/imprimir-button";
-import { FolhaProducao, type LinhaFolha } from "@/components/producao/folha-producao";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -46,27 +44,6 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
   const cartoesHoje = cartoes.filter((cartao) => cartao.diaChave === hojeChave);
   const clientesHoje = new Set(cartoesHoje.map((cartao) => cartao.clienteLabel)).size;
   const pecasHoje = cartoesHoje.reduce((total, cartao) => total + cartao.quantidade, 0);
-
-  // Folha de impressão/seleção — mesma lógica que já vivia no Kanban
-  // (agora desativado, ver ADR-033): todos os itens pendentes (não
-  // concluídos) do sistema inteiro, lista corrida sem agrupamento
-  // visual, cor alternada por cliente.
-  const pendentes = cartoes.filter((cartao) => cartao.status !== "CONCLUIDO");
-  const coresPorCliente = coresAlternadasPorCliente(pendentes);
-  const totalPecasFolha = pendentes.reduce((total, cartao) => total + cartao.quantidade, 0);
-  const fonteFolha =
-    pendentes.length <= 4 ? "text-xl" : pendentes.length <= 7 ? "text-base" : pendentes.length <= 10 ? "text-sm" : "text-xs";
-  const linhasFolha: LinhaFolha[] = pendentes.map((cartao) => ({
-    id: `${cartao.origem}-${cartao.id}`,
-    quantidade: cartao.quantidade,
-    produtoTexto: cartao.produtoTexto,
-    clienteLabel: cartao.clienteLabel,
-    observacao: cartao.observacao,
-    corGrupo: coresPorCliente.get(`${cartao.origem}-${cartao.id}`) ?? "peach",
-    dataProgramadaIso: cartao.dataProgramada ? cartao.dataProgramada.toISOString() : null,
-    opGrupoId: cartao.grupoOpId,
-    opNumeroLabel: cartao.numeroLabel,
-  }));
 
   // Janela de meses pra escolher (mês atual + os 2 anteriores + o
   // seguinte) — não é mais grade do ano inteiro com navegação de ano.
@@ -123,13 +100,14 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
                 <Plus />
                 Criar OP
               </Button>
-              <ImprimirButton />
+              <Button render={<Link href="/producao/imprimir" />} nativeButton={false}>
+                <Printer />
+                Imprimir
+              </Button>
             </div>
           }
         />
       </div>
-
-      <FolhaProducao linhas={linhasFolha} totalPecas={totalPecasFolha} fonteFolha={fonteFolha} />
 
       <div className="flex flex-col gap-6 print:hidden">
         {concluidasSemExpedicao.length > 0 && (
