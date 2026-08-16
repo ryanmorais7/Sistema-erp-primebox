@@ -739,3 +739,64 @@ card Hoje, card do mês, card da semana — nada mais.
   Pedro: o card "Hoje" tinha uma classe `capitalize` sobrando de uma
   versão anterior, que virava "16 De Agosto" (com D maiúsculo) —
   removida.
+
+## Atualização 2026-08-16 (parte 18) — uma OP = um cliente sempre, e melhorias de usabilidade
+
+- **Bug corrigido: linhas avulsas de clientes diferentes numa mesma
+  submissão de "Criar OP" caíam todas na mesma `OrdemAvulsa`.** O lado
+  formal já agrupava corretamente por `clienteId`; o lado avulso não
+  agrupava por cliente nenhum — todas as linhas sem cliente cadastrado
+  iam pra uma única OP, mesmo sendo de clientes diferentes. Corrigido
+  em `criarOrdemAvulsa` (`producao/ordem-avulsa/actions.ts`): agora
+  agrupa por `clienteTexto` normalizado, criando uma `OrdemAvulsa` por
+  cliente distinto — regra explícita do Pedro: "dentro da mesma OP
+  precisa ser o mesmo cliente", seja formal ou avulsa. Testado:
+  2 linhas do mesmo cliente ficam numa OP; 1 linha de cliente
+  diferente vira uma segunda OP, mesmo enviadas juntas no formulário.
+- **Autocomplete em Produto/Cliente já existia** (`ProdutoTextoField`/
+  `ClienteTextoField`, sugestões por substring conforme digita, opção
+  de cadastrar na hora) — não precisou ser criado do zero. O que
+  faltava: **`ProdutoTextoField` agora auto-vincula no blur quando o
+  texto bate exato com um produto cadastrado**, mesmo sem clicar na
+  sugestão — só clicar já vinculava (e pré-preenchia o preço); digitar
+  o nome certinho e sair do campo não. Agora os dois caminhos
+  pré-preenchem o preço.
+- **Atalho de teclado**: Enter no campo Preço da última linha do
+  formulário de Criar OP adiciona uma linha nova e foca a Qtd. dela
+  (`ordem-avulsa-form.tsx` — `qtdRefs` + `proximoFocoRef`, focando via
+  `useEffect` depois do array crescer). Só dispara na última linha —
+  editar o Preço de uma linha do meio e apertar Enter não adiciona
+  nada no fim (evitaria confusão, já que `useFieldArray.append` sempre
+  adiciona no final).
+- **Texto de ajuda do Criar OP virou expansível** — componente novo
+  `AjudaCriarOp` (`components/producao/ajuda-criar-op.tsx`), link
+  "❓ Como funciona?" que expande/recolhe o parágrafo, recolhido por
+  padrão.
+- **Grade de meses de `/producao` voltou a mostrar os 12 meses do ano
+  corrente** (4 colunas × 3 linhas), revertendo a janela de 4 meses da
+  parte 16 — pedido explícito do Pedro. Mantido o estilo visual (ícone
+  de pasta, mês atual destacado em copper, resto apagado).
+- **`/producao/importar` (novo)** — mesmo padrão de `/pedidos/importar`
+  (upload `.xlsx` via SheetJS/`parsePlanilhaOp`, prévia editável antes
+  de gravar, tudo numa transação), com duas diferenças por ser
+  Produção, não Pedidos:
+  - **Decide formal vs. avulsa por cliente**, reaproveitando a mesma
+    lógica de `criarOrdemAvulsa` — cliente que já bate com cadastro
+    vira Pedido formal (+ `OrdemProducao` criada na hora, diferente da
+    importação de Pedidos que exige um "Gerar OP" manual depois);
+    cliente novo, sem cadastro, fica avulso **por padrão** (checkbox
+    "Cadastrar" desmarcado na prévia — só vira Pedido formal se o
+    usuário marcar explicitamente). Isso espelha o comportamento do
+    `ClienteTextoField` no formulário manual, que só formaliza sob
+    pedido.
+  - **Campo de data programada** na prévia, aplicado a todos os itens
+    importados (mesmo campo do formulário manual).
+  - Arquivos novos: `producao/importar/page.tsx`,
+    `producao/importar/actions.ts` (`analisarPlanilhaProducao`,
+    `confirmarImportacaoProducao`),
+    `components/producao/importar-planilha-producao-form.tsx`,
+    `lib/validations/importarPlanilhaProducao.ts`. Botão "Importar
+    planilha" adicionado ao lado de "+ Criar OP" em `/producao`.
+  - Testado ponta a ponta: planilha com 2 linhas do mesmo cliente + 1
+    linha de cliente diferente gerou 2 OPs avulsas corretamente
+    agrupadas (2 itens numa, 1 item na outra).

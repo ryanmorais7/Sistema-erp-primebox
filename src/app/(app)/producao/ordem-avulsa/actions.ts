@@ -192,12 +192,24 @@ export async function criarOrdemAvulsa(
       }
     }
 
+    // Agrupa por cliente (texto normalizado) — uma OP avulsa só pode
+    // ter um cliente, mesma regra do lado formal (que já agrupa por
+    // clienteId). Antes todas as linhas avulsas de uma submissão
+    // caíam numa OrdemAvulsa só, mesmo sendo de clientes diferentes.
     const linhasAvulsas = produtos.filter((p) => !ehFormal(p.linha));
-    if (linhasAvulsas.length > 0) {
+    const gruposPorClienteTexto = new Map<string, typeof linhasAvulsas>();
+    for (const item of linhasAvulsas) {
+      const chave = normalizar(item.linha.clienteTexto);
+      const grupo = gruposPorClienteTexto.get(chave) ?? [];
+      grupo.push(item);
+      gruposPorClienteTexto.set(chave, grupo);
+    }
+
+    for (const itensDoCliente of gruposPorClienteTexto.values()) {
       await tx.ordemAvulsa.create({
         data: {
           itens: {
-            create: linhasAvulsas.map(({ linha, produtoId }) => ({
+            create: itensDoCliente.map(({ linha, produtoId }) => ({
               produtoId,
               quantidade: linha.quantidade,
               clienteTexto: linha.clienteTexto,

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { OrdemAvulsaForm } from "@/components/producao/ordem-avulsa-form";
+import { AjudaCriarOp } from "@/components/producao/ajuda-criar-op";
 import { PageHeader } from "@/components/layout/page-header";
 
 // Depende de dado ao vivo do banco; nunca deve ser pré-renderizada no build.
@@ -39,12 +40,7 @@ export default async function NovaOrdemAvulsaPage({ searchParams }: PageProps) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Criar OP" />
-      <p className="text-sm text-muted-foreground">
-        Adicione quantas linhas precisar. Produto pode ser digitado livremente. Se não bater com o
-        catálogo, é cadastrado sozinho ao salvar. Se o cliente não tiver cadastro (ex:
-        &quot;Avulso&quot;), vira uma OP avulsa, fora do fluxo formal de Pedidos. Se você escolher ou
-        cadastrar um cliente, essa linha vira um Pedido formal de verdade, do jeito de sempre.
-      </p>
+      <AjudaCriarOp />
       <OrdemAvulsaForm
         produtos={produtosComPrecoNumero}
         clientes={clientes}

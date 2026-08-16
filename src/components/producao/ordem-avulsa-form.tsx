@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type KeyboardEvent } from "react";
+import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,6 +73,22 @@ export function OrdemAvulsaForm({
   const { fields, append, remove } = useFieldArray({ control, name: "linhas" });
   const linhasObservadas = useWatch({ control, name: "linhas" });
 
+  // Enter no Preço da última linha adiciona uma linha nova e já foca a
+  // Qtd. dela — Pedro tá acostumado a preencher planilha em sequência,
+  // sem precisar clicar em "+ Adicionar linha" toda hora.
+  const qtdRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const proximoFocoRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (proximoFocoRef.current !== null) {
+      qtdRefs.current[proximoFocoRef.current]?.focus();
+      proximoFocoRef.current = null;
+    }
+  }, [fields.length]);
+  function adicionarLinhaEFocar() {
+    proximoFocoRef.current = fields.length;
+    append(linhaVazia);
+  }
+
   // Com uma linha só não dá pra remover (precisa sobrar pelo menos uma) —
   // em vez de deixar o botão de lixeira desabilitado (parecendo quebrado),
   // vira um botão "Limpar" que zera os campos dessa linha.
@@ -129,6 +145,10 @@ export function OrdemAvulsaForm({
                   name={`linhas.${index}.quantidade`}
                   render={({ field: qtdField }) => (
                     <Input
+                      ref={(el) => {
+                        qtdField.ref(el);
+                        qtdRefs.current[index] = el;
+                      }}
                       type="number"
                       min={1}
                       step={1}
@@ -223,6 +243,12 @@ export function OrdemAvulsaForm({
                       value={precoField.value ?? ""}
                       onChange={(e) => precoField.onChange(mascararMoeda(e.target.value))}
                       onBlur={precoField.onBlur}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && index === fields.length - 1) {
+                          e.preventDefault();
+                          adicionarLinhaEFocar();
+                        }
+                      }}
                     />
                   )}
                 />
@@ -254,7 +280,7 @@ export function OrdemAvulsaForm({
             variant="outline"
             size="sm"
             className="self-start"
-            onClick={() => append(linhaVazia)}
+            onClick={adicionarLinhaEFocar}
           >
             <Plus />
             Adicionar linha

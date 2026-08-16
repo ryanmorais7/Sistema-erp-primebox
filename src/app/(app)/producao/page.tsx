@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { List, Plus, ArrowRight, Folder, Printer } from "lucide-react";
+import { List, Plus, ArrowRight, Folder, Printer, Upload } from "lucide-react";
 import { buscarCartoesProducao } from "@/lib/producaoCartoes";
 import { PageHeader } from "@/components/layout/page-header";
 import { NavegacaoPassos } from "@/components/producao/navegacao-passos";
@@ -45,27 +45,12 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
   const clientesHoje = new Set(cartoesHoje.map((cartao) => cartao.clienteLabel)).size;
   const pecasHoje = cartoesHoje.reduce((total, cartao) => total + cartao.quantidade, 0);
 
-  // Janela de meses pra escolher (mês atual + os 2 anteriores + o
-  // seguinte) — não é mais grade do ano inteiro com navegação de ano.
-  const janelaMeses = [-2, -1, 0, 1].map((offset) => {
-    let mes = mesHoje + offset;
-    let ano = anoHoje;
-    while (mes < 1) {
-      mes += 12;
-      ano -= 1;
-    }
-    while (mes > 12) {
-      mes -= 12;
-      ano += 1;
-    }
-    return { mes, ano };
-  });
+  // Os 12 meses do ano corrente.
   const resumoPorMesJanela = new Map<string, { pecas: number; ops: Set<string> }>();
   for (const cartao of cartoes) {
     const [anoCartao, mesCartao] = cartao.diaChave.split("-").map(Number);
+    if (anoCartao !== anoHoje) continue;
     const chave = `${anoCartao}-${mesCartao}`;
-    const naJanela = janelaMeses.some((m) => m.ano === anoCartao && m.mes === mesCartao);
-    if (!naJanela) continue;
     const atual = resumoPorMesJanela.get(chave) ?? { pecas: 0, ops: new Set<string>() };
     atual.pecas += cartao.quantidade;
     atual.ops.add(cartao.grupoOpId);
@@ -99,6 +84,10 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
               >
                 <Plus />
                 Criar OP
+              </Button>
+              <Button render={<Link href="/producao/importar" />} nativeButton={false} variant="outline">
+                <Upload />
+                Importar planilha
               </Button>
               <Button render={<Link href="/producao/imprimir" />} nativeButton={false}>
                 <Printer />
@@ -164,10 +153,12 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
               </p>
               <p className="font-heading text-lg font-semibold">Produção · {anoHoje}</p>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {janelaMeses.map(({ mes, ano }) => {
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {NOMES_MES.map((_, indice) => {
+                const mes = indice + 1;
+                const ano = anoHoje;
                 const resumo = resumoPorMesJanela.get(`${ano}-${mes}`);
-                const ehMesAtual = ano === anoHoje && mes === mesHoje;
+                const ehMesAtual = mes === mesHoje;
                 return (
                   <Link
                     key={`${ano}-${mes}`}

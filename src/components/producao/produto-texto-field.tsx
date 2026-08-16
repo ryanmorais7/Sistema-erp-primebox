@@ -89,7 +89,16 @@ export function ProdutoTextoField({
           setCriando(false);
         }}
         onFocus={() => setAberto(true)}
-        onBlur={() => setTimeout(() => setAberto(false), 150)}
+        onBlur={() => {
+          // Digitou o nome exato de um produto já cadastrado (sem
+          // clicar na sugestão) — vincula do mesmo jeito, pra também
+          // pré-preencher o preço.
+          if (!produtoId) {
+            const produtoExato = produtos.find((produto) => normalizar(produto.nome) === termo);
+            if (produtoExato) onChange(produtoExato.nome, produtoExato);
+          }
+          setTimeout(() => setAberto(false), 150);
+        }}
       />
       {produtoId && <p className="mt-1 text-xs text-[#0F6E56]">Vinculado ao catálogo</p>}
 
