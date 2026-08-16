@@ -142,4 +142,22 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
   );
 }
 
+// Cor alternada (peach/teal) trocando toda vez que o cliente muda,
+// andando na ordem dada — dá uma pista visual de "essas linhas são do
+// mesmo cliente" numa lista corrida, sem precisar de um cabeçalho
+// separando grupos (ver ADR-033, reversão do agrupamento por OP).
+export function coresAlternadasPorCliente(cartoes: Cartao[]): Map<string, "peach" | "teal"> {
+  const cores = new Map<string, "peach" | "teal">();
+  let clienteAnterior: string | null = null;
+  let indice = -1;
+  for (const cartao of cartoes) {
+    if (cartao.clienteLabel !== clienteAnterior) {
+      indice++;
+      clienteAnterior = cartao.clienteLabel;
+    }
+    cores.set(`${cartao.origem}-${cartao.id}`, indice % 2 === 0 ? "peach" : "teal");
+  }
+  return cores;
+}
+
 export { normalizar };

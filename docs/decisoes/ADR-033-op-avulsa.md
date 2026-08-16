@@ -650,3 +650,70 @@ correções pontuais.
   uma pista visual de "essas linhas são a mesma OP" sem precisar de um
   cabeçalho interrompendo a lista. "Selecionar dia X" e o total geral
   no rodapé não mudaram.
+
+## Atualização 2026-08-16 (parte 16) — redesign fiel a um PDF de referência (Fluxo_Correto_Agenda)
+
+Pedro mandou um PDF com 4 telas de referência (mockups reais, não só
+descrição em texto) mostrando exatamente como cada nível da navegação
+deveria ficar. Comparado ponto a ponto contra a implementação da parte
+15, várias diferenças de layout — não só as 5 correções já pedidas.
+
+- **`AgendaSemanalCard` (novo, `src/components/producao/agenda-semanal-card.tsx`)**
+  — o card da agenda semanal aparece **persistente nas 3 telas** (Mês,
+  Dia, OP do dia), não só na tela de mês — o PDF mostra o mesmo card
+  (mesmos dados da semana atual) repetido idêntico nas 3 páginas.
+  Extraído pra componente compartilhado; cada tela passa seu próprio
+  `hrefBase` pra que "Semana anterior/Próxima semana" naveguem sem
+  sair da tela atual. Ganhou também um botão "•••" — presente nas 3
+  telas do PDF, sem nenhuma função especificada em texto; implementado
+  só visualmente, sem comportamento (nada foi inferido).
+- **`coresAlternadasPorCliente` (novo, em `producaoCartoes.ts`)** — o
+  PDF mostra a listra peach/teal alternando **por cliente**, não por
+  OP: dentro de uma mesma OP com 4 itens de 3 clientes diferentes, a
+  cor muda a cada troca de cliente. Substituiu a lógica "por OP"
+  (calculada por quem chama, tanto em `FolhaProducao` quanto na tabela
+  da OP do dia).
+- **`/producao` (nível 1)** — grade de meses trocada: em vez da grade
+  do ano inteiro com navegação de ano, virou uma janela fixa de 4
+  meses (2 anteriores + atual + 1 seguinte) com ícone de pasta,
+  eyebrow "PASSO 1 · ESCOLHER O MÊS" e heading "Produção · {ano}" —
+  sem navegação de ano (o PDF não mostra essa opção; se o Pedro
+  precisar ver meses mais distantes no futuro, precisa de uma forma
+  nova de chegar lá). Card "Hoje" reformatado pra uma linha só ("Hoje
+  · 19 de agosto", sem eyebrow separado) — corrigido de quebra um bug
+  de capitalização (`capitalize` do CSS transformava "de" em "De").
+  `FolhaProducao` continua renderizada nessa tela (não aparece nos 6
+  blocos do PDF, mas removê-la quebraria a seleção por dia que a
+  Correção 5 da parte 15 exigia manter funcionando — julgamento
+  registrado, a confirmar com o Pedro).
+- **`/producao/[ano]/[mes]` (nível 2)** — cabeçalho trocado de
+  `PageHeader` pra eyebrow "PASSO 2 · DENTRO DE {MÊS}, ESCOLHER O DIA"
+  \+ link "← {Mês} · {Ano}". Linha de cada dia reformatada: título
+  "OP do dia {dd/mm}" (era "Dia {N}"), resumo "{clientes} · {peças}"
+  embaixo, e uma linha extra em copper listando os números reais das
+  OPs daquele dia ("OP #17 · #18") — não existia antes. Dia de hoje
+  ganhou destaque (borda copper + fundo).
+- **`/producao/[ano]/[mes]/[dia]` (nível 3)** — mudança mais profunda:
+  - Cabeçalho de marca (PrimeBox + "OP do dia dd/mm" + "Uso interno ·
+    Fábrica") que antes só existia na versão impressa agora é **o
+    mesmo elemento visual usado na tela interativa também** — não tem
+    mais duas versões diferentes de cabeçalho, só uma.
+  - Barra de cada OP simplificada pra uma linha só ("OP #N · X itens ·
+    Y peças") — removido o nome do cliente do cabeçalho (não faz mais
+    sentido, já que uma OP pode ter itens de clientes diferentes,
+    cada um mostrado na própria linha da tabela).
+  - **Botão "Gerar recibo" removido do cabeçalho do grupo** — o PDF só
+    mostra badge de status + Editar + Cancelar ali. A geração de
+    recibo por OP inteira (rota `/producao/recibo/*-grupo/[id]`)
+    continua existindo no código, só não tem mais botão de acesso
+    nessa tela.
+  - **Total "X · Total de peças nesta OP" por grupo** (novo) — cada
+    card de OP agora soma o próprio total, além do total geral do dia
+    que já existia na versão impressa.
+  - Versão impressa perdeu o cabeçalho de sub-grupo por OP que ainda
+    tinha sobrado dessa tela especificamente (a folha do Kanban/mês já
+    tinha sido corrigida na parte 15, mas essa aqui não — agora as
+    duas são igualmente uma lista corrida).
+- **Pendência ainda em aberto** (mesma da parte 15, não resolvida
+  ainda): o controle de Pago/Pendente por item não tem mais lugar na
+  navegação principal.

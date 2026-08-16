@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { buscarCartoesProducao } from "@/lib/producaoCartoes";
-import { PageHeader } from "@/components/layout/page-header";
 import { NavegacaoPassos } from "@/components/producao/navegacao-passos";
-import { Button } from "@/components/ui/button";
+import { AgendaSemanalCard } from "@/components/producao/agenda-semanal-card";
 
 // Lista ordens de produção ao vivo do banco; nunca deve ser pré-renderizada no build.
 export const dynamic = "force-dynamic";
@@ -13,28 +12,36 @@ const NOMES_MES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ] as const;
 
+const formatadorChaveDiaBr = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" });
+
 type PageProps = {
   params: Promise<{ ano: string; mes: string }>;
+  searchParams: Promise<{ semanaInicio?: string }>;
 };
 
-export default async function ProducaoDiasDoMesPage({ params }: PageProps) {
+export default async function ProducaoDiasDoMesPage({ params, searchParams }: PageProps) {
   const { ano, mes } = await params;
+  const { semanaInicio } = await searchParams;
   const prefixo = `${ano}-${mes}`;
   const numeroMes = Number(mes);
+  const hojeChave = formatadorChaveDiaBr.format(new Date());
 
   const cartoes = await buscarCartoesProducao();
   const cartoesDoMes = cartoes.filter((cartao) => cartao.diaChave.startsWith(prefixo));
 
-  const resumoPorDia = new Map<string, { pecas: number; ops: Set<string>; clientes: Set<string> }>();
+  const resumoPorDia = new Map<
+    string,
+    { pecas: number; clientes: Set<string>; numeros: string[] }
+  >();
   for (const cartao of cartoesDoMes) {
     const atual = resumoPorDia.get(cartao.diaChave) ?? {
       pecas: 0,
-      ops: new Set<string>(),
       clientes: new Set<string>(),
+      numeros: [],
     };
     atual.pecas += cartao.quantidade;
-    atual.ops.add(cartao.grupoOpId);
     atual.clientes.add(cartao.clienteLabel);
+    if (!atual.numeros.includes(cartao.numeroLabel)) atual.numeros.push(cartao.numeroLabel);
     resumoPorDia.set(cartao.diaChave, atual);
   }
   const diasComOp = [...resumoPorDia.keys()].sort();
@@ -49,15 +56,19 @@ export default async function ProducaoDiasDoMesPage({ params }: PageProps) {
           { numero: 3, label: "OP do dia" },
         ]}
       />
-      <PageHeader
-        title={`${NOMES_MES[numeroMes - 1]} de ${ano}`}
-        action={
-          <Button render={<Link href="/producao" />} nativeButton={false} variant="outline">
-            <ChevronLeft />
-            Voltar pros meses
-          </Button>
-        }
-      />
+
+      <div>
+        <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+          Passo 2 · Dentro de {NOMES_MES[numeroMes - 1]}, escolher o dia
+        </p>
+        <Link
+          href="/producao"
+          className="mt-1 flex w-fit items-center gap-1.5 font-heading text-lg font-semibold hover:underline"
+        >
+          <ArrowLeft className="size-4" />
+          {NOMES_MES[numeroMes - 1]} · {ano}
+        </Link>
+      </div>
 
       {diasComOp.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhuma OP programada nesse mês.</p>
@@ -66,22 +77,39 @@ export default async function ProducaoDiasDoMesPage({ params }: PageProps) {
           {diasComOp.map((diaChave) => {
             const resumo = resumoPorDia.get(diaChave)!;
             const dia = diaChave.slice(-2);
+            const ehHoje = diaChave === hojeChave;
             return (
               <Link
                 key={diaChave}
                 href={`/producao/${ano}/${mes}/${dia}`}
-                className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:border-brand hover:bg-accent/30"
+                className={`flex items-center justify-between rounded-lg p-4 transition-colors hover:border-brand hover:bg-accent/30 ${
+                  ehHoje ? "border-2 border-brand bg-[#C9622B]/5" : "border"
+                }`}
               >
-                <p className="font-heading text-sm font-semibold">Dia {dia}</p>
-                <p className="text-sm text-muted-foreground">
-                  {resumo.ops.size} {resumo.ops.size === 1 ? "OP" : "OPs"} · {resumo.clientes.size}{" "}
-                  {resumo.clientes.size === 1 ? "cliente" : "clientes"} · {resumo.pecas} peças
-                </p>
+                <div>
+                  <p className="font-heading text-sm font-semibold">
+                    OP do dia {dia}/{mes}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {resumo.clientes.size} {resumo.clientes.size === 1 ? "cliente" : "clientes"} ·{" "}
+                    {resumo.pecas} peças
+                  </p>
+                  <p className="text-xs text-brand">{resumo.numeros.join(" · ")}</p>
+                </div>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
               </Link>
             );
           })}
         </div>
       )}
+
+      <div id="semana" className="scroll-mt-4">
+        <AgendaSemanalCard
+          cartoes={cartoes}
+          hrefBase={`/producao/${ano}/${mes}`}
+          semanaInicioParam={semanaInicio}
+        />
+      </div>
     </div>
   );
 }
