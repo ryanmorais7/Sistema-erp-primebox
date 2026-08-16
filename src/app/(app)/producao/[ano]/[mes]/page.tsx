@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { buscarCartoesProducao } from "@/lib/producaoCartoes";
 import { PageHeader } from "@/components/layout/page-header";
+import { NavegacaoPassos } from "@/components/producao/navegacao-passos";
 import { Button } from "@/components/ui/button";
 
 // Lista ordens de produção ao vivo do banco; nunca deve ser pré-renderizada no build.
@@ -40,6 +41,14 @@ export default async function ProducaoDiasDoMesPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      <NavegacaoPassos
+        atual={2}
+        passos={[
+          { numero: 1, label: "Mês", href: "/producao" },
+          { numero: 2, label: "Dia" },
+          { numero: 3, label: "OP do dia" },
+        ]}
+      />
       <PageHeader
         title={`${NOMES_MES[numeroMes - 1]} de ${ano}`}
         action={

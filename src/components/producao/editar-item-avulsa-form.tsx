@@ -62,7 +62,7 @@ export function EditarItemAvulsaForm({
       setErroGeral(resultado.error);
       return;
     }
-    router.push("/producao/kanban");
+    router.push("/producao");
     router.refresh();
   }
 
@@ -182,7 +182,7 @@ export function EditarItemAvulsaForm({
       {erroGeral && <p className="text-sm text-destructive">{erroGeral}</p>}
 
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={() => router.push("/producao/kanban")}>
+        <Button type="button" variant="outline" onClick={() => router.push("/producao")}>
           Cancelar
         </Button>
         <Button

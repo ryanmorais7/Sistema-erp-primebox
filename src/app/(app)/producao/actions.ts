@@ -323,3 +323,30 @@ export async function voltarOrdemProducao(id: string) {
     revalidatePath("/estoque");
   }
 }
+
+// Checkbox "Feito" da tela OP do dia — binário (feito ou não), em vez
+// dos 3 passos do Kanban. Reaproveita iniciarProducao/concluirProducao/
+// voltarOrdemProducao por baixo pra manter a mesma baixa/estorno de
+// estoque, só pulando o estado intermediário "Em produção" sem deixar
+// ele persistido.
+export async function marcarItemFeito(id: string) {
+  const ordem = await prisma.ordemProducao.findUnique({ where: { id } });
+  if (!ordem || ordem.status === "CONCLUIDO") {
+    return;
+  }
+  if (ordem.status === "AGUARDANDO") {
+    await iniciarProducao(id);
+  }
+  await concluirProducao(id);
+}
+
+export async function desmarcarItemFeito(id: string) {
+  const ordem = await prisma.ordemProducao.findUnique({ where: { id } });
+  if (!ordem || ordem.status === "AGUARDANDO") {
+    return;
+  }
+  if (ordem.status === "CONCLUIDO") {
+    await voltarOrdemProducao(id);
+  }
+  await voltarOrdemProducao(id);
+}

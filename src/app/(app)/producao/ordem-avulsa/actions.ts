@@ -408,6 +408,32 @@ export async function voltarProducaoAvulsa(id: string) {
   }
 }
 
+// Checkbox "Feito" da tela OP do dia — mesmo racional do lado formal
+// (marcarItemFeito/desmarcarItemFeito em producao/actions.ts): binário,
+// reaproveitando as funções de 3 passos por baixo. "Marcar" não tem
+// trava de expedição (só "desmarcar" tem, herdada de voltarProducaoAvulsa).
+export async function marcarItemFeitoAvulsa(id: string) {
+  const item = await prisma.itemOrdemAvulsa.findUnique({ where: { id } });
+  if (!item || item.status === "CONCLUIDO") {
+    return;
+  }
+  if (item.status === "AGUARDANDO") {
+    await iniciarProducaoAvulsa(id);
+  }
+  await concluirProducaoAvulsa(id);
+}
+
+export async function desmarcarItemFeitoAvulsa(id: string) {
+  const item = await prisma.itemOrdemAvulsa.findUnique({ where: { id } });
+  if (!item || item.status === "AGUARDANDO") {
+    return;
+  }
+  if (item.status === "CONCLUIDO") {
+    await voltarProducaoAvulsa(id);
+  }
+  await voltarProducaoAvulsa(id);
+}
+
 export async function cancelarItemOrdemAvulsa(id: string) {
   const item = await prisma.itemOrdemAvulsa.findUnique({
     where: { id },

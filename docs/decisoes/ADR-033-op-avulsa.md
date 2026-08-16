@@ -588,3 +588,65 @@ naquela tela).
   `/producao/kanban` e pelo botão "Ver no quadro" já existente na tela
   "OP do dia" (nível 3) — nada foi removido do Kanban em si, só o link
   de destaque no nível 1.
+
+## Atualização 2026-08-15 (parte 15) — correções: mês+semana juntos, indicador de passos, tabela da OP do dia, Kanban desligado de vez, folha sem agrupamento
+
+Pedro revisou o resultado das partes 13/14 contra um design já
+aprovado anteriormente (fora do contexto desta sessão) e pediu 5
+correções pontuais.
+
+- **`/producao` (nível 1) passou a mostrar mês e semana juntos, sem
+  alternância de tela.** A rota `/producao/semana` foi removida — o
+  conteúdo (6 colunas, nav de semana via `?semanaInicio=`) virou parte
+  de `/producao/page.tsx`, entre o card "Hoje" e a grade de meses. O
+  botão "Ver semana" saiu do ar.
+- **Indicador de passos "① Mês › ② Dia › ③ OP do dia"** — componente
+  novo `src/components/producao/navegacao-passos.tsx`, usado nas 3
+  telas da navegação, passo atual destacado em copper, passos
+  anteriores clicáveis (voltam), passos futuros neutros. **Sem
+  registro do design visual originalmente aprovado** (não encontrado
+  no contexto disponível nem no PDF de guia visual do projeto, que é
+  de uma versão anterior do sistema) — implementado com o melhor
+  julgamento, usando as cores já existentes no resto do sistema.
+- **Tabela da tela "OP do dia" simplificada** — colunas
+  Qtd./Produto/Cliente/Observação/Feito/Recibo/Expedição, no lugar de
+  Status/Pagamento/Recibo/Expedição/Ação. "Feito" é um checkbox
+  binário (não os 3 passos Aguardando → Em produção → Concluído do
+  Kanban). Para não quebrar a baixa de estoque (que só acontece na
+  transição Em produção → Concluído, ver `darBaixaProducaoConcluida`
+  em `concluirProducao`/`concluirProducaoAvulsa`), duas ações novas —
+  `marcarItemFeito`/`desmarcarItemFeito` (formal, em
+  `producao/actions.ts`) e as equivalentes `*Avulsa` — encadeiam as
+  ações de 3 passos por baixo (pula Aguardando → Em produção → Concluído
+  numa side só, sem deixar o estado intermediário persistido). Item
+  avulso com expedição já gerada não pode desmarcar "Feito" (mesma
+  trava que já existia no botão Voltar) — mostra um ícone travado,
+  sem form. **Consequência a confirmar com o Pedro:** o controle de
+  Pago/Pendente por item, que vivia nessa tabela, não tem mais lugar
+  na navegação principal (só sobrou no Kanban, desligado — ver abaixo)
+  — se ele ainda usa isso no dia a dia, precisa de um lugar novo.
+- **Kanban desligado de vez** — antes só tinha perdido o botão de
+  destaque; agora `KANBAN_ATIVO = false` em `producao/kanban/page.tsx`
+  faz a rota chamar `notFound()` (código intocado, reversível trocando
+  a flag). Todos os links que apontavam pra lá foram atualizados: os 5
+  formulários de criar/editar OP (redirect de sucesso e Cancelar)
+  voltam pra `/producao`; o botão "Ver no quadro" da tela "OP do dia"
+  foi removido; o link "Ver" do alerta de concluídas-sem-expedição
+  agora rola até a âncora `#semana` na própria página, em vez de
+  apontar pro Kanban.
+- **Achado ao desligar o Kanban: a folha de impressão/seleção
+  (`FolhaProducao`) só era renderizada dentro do Kanban** — desligá-lo
+  sem mais nada deixaria o botão "Imprimir" de `/producao` sem nada
+  pra imprimir. Movida pra `/producao/page.tsx` (mesmos dados: todos
+  os itens pendentes do sistema inteiro, não só do mês/ano em tela),
+  logo abaixo do cabeçalho.
+- **`FolhaProducao` revertida pro formato lista corrida** — removido o
+  agrupamento visual por OP (cabeçalho clicável "OP Avulsa #N · X
+  itens" da parte 12): sem `Fragment`/grupos, cada linha renderiza
+  direto, clique na própria linha seleciona ela (sem mais clique no
+  grupo inteiro). A alternância de cor por OP (peach/teal) foi mantida
+  — é calculada por quem chama o componente (antes só o Kanban, agora
+  também `/producao`), não pelo componente em si, então continua dando
+  uma pista visual de "essas linhas são a mesma OP" sem precisar de um
+  cabeçalho interrompendo a lista. "Selecionar dia X" e o total geral
+  no rodapé não mudaram.

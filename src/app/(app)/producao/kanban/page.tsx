@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowRight, ArrowLeft, X, Plus, List, Receipt, Truck, CalendarClock, CalendarDays, Pencil } from "lucide-react";
 import {
   iniciarProducao,
@@ -44,7 +45,17 @@ const formatadorDataProgramada = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "UTC",
 });
 
+// Desativado da navegação principal a pedido do Pedro — a agenda
+// semanal em /producao cobre a visão panorâmica que o Kanban tentava
+// resolver. Código intacto, só a rota desligada; virar KANBAN_ATIVO
+// pra true reativa a tela sem precisar reescrever nada (ver ADR-033).
+const KANBAN_ATIVO = false;
+
 export default async function ProducaoKanbanPage() {
+  if (!KANBAN_ATIVO) {
+    notFound();
+  }
+
   const todosCartoes = await buscarCartoesProducao();
 
   // Agrupa por OP inteira (não por cliente) e ordena por ordem de
