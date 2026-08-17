@@ -34,10 +34,11 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
 
   const cartoes = await buscarCartoesProducao();
 
-  // Alerta: OPs concluídas em qualquer dia, ainda sem expedição gerada —
-  // o Pedro só usa esse status (amarelo); não existe conceito de atraso.
+  // Alerta: OPs com conclusão CONFIRMADA (botão "Marcar como concluída",
+  // não é automático — ver ADR-033), ainda sem expedição gerada. O
+  // Pedro só usa esse status (amarelo); não existe conceito de atraso.
   const concluidasSemExpedicao = cartoes.filter(
-    (cartao) => cartao.status === "CONCLUIDO" && !cartao.temExpedicao,
+    (cartao) => cartao.concluidaConfirmada && !cartao.temExpedicao,
   );
 
   // Card "Hoje"
@@ -102,7 +103,10 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
         {concluidasSemExpedicao.length > 0 && (
           <div className="flex items-center justify-between rounded-lg border bg-white p-4 shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
             <div className="flex items-center gap-3">
-              <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: "#D6A537" }} />
+              <span
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: "#F0B429", boxShadow: "0 0 0 4px rgba(240,180,41,0.25)" }}
+              />
               <p className="text-sm">
                 <span className="font-semibold">
                   {concluidasSemExpedicao.length} OP{concluidasSemExpedicao.length > 1 ? "s" : ""}
@@ -113,7 +117,8 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
             </div>
             <a
               href="#semana"
-              className="flex shrink-0 items-center gap-1 text-sm font-medium text-brand hover:underline"
+              className="flex shrink-0 items-center gap-1 text-sm font-medium hover:underline"
+              style={{ color: "#8A6A16" }}
             >
               Ver
               <ArrowRight className="size-3.5" />
@@ -151,35 +156,50 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
               <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
                 Passo 1 · Escolher o mês
               </p>
-              <p className="font-heading text-lg font-semibold">Produção · {anoHoje}</p>
+              <p className="font-heading text-lg font-extrabold">Produção · {anoHoje}</p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {NOMES_MES.map((_, indice) => {
                 const mes = indice + 1;
                 const ano = anoHoje;
                 const resumo = resumoPorMesJanela.get(`${ano}-${mes}`);
+                const temOps = !!resumo && resumo.ops.size > 0;
                 const ehMesAtual = mes === mesHoje;
+                const destaque = ehMesAtual || temOps;
                 return (
                   <Link
                     key={`${ano}-${mes}`}
                     href={`/producao/${ano}/${String(mes).padStart(2, "0")}`}
-                    className={`flex flex-col items-center gap-2 rounded-lg border p-4 text-center transition-colors ${
-                      ehMesAtual
-                        ? "border-brand bg-[#C9622B]/10"
-                        : "text-muted-foreground hover:border-brand hover:bg-accent/30"
-                    }`}
+                    className="flex flex-col items-center gap-2 rounded-lg p-4 text-center transition-colors hover:brightness-95"
+                    style={
+                      destaque
+                        ? { backgroundColor: "#F4E2D6", border: "2px solid #C9622B" }
+                        : {
+                            backgroundColor: "#FBF7F0",
+                            border: "1px solid #EDE6D8",
+                            borderTop: "3px solid #D9CBAE",
+                          }
+                    }
                   >
                     <Folder
-                      className={ehMesAtual ? "size-6 text-brand" : "size-6 text-muted-foreground/50"}
-                      fill={ehMesAtual ? "currentColor" : "none"}
-                      strokeWidth={ehMesAtual ? 0 : 1.5}
+                      className="size-6"
+                      style={destaque ? { color: "#C9622B" } : { color: "#8A9187" }}
+                      fill={destaque ? "#E89968" : "none"}
+                      strokeWidth={1.8}
                     />
-                    <p className={`text-sm font-medium ${ehMesAtual ? "text-foreground" : ""}`}>
+                    <p
+                      className="text-[13px]"
+                      style={
+                        destaque
+                          ? { fontWeight: 800, color: "#1C2321" }
+                          : { fontWeight: 700, color: "#3D4340" }
+                      }
+                    >
                       {NOMES_MES[mes - 1]}
                     </p>
-                    {resumo && resumo.ops.size > 0 && (
-                      <p className="text-xs text-brand">
-                        {resumo.ops.size} {resumo.ops.size === 1 ? "OP" : "OPs"}
+                    {temOps && (
+                      <p className="font-mono text-xs font-semibold" style={{ color: "#C9622B" }}>
+                        {resumo!.ops.size} {resumo!.ops.size === 1 ? "OP" : "OPs"}
                       </p>
                     )}
                   </Link>

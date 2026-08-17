@@ -31,17 +31,19 @@ export default async function ProducaoDiasDoMesPage({ params, searchParams }: Pa
 
   const resumoPorDia = new Map<
     string,
-    { pecas: number; clientes: Set<string>; numeros: string[] }
+    { pecas: number; clientes: Set<string>; numeros: string[]; grupos: Map<string, boolean> }
   >();
   for (const cartao of cartoesDoMes) {
     const atual = resumoPorDia.get(cartao.diaChave) ?? {
       pecas: 0,
       clientes: new Set<string>(),
       numeros: [],
+      grupos: new Map<string, boolean>(),
     };
     atual.pecas += cartao.quantidade;
     atual.clientes.add(cartao.clienteLabel);
     if (!atual.numeros.includes(cartao.numeroLabel)) atual.numeros.push(cartao.numeroLabel);
+    atual.grupos.set(cartao.grupoOpId, cartao.concluidaConfirmada);
     resumoPorDia.set(cartao.diaChave, atual);
   }
   const diasComOp = [...resumoPorDia.keys()].sort();
@@ -78,15 +80,26 @@ export default async function ProducaoDiasDoMesPage({ params, searchParams }: Pa
             const resumo = resumoPorDia.get(diaChave)!;
             const dia = diaChave.slice(-2);
             const ehHoje = diaChave === hojeChave;
+            const todasConfirmadas = [...resumo.grupos.values()].every(Boolean);
             return (
               <Link
                 key={diaChave}
                 href={`/producao/${ano}/${mes}/${dia}`}
-                className={`flex items-center justify-between rounded-lg p-4 transition-colors hover:border-brand hover:bg-accent/30 ${
-                  ehHoje ? "border-2 border-brand bg-[#C9622B]/5" : "border"
+                className={`flex items-center justify-between rounded-lg p-4 transition-colors hover:brightness-95 ${
+                  todasConfirmadas
+                    ? ""
+                    : ehHoje
+                      ? "border-2 border-brand bg-[#C9622B]/5"
+                      : "border hover:border-brand hover:bg-accent/30"
                 }`}
+                style={todasConfirmadas ? { backgroundColor: "#FDF0D2", border: "1px solid #F0B429" } : undefined}
               >
                 <div>
+                  {todasConfirmadas && (
+                    <p className="mb-0.5 text-xs font-medium" style={{ color: "#8A6A16" }}>
+                      ✓ Concluída
+                    </p>
+                  )}
                   <p className="font-heading text-sm font-semibold">
                     OP do dia {dia}/{mes}
                   </p>

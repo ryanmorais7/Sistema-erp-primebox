@@ -56,6 +56,9 @@ export type Cartao = {
   grupoOpId: string;
   createdAt: Date;
   temExpedicao: boolean;
+  // Confirmação explícita da OP inteira (não é "todo item concluído",
+  // é o botão "Marcar como concluída" clicado — ver ADR-033).
+  concluidaConfirmada: boolean;
   dataProgramada: Date | null;
   // Controle de pagamento — independente do status Em carteira/Faturado
   // do Pedido (que é sobre faturamento, não sobre o dinheiro ter
@@ -114,6 +117,7 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
     // Expedicao do fluxo formal é por Pedido inteiro (não por linha) —
     // ver Expedicao.pedidoId no schema.
     temExpedicao: !!ordem.itemPedido.pedido.expedicao,
+    concluidaConfirmada: ordem.itemPedido.pedido.concluidaConfirmada,
     dataProgramada: ordem.dataProgramada,
     pago: ordem.itemPedido.pago,
     diaChave: chaveDiaCartao(ordem.dataProgramada, ordem.createdAt),
@@ -132,6 +136,7 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
     grupoOpId: item.ordemAvulsaId,
     createdAt: item.createdAt,
     temExpedicao: !!item.expedicao,
+    concluidaConfirmada: item.ordemAvulsa.concluidaConfirmada,
     dataProgramada: item.dataProgramada,
     pago: item.pago,
     diaChave: chaveDiaCartao(item.dataProgramada, item.createdAt),

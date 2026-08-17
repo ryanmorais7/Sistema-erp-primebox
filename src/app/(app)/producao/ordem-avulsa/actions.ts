@@ -446,6 +446,22 @@ export async function desmarcarItemFeitoAvulsa(id: string) {
   await voltarProducaoAvulsa(id);
 }
 
+// Mesmo racional de confirmarConclusaoGrupo (producao/actions.ts) do
+// lado avulso — ver ADR-033.
+export async function confirmarConclusaoGrupoAvulsa(ordemAvulsaId: string) {
+  const itens = await prisma.itemOrdemAvulsa.findMany({ where: { ordemAvulsaId } });
+  for (const item of itens) {
+    if (item.status !== "CONCLUIDO") {
+      await marcarItemFeitoAvulsa(item.id);
+    }
+  }
+  await prisma.ordemAvulsa.update({
+    where: { id: ordemAvulsaId },
+    data: { concluidaConfirmada: true },
+  });
+  revalidatePath("/producao");
+}
+
 export async function cancelarItemOrdemAvulsa(id: string) {
   const item = await prisma.itemOrdemAvulsa.findUnique({
     where: { id },

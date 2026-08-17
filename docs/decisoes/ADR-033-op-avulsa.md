@@ -800,3 +800,61 @@ card Hoje, card do mês, card da semana — nada mais.
   - Testado ponta a ponta: planilha com 2 linhas do mesmo cliente + 1
     linha de cliente diferente gerou 2 OPs avulsas corretamente
     agrupadas (2 itens numa, 1 item na outra).
+
+## Atualização 2026-08-17 (parte 19) — conclusão de OP vira confirmação explícita, cores de alerta padronizadas, agenda semanal com 5 estados de card
+
+- **Migração de schema**: `Pedido.concluidaConfirmada` e
+  `OrdemAvulsa.concluidaConfirmada` (`Boolean @default(false)`,
+  migration `20260817011127_adiciona_conclusao_confirmada`). Antes, o
+  badge "Concluída" era derivado automaticamente (todo item com status
+  CONCLUIDO). Agora é um campo próprio, só vira `true` por uma ação
+  explícita — decisão confirmada com o Ryan antes de mexer no schema.
+- **Botão "Marcar como concluída" no cabeçalho de cada OP** (junto com
+  Editar/Cancelar), sempre visível enquanto `!concluidaConfirmada`.
+  Ação em lote e por OP individual, nunca o dia inteiro de uma vez
+  (confirmado explicitamente): `confirmarConclusaoGrupo`
+  (`producao/actions.ts`) e `confirmarConclusaoGrupoAvulsa`
+  (`ordem-avulsa/actions.ts`) marcam qualquer item ainda não "Feito"
+  (reaproveitando `marcarItemFeito`/`marcarItemFeitoAvulsa`, mantendo a
+  baixa de estoque) e só então gravam a confirmação da OP. Sempre atrás
+  de um modal de confirmação (`ConfirmarConclusaoButton`, componente
+  novo em `components/producao/confirmar-conclusao-button.tsx`) — sem
+  modal de confirmação nenhum na UI antes disso (`AlertDialog` novo em
+  `components/ui/alert-dialog.tsx`, wrapper do `@base-ui/react/alert-dialog`,
+  primeiro dialog/modal do projeto).
+- **Cor de alerta/concluída padronizada em todo canto** — fundo
+  `#FDF0D2`, borda `#F0B429`, texto `#8A6A16`, bolinha/ícone `#F0B429`
+  com glow (`box-shadow: 0 0 0 4px rgba(240,180,41,0.25)`), aplicada
+  igual na faixa de alerta do nível 1, no badge/card da OP (nível 3),
+  nos cards de dia do Passo 2, e nos cards da agenda semanal.
+- **Regra confirmada com o Ryan**: os cards de **dia** (Passo 2) e da
+  **agenda semanal** só ficam amarelos quando **todas** as OPs
+  daquele dia já estiverem confirmadas — não "pelo menos uma". Cada
+  card de dia carrega um `Map<grupoOpId, concluidaConfirmada>` e só
+  pinta se `[...grupos.values()].every(Boolean)`.
+- **Agenda semanal ganhou 5 estados de card** (antes só tinha
+  "com dados" / "vazio"): concluída-confirmada (qualquer dia, amarelo);
+  passado vazio (opacidade ~45%, sem link, `<div>` em vez de `<Link>`);
+  futuro vazio (borda tracejada, círculo tracejado com "+", texto
+  "Criar OP", link direto pra `/producao/nova?data=` já com a data);
+  hoje (borda copper, mantido igual); dia com dados normais (formato
+  de sempre). Grade dias 12 meses continua com janela/12-meses
+  independente disso.
+- **Domingo pula pra semana que vem por padrão** — se hoje é domingo
+  (fábrica não produz) e a tela não recebeu `?semanaInicio=` explícito,
+  a agenda soma +7 dias na segunda calculada e mostra um aviso: "🗓️
+  Hoje é domingo... mostrando a próxima semana útil". Navegar
+  manualmente pra "semana anterior" ainda funciona normal — o pulo só
+  acontece no carregamento padrão.
+- **Grade de meses (Passo 1) ganhou identidade visual própria**: fundo
+  creme `#FBF7F0`, borda `#EDE6D8` com topo de 3px `#D9CBAE` nos meses
+  normais; mês atual **ou** mês com OPs (não só o atual) ganha fundo
+  `#F4E2D6`, borda 2px `#C9622B`, ícone de pasta preenchido
+  (`#E89968`/`#C9622B`, stroke-width 1.8); tipografia mais pesada
+  (nome do mês 700/800, título "Produção · {ano}" 800).
+- **Bug corrigido: `ClienteTextoField` agora também auto-vincula no
+  blur** quando o texto bate exato com um cliente cadastrado, mesmo
+  sem clicar na sugestão — mesma correção já feita em
+  `ProdutoTextoField` na parte 18, faltava do lado cliente. Evita que
+  uma linha vire "OP Avulsa" por engano quando o nome digitado já
+  existe no cadastro.

@@ -350,3 +350,23 @@ export async function desmarcarItemFeito(id: string) {
   }
   await voltarOrdemProducao(id);
 }
+
+// Botão "Marcar como concluída" no cabeçalho do grupo — confirmação
+// explícita e em lote (ver ADR-033): marca qualquer item ainda não
+// feito (reaproveitando marcarItemFeito, preservando a baixa de
+// estoque) e só então grava a confirmação da OP inteira. O card só
+// vira "Concluída" (amarelo) por causa desse campo, nunca sozinho
+// só por todo item já estar com status CONCLUIDO.
+export async function confirmarConclusaoGrupo(pedidoId: string) {
+  const itens = await prisma.itemPedido.findMany({
+    where: { pedidoId },
+    include: { ordemProducao: true },
+  });
+  for (const item of itens) {
+    if (item.ordemProducao && item.ordemProducao.status !== "CONCLUIDO") {
+      await marcarItemFeito(item.ordemProducao.id);
+    }
+  }
+  await prisma.pedido.update({ where: { id: pedidoId }, data: { concluidaConfirmada: true } });
+  revalidatePath("/producao");
+}

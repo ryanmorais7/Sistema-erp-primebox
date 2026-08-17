@@ -11,6 +11,7 @@ import { gerarExpedicao, gerarExpedicaoAvulsa } from "@/app/(app)/expedicao/acti
 import { buscarCartoesProducao, coresAlternadasPorCliente, type Cartao } from "@/lib/producaoCartoes";
 import { NavegacaoPassos } from "@/components/producao/navegacao-passos";
 import { AgendaSemanalCard } from "@/components/producao/agenda-semanal-card";
+import { ConfirmarConclusaoButton } from "@/components/producao/confirmar-conclusao-button";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { Button } from "@/components/ui/button";
 
@@ -27,7 +28,7 @@ type Grupo = {
   primeiro: Cartao;
   itens: Cartao[];
   totalPecas: number;
-  todosConcluidos: boolean;
+  concluidaConfirmada: boolean;
   algumAguardando: boolean;
 };
 
@@ -56,7 +57,7 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
     primeiro: itens[0],
     itens,
     totalPecas: itens.reduce((total, cartao) => total + cartao.quantidade, 0),
-    todosConcluidos: itens.every((cartao) => cartao.status === "CONCLUIDO"),
+    concluidaConfirmada: itens[0].concluidaConfirmada,
     algumAguardando: itens.some((cartao) => cartao.status === "AGUARDANDO"),
   }));
 
@@ -138,7 +139,11 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                   <div
                     key={grupo.grupoOpId}
                     className="rounded-lg border p-4"
-                    style={grupo.todosConcluidos ? { backgroundColor: "#FBF2D3" } : undefined}
+                    style={
+                      grupo.concluidaConfirmada
+                        ? { backgroundColor: "#FDF0D2", borderColor: "#F0B429" }
+                        : undefined
+                    }
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-semibold">
@@ -146,14 +151,20 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                         {grupo.itens.length === 1 ? "item" : "itens"} · {grupo.totalPecas} peças
                       </p>
                       <div className="flex flex-wrap items-center gap-2">
-                        {grupo.todosConcluidos && (
+                        {grupo.concluidaConfirmada && (
                           <span
-                            className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
-                            style={{ backgroundColor: "#F7E5B8", color: "#8A6A16" }}
+                            className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium"
+                            style={{ backgroundColor: "#FDF0D2", borderColor: "#F0B429", color: "#8A6A16" }}
                           >
                             <CheckCircle2 className="size-3.5" />
                             Concluída
                           </span>
+                        )}
+                        {!grupo.concluidaConfirmada && (
+                          <ConfirmarConclusaoButton
+                            grupoOpId={grupo.grupoOpId}
+                            origem={grupo.primeiro.origem}
+                          />
                         )}
                         {grupo.algumAguardando && (
                           <Button

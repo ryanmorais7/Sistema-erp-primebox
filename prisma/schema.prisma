@@ -112,6 +112,12 @@ model Pedido {
   expedicao   Expedicao?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  // Confirmação explícita de que a OP (todos os itens) foi concluída —
+  // não é derivado automaticamente de todo item estar com status
+  // CONCLUIDO. Só vira true pelo botão "Marcar como concluída" no
+  // cabeçalho do grupo (ver ADR-033). É o que pinta os cards de dia/
+  // semana de amarelo e conta pro alerta de "esperando expedição".
+  concluidaConfirmada Boolean @default(false)
 }
 
 model ItemPedido {
@@ -168,6 +174,9 @@ model OrdemAvulsa {
   createdAt DateTime @default(now())
 
   itens ItemOrdemAvulsa[]
+  // Mesmo campo e mesmo racional do Pedido.concluidaConfirmada — ver
+  // comentário lá.
+  concluidaConfirmada Boolean @default(false)
 }
 
 model ItemOrdemAvulsa {
