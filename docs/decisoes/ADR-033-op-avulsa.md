@@ -858,3 +858,32 @@ card Hoje, card do mês, card da semana — nada mais.
   `ProdutoTextoField` na parte 18, faltava do lado cliente. Evita que
   uma linha vire "OP Avulsa" por engano quando o nome digitado já
   existe no cadastro.
+
+## Atualização 2026-08-17 (parte 20) — preço e subtotal na tela "OP do dia" (só na versão de sistema)
+
+Pedro queria ver o preço de cada item e o total da OP sem precisar
+clicar em "Recibo". Adicionado só na versão A (interativa) da tela "OP
+do dia" — a versão B (impressa pra fábrica) continua exatamente igual,
+sem nenhuma coluna ou valor de preço (regra permanente, não omissão).
+
+- **`Cartao.precoUnitario: number | null`** (novo campo em
+  `producaoCartoes.ts`) — vem de `ItemPedido.precoUnitario` (formal,
+  sempre presente) ou `ItemOrdemAvulsa.precoUnitario` (avulso,
+  opcional — Pedro pode deixar em branco na criação).
+- **Duas colunas novas na tabela interativa**, entre Observação e
+  Feito: "Preço unit." (só leitura, `text-right font-mono
+  text-muted-foreground`) e "Subtotal" (`Qtd. × Preço unit.`,
+  calculado na hora, nunca gravado — `text-right font-mono
+  font-medium`). Item sem preço mostra "—" nas duas colunas.
+- **Bloco "TOTAL DA OP"** no rodapé de cada card de grupo, ao lado do
+  total de peças já existente — soma os subtotais de todos os itens
+  da OP (item sem preço conta como 0 na soma, sem travar nada).
+  Formatação `Intl.NumberFormat("pt-BR", {style:"currency",
+  currency:"BRL"})` (mesmo padrão já usado em Pedidos/Estoque/Painel),
+  gerando "R$ 1.234,56".
+- **Edição de preço já funcionava** — os 4 formulários de "Editar"
+  (grupo/item × formal/avulso) já tinham o campo Preço editável e
+  persistindo de verdade desde antes desta parte; só precisou
+  verificar, nenhum código novo. Testado: editar o preço de um item
+  sem preço via "Editar" reflete corretamente na coluna, no subtotal
+  da linha e no "TOTAL DA OP" ao voltar pra tela.

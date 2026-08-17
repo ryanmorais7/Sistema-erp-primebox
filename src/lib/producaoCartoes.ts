@@ -50,6 +50,11 @@ export type Cartao = {
   clienteLabel: string;
   clienteHref: string | null;
   observacao: string;
+  // Preço unitário definido na criação/edição da OP — sempre presente
+  // do lado formal (ItemPedido.precoUnitario é obrigatório), opcional
+  // do lado avulso (Pedro pode deixar em branco). Só leitura na tela
+  // "OP do dia"; edição continua sendo pelo formulário de Editar.
+  precoUnitario: number | null;
   // Id da OP inteira (OrdemAvulsa ou Pedido) — usado pra agrupar vários
   // itens da mesma OP num card só, seja no board ou na navegação por
   // dia (ver ADR-033).
@@ -112,6 +117,7 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
       ordem.itemPedido.pedido.cliente.nomeFantasia || ordem.itemPedido.pedido.cliente.razaoSocial,
     clienteHref: `/pedidos/${ordem.itemPedido.pedido.id}`,
     observacao: ordem.itemPedido.pedido.observacoes || "",
+    precoUnitario: Number(ordem.itemPedido.precoUnitario),
     grupoOpId: ordem.itemPedido.pedidoId,
     createdAt: ordem.createdAt,
     // Expedicao do fluxo formal é por Pedido inteiro (não por linha) —
@@ -133,6 +139,7 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
     clienteLabel: item.clienteTexto,
     clienteHref: item.clienteId ? `/clientes/${item.clienteId}/editar` : null,
     observacao: item.observacao || "",
+    precoUnitario: item.precoUnitario ? Number(item.precoUnitario) : null,
     grupoOpId: item.ordemAvulsaId,
     createdAt: item.createdAt,
     temExpedicao: !!item.expedicao,

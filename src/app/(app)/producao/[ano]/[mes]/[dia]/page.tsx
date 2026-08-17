@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 // Lista ordens de produção ao vivo do banco; nunca deve ser pré-renderizada no build.
 export const dynamic = "force-dynamic";
 
+const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
 type PageProps = {
   params: Promise<{ ano: string; mes: string; dia: string }>;
   searchParams: Promise<{ semanaInicio?: string }>;
@@ -28,6 +30,7 @@ type Grupo = {
   primeiro: Cartao;
   itens: Cartao[];
   totalPecas: number;
+  totalPreco: number;
   concluidaConfirmada: boolean;
   algumAguardando: boolean;
 };
@@ -57,6 +60,10 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
     primeiro: itens[0],
     itens,
     totalPecas: itens.reduce((total, cartao) => total + cartao.quantidade, 0),
+    totalPreco: itens.reduce(
+      (total, cartao) => total + (cartao.precoUnitario ?? 0) * cartao.quantidade,
+      0,
+    ),
     concluidaConfirmada: itens[0].concluidaConfirmada,
     algumAguardando: itens.some((cartao) => cartao.status === "AGUARDANDO"),
   }));
@@ -212,6 +219,8 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                             <th className="p-2 text-left font-medium">Produto</th>
                             <th className="p-2 text-left font-medium">Cliente</th>
                             <th className="p-2 text-left font-medium">Observação</th>
+                            <th className="p-2 text-right font-medium">Preço unit.</th>
+                            <th className="p-2 text-right font-medium">Subtotal</th>
                             <th className="p-2 text-center font-medium">Feito</th>
                             <th className="p-2 text-center font-medium">Recibo</th>
                             <th className="p-2 text-center font-medium">Expedição</th>
@@ -234,6 +243,16 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                                 <td className="p-2 font-medium">{cartao.produtoTexto}</td>
                                 <td className="p-2 text-muted-foreground italic">{cartao.clienteLabel}</td>
                                 <td className="p-2 text-muted-foreground">{cartao.observacao}</td>
+                                <td className="p-2 text-right font-mono text-muted-foreground">
+                                  {cartao.precoUnitario != null
+                                    ? formatadorMoeda.format(cartao.precoUnitario)
+                                    : "—"}
+                                </td>
+                                <td className="p-2 text-right font-mono font-medium">
+                                  {cartao.precoUnitario != null
+                                    ? formatadorMoeda.format(cartao.precoUnitario * cartao.quantidade)
+                                    : "—"}
+                                </td>
                                 <td className="p-2 text-center">
                                   {feito && feitoTravado ? (
                                     <CheckSquare className="mx-auto size-4 text-muted-foreground" />
@@ -312,9 +331,19 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                       </table>
                     </div>
 
-                    <div className="mt-3 flex items-center gap-3">
-                      <p className="text-2xl font-bold">{grupo.totalPecas}</p>
-                      <p className="text-sm text-muted-foreground">Total de peças nesta OP</p>
+                    <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <p className="text-2xl font-bold">{grupo.totalPecas}</p>
+                        <p className="text-sm text-muted-foreground">Total de peças nesta OP</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                          Total da OP
+                        </p>
+                        <p className="font-mono text-xl font-medium">
+                          {formatadorMoeda.format(grupo.totalPreco)}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
