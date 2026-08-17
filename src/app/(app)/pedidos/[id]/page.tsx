@@ -8,6 +8,7 @@ import {
   Wrench,
   CircleCheck,
   Warehouse,
+  Trash2,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -16,7 +17,7 @@ import { calcularSaldosProdutos } from "@/lib/estoque";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { AutoImprimir } from "@/components/pedidos/auto-imprimir";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
-import { gerarOrdemProducao } from "@/app/(app)/producao/actions";
+import { gerarOrdemProducao, cancelarOrdemProducao } from "@/app/(app)/producao/actions";
 import { atenderItemDoEstoque } from "@/app/(app)/estoque/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -212,6 +213,7 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
               {pedido.itens.map((item) => {
                 const saldoEstoque = saldosProdutos.get(item.produtoId) ?? 0;
                 const saldoSuficiente = saldoEstoque >= item.quantidade;
+                const idOrdemProducao = item.ordemProducao?.id;
                 return (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
@@ -248,14 +250,32 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
                   </TableCell>
                   <TableCell className="text-right print:hidden">
                     {item.ordemProducao ? (
-                      <Link
-                        href="/producao"
-                        className="inline-flex w-fit items-center gap-1 rounded-full bg-[#DFEAE6] px-2 py-0.5 text-xs font-medium text-[#0F6E56] hover:underline"
-                      >
-                        <CircleCheck className="size-3.5" />
-                        OP #{item.ordemProducao.numero} ·{" "}
-                        {statusOrdemProducaoLabels[item.ordemProducao.status]}
-                      </Link>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href="/producao"
+                          className="inline-flex w-fit items-center gap-1 rounded-full bg-[#DFEAE6] px-2 py-0.5 text-xs font-medium text-[#0F6E56] hover:underline"
+                        >
+                          <CircleCheck className="size-3.5" />
+                          OP #{item.ordemProducao.numero} ·{" "}
+                          {statusOrdemProducaoLabels[item.ordemProducao.status]}
+                        </Link>
+                        <form
+                          action={async () => {
+                            "use server";
+                            await cancelarOrdemProducao(idOrdemProducao!);
+                          }}
+                        >
+                          <Button
+                            type="submit"
+                            variant="destructive"
+                            size="icon-sm"
+                            aria-label="Apagar esta OP"
+                            title="Apagar esta OP"
+                          >
+                            <Trash2 />
+                          </Button>
+                        </form>
+                      </div>
                     ) : item.atendidoEstoque ? (
                       <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#DFEAE6] px-2 py-0.5 text-xs font-medium text-[#0F6E56]">
                         <Warehouse className="size-3.5" />

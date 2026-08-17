@@ -370,3 +370,12 @@ export async function confirmarConclusaoGrupo(pedidoId: string) {
   await prisma.pedido.update({ where: { id: pedidoId }, data: { concluidaConfirmada: true } });
   revalidatePath("/producao");
 }
+
+// Desfaz a confirmação — clicar de novo no badge "Concluída" tira a OP
+// desse estado e some com a cor amarela dos cards. Não mexe no status
+// "Feito" de cada item nem na baixa de estoque (são independentes);
+// se quiser desfazer isso também, o Pedro desmarca item por item.
+export async function desconfirmarConclusaoGrupo(pedidoId: string) {
+  await prisma.pedido.update({ where: { id: pedidoId }, data: { concluidaConfirmada: false } });
+  revalidatePath("/producao");
+}

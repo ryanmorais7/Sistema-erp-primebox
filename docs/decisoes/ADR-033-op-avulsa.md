@@ -887,3 +887,22 @@ sem nenhuma coluna ou valor de preço (regra permanente, não omissão).
   verificar, nenhum código novo. Testado: editar o preço de um item
   sem preço via "Editar" reflete corretamente na coluna, no subtotal
   da linha e no "TOTAL DA OP" ao voltar pra tela.
+
+## Atualização 2026-08-17 (parte 21) — desfazer conclusão, e lixeira de OP em Pedido
+
+- **Badge "✓ Concluída" virou clicável** — clicar de novo desfaz a
+  confirmação (`desconfirmarConclusaoGrupo`/`...Avulsa`, novas em
+  `producao/actions.ts`/`ordem-avulsa/actions.ts`, só gravam
+  `concluidaConfirmada: false`). Sem modal, diferente de confirmar —
+  não desfaz o estoque nem desmarca os "Feito" de cada item (são
+  independentes; se quiser desfazer isso também, é item por item). Ao
+  desfazer, some a cor amarela do card da OP, do card do dia (Passo 2)
+  e do card daquele dia na agenda semanal, automaticamente (dependem
+  todos do mesmo campo).
+- **Lixeira em `/pedidos/[id]`** — reaproveitado `cancelarOrdemProducao`
+  (já existia, mesma ação usada em "Cancelar OP" na Produção) num
+  ícone novo ao lado do badge "OP #N · status", na coluna Produção.
+  Apaga só a `OrdemProducao` (estorna estoque se já tinha concluído),
+  não mexe no `ItemPedido`/`Pedido` — o botão "Gerar OP" volta a
+  aparecer, como se a OP nunca tivesse sido criada. Sem modal,
+  consistente com o "Cancelar OP" que já existia em Produção.

@@ -462,6 +462,16 @@ export async function confirmarConclusaoGrupoAvulsa(ordemAvulsaId: string) {
   revalidatePath("/producao");
 }
 
+// Mesmo racional de desconfirmarConclusaoGrupo (producao/actions.ts) —
+// clicar de novo no badge tira a OP avulsa do estado confirmado.
+export async function desconfirmarConclusaoGrupoAvulsa(ordemAvulsaId: string) {
+  await prisma.ordemAvulsa.update({
+    where: { id: ordemAvulsaId },
+    data: { concluidaConfirmada: false },
+  });
+  revalidatePath("/producao");
+}
+
 export async function cancelarItemOrdemAvulsa(id: string) {
   const item = await prisma.itemOrdemAvulsa.findUnique({
     where: { id },

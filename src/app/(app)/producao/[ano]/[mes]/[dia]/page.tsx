@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, X, Receipt, Truck, Pencil, CheckCircle2, Box, Plus, Square, CheckSquare } from "lucide-react";
-import { cancelarGrupoOrdemProducao, marcarItemFeito, desmarcarItemFeito } from "../../../actions";
+import {
+  cancelarGrupoOrdemProducao,
+  marcarItemFeito,
+  desmarcarItemFeito,
+  desconfirmarConclusaoGrupo,
+} from "../../../actions";
 import {
   cancelarGrupoAvulsa,
   marcarItemFeitoAvulsa,
   desmarcarItemFeitoAvulsa,
+  desconfirmarConclusaoGrupoAvulsa,
 } from "../../../ordem-avulsa/actions";
 import { gerarExpedicao, gerarExpedicaoAvulsa } from "@/app/(app)/expedicao/actions";
 import { buscarCartoesProducao, coresAlternadasPorCliente, type Cartao } from "@/lib/producaoCartoes";
@@ -159,13 +165,27 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                       </p>
                       <div className="flex flex-wrap items-center gap-2">
                         {grupo.concluidaConfirmada && (
-                          <span
-                            className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium"
-                            style={{ backgroundColor: "#FDF0D2", borderColor: "#F0B429", color: "#8A6A16" }}
+                          <form
+                            action={async () => {
+                              "use server";
+                              if (grupo.primeiro.origem === "formal") {
+                                await desconfirmarConclusaoGrupo(grupo.grupoOpId);
+                              } else {
+                                await desconfirmarConclusaoGrupoAvulsa(grupo.grupoOpId);
+                              }
+                            }}
                           >
-                            <CheckCircle2 className="size-3.5" />
-                            Concluída
-                          </span>
+                            <button
+                              type="submit"
+                              aria-label="Desmarcar como concluída"
+                              title="Clique pra desmarcar como concluída"
+                              className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium hover:brightness-95"
+                              style={{ backgroundColor: "#FDF0D2", borderColor: "#F0B429", color: "#8A6A16" }}
+                            >
+                              <CheckCircle2 className="size-3.5" />
+                              Concluída
+                            </button>
+                          </form>
                         )}
                         {!grupo.concluidaConfirmada && (
                           <ConfirmarConclusaoButton
