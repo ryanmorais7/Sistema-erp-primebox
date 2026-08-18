@@ -213,24 +213,18 @@ export async function criarOrdemAvulsa(
       }
     }
 
-    // Agrupa por cliente (texto normalizado) — uma OP avulsa só pode
-    // ter um cliente, mesma regra do lado formal (que já agrupa por
-    // clienteId). Antes todas as linhas avulsas de uma submissão
-    // caíam numa OrdemAvulsa só, mesmo sendo de clientes diferentes.
+    // Todas as linhas avulsas de uma submissão caem numa OrdemAvulsa só,
+    // mesmo sendo de clientes diferentes — uma OP avulsa pode ter
+    // vários clientes dentro (decisão revertida em 2026-08-18, ver
+    // ADR-033/ADR-034: o agrupamento por cliente que existiu por um
+    // tempo ficava com o dia partido em várias caixas separadas na
+    // tela "OP do dia", o que o Ryan não queria).
     const linhasAvulsas = produtos.filter((p) => !ehFormal(p.linha));
-    const gruposPorClienteTexto = new Map<string, typeof linhasAvulsas>();
-    for (const item of linhasAvulsas) {
-      const chave = normalizar(item.linha.clienteTexto);
-      const grupo = gruposPorClienteTexto.get(chave) ?? [];
-      grupo.push(item);
-      gruposPorClienteTexto.set(chave, grupo);
-    }
-
-    for (const itensDoCliente of gruposPorClienteTexto.values()) {
+    if (linhasAvulsas.length > 0) {
       const ordem = await tx.ordemAvulsa.create({
         data: {
           itens: {
-            create: itensDoCliente.map(({ linha, produtoId }) => ({
+            create: linhasAvulsas.map(({ linha, produtoId }) => ({
               produtoId,
               quantidade: linha.quantidade,
               clienteTexto: linha.clienteTexto,

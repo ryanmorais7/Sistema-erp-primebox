@@ -264,6 +264,44 @@ cliente); confirmou: só visual.
   (`observacao` de `MovimentoEstoqueMateriaPrima`/`Produto`) — são
   auditoria técnica, não a tela que o Pedro olha.
 
+## Atualização 2026-08-18 (parte 4) — revertido: OP avulsa volta a aceitar vários clientes numa OP só
+
+A "moldura única" da parte 3 melhorou a aparência, mas não resolveu o
+incômodo de verdade: perguntei se Ryan queria só unificar visualmente
+ou juntar os registros de vez, e a resposta foi mais fundamental do
+que as duas opções que dei — **ele nunca quis a regra "uma OP avulsa
+por cliente"**. Confirmado explicitamente: "em uma OP só pode conter
+diversos clientes".
+
+- **Revertido o agrupamento por cliente** em `criarOrdemAvulsa`
+  (`producao/ordem-avulsa/actions.ts`) e `confirmarImportacaoProducao`
+  (`producao/importar/actions.ts`) — as duas tinham uma regra
+  documentada ("uma OP avulsa só pode ter um cliente, mesma regra do
+  lado formal") que agrupava as linhas avulsas de uma submissão por
+  `clienteTexto` normalizado, criando uma `OrdemAvulsa` por cliente
+  distinto. Voltou a ser **uma `OrdemAvulsa` só por submissão**,
+  não importa quantos clientes diferentes tenham linhas nela — era
+  literalmente o comportamento original de antes dessa regra (o
+  comentário antigo no código até documentava isso ao explicar a
+  mudança, "antes todas as linhas avulsas de uma submissão caíam numa
+  OrdemAvulsa só").
+- A tela de resumo "OPs criadas com sucesso" (import de planilha) — o
+  `clienteNome` de uma OP avulsa agora é a lista dos clientes distintos
+  daquela submissão, separados por "·", já que não é mais garantido
+  ter só um.
+- **A "moldura única" da parte 3 continua valendo** — ela ainda importa
+  pro caso de várias submissões separadas caírem no mesmo dia (cada
+  `criarOrdemAvulsa` chamado em momentos diferentes ainda gera uma
+  `OrdemAvulsa` própria); só deixou de ser a explicação de por que o
+  dia 18 parecia "errado" — a causa raiz era o agrupamento por cliente
+  dentro da mesma submissão, não a apresentação visual.
+- **Dados já existentes (ex: as OPs já separadas do dia 18) não foram
+  tocados nesta parte** — mesclar registros já criados exigiria uma
+  migração direta no banco de produção (reparentar itens entre
+  `OrdemAvulsa`s e apagar as vazias), uma ação bem mais arriscada que
+  um deploy de código normal. Perguntado ao Ryan separadamente antes
+  de fazer.
+
 ## Consequências
 
 - `docs/requisitos/requisitos-fase5.md` precisa refletir que Expedição

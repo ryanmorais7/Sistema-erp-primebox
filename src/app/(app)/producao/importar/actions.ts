@@ -168,17 +168,17 @@ export async function confirmarImportacaoProducao(
       const linhasParaBaixa: { produtoId: string; quantidade: number; rotulo: string }[] = [];
 
       const formaisPorCliente = new Map<string, typeof itensResolvidos>();
-      const avulsosPorClienteTexto = new Map<string, typeof itensResolvidos>();
+      // Todas as linhas avulsas da planilha caem numa OrdemAvulsa só,
+      // mesmo sendo de clientes diferentes — mesma decisão de
+      // criarOrdemAvulsa (ver ADR-034).
+      const avulsos: typeof itensResolvidos = [];
       for (const resolvido of itensResolvidos) {
         if (resolvido.clienteId) {
           const grupo = formaisPorCliente.get(resolvido.clienteId) ?? [];
           grupo.push(resolvido);
           formaisPorCliente.set(resolvido.clienteId, grupo);
         } else {
-          const chave = normalizar(resolvido.item.clienteTexto);
-          const grupo = avulsosPorClienteTexto.get(chave) ?? [];
-          grupo.push(resolvido);
-          avulsosPorClienteTexto.set(chave, grupo);
+          avulsos.push(resolvido);
         }
       }
 
@@ -225,12 +225,11 @@ export async function confirmarImportacaoProducao(
         });
       }
 
-      for (const itens of avulsosPorClienteTexto.values()) {
-        const clienteTexto = itens[0].item.clienteTexto;
+      if (avulsos.length > 0) {
         const ordem = await tx.ordemAvulsa.create({
           data: {
             itens: {
-              create: itens.map(({ item, produto }) => ({
+              create: avulsos.map(({ item, produto }) => ({
                 produtoId: produto.id,
                 quantidade: item.quantidade,
                 clienteTexto: item.clienteTexto,
@@ -248,11 +247,12 @@ export async function confirmarImportacaoProducao(
             rotulo: `OP Avulsa #${ordem.numero}`,
           });
         }
+        const clientesDistintos = [...new Set(avulsos.map(({ item }) => item.clienteTexto))];
         criadas.push({
           tipo: "avulsa",
           numeroLabel: `OP #${ordem.numero}`,
-          clienteNome: clienteTexto,
-          itens: itens.length,
+          clienteNome: clientesDistintos.join(" · "),
+          itens: avulsos.length,
         });
       }
 
