@@ -45,8 +45,6 @@ export default async function ReciboAvulsaPage({ params }: PageProps) {
       itens={[
         {
           produtoNome: item.produto.nome,
-          medidaNome: item.produto.medida.nome,
-          tecidoCor: [item.produto.tecido, item.produto.cor].filter(Boolean).join(" / ") || null,
           quantidade: item.quantidade,
           precoUnitario: item.precoUnitario != null ? Number(item.precoUnitario) : null,
           observacao: item.observacao,

@@ -93,8 +93,6 @@ export default async function ReciboFormalGrupoPage({ params }: PageProps) {
       clienteEndereco={formatarEndereco(pedido.cliente)}
       itens={pedido.itens.map((item) => ({
         produtoNome: item.produto.nome,
-        medidaNome: item.produto.medida.nome,
-        tecidoCor: [item.produto.tecido, item.produto.cor].filter(Boolean).join(" / ") || null,
         quantidade: item.quantidade,
         precoUnitario: Number(item.precoUnitario),
       }))}

@@ -44,7 +44,18 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
   const diaChave = `${ano}-${mes}-${dia}`;
 
   const todosCartoes = await buscarCartoesProducao();
-  const cartoesDoDia = todosCartoes.filter((cartao) => cartao.diaChave === diaChave);
+  // Agrupado por cliente (mesma correção da folha de impressão geral,
+  // ver /producao/imprimir) — sem isso, a folha impressa (Versão B)
+  // intercala clientes na ordem de criação, com só a cor alternada
+  // tentando separar visualmente. Efeito colateral bom: os cards da
+  // Versão A (interativa) também passam a aparecer agrupados por
+  // cliente, em vez da ordem de criação.
+  const cartoesDoDia = todosCartoes
+    .filter((cartao) => cartao.diaChave === diaChave)
+    .sort(
+      (a, b) =>
+        a.clienteLabel.localeCompare(b.clienteLabel) || a.createdAt.getTime() - b.createdAt.getTime(),
+    );
 
   const gruposMap = new Map<string, Cartao[]>();
   for (const cartao of cartoesDoDia) {

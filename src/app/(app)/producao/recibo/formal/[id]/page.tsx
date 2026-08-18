@@ -91,8 +91,6 @@ export default async function ReciboFormalPage({ params }: PageProps) {
       itens={[
         {
           produtoNome: item.produto.nome,
-          medidaNome: item.produto.medida.nome,
-          tecidoCor: [item.produto.tecido, item.produto.cor].filter(Boolean).join(" / ") || null,
           quantidade: item.quantidade,
           precoUnitario: Number(item.precoUnitario),
         },

@@ -199,8 +199,6 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
             <TableHeader>
               <TableRow>
                 <TableHead>Produto</TableHead>
-                <TableHead>Medida</TableHead>
-                <TableHead>Tecido/Cor</TableHead>
                 <TableHead className="text-right">Qtd.</TableHead>
                 <TableHead className="text-right">Preço unit.</TableHead>
                 <TableHead className="text-right print:hidden">Custo unit.</TableHead>
@@ -228,10 +226,6 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
                     >
                       {saldoEstoque} em estoque
                     </span>
-                  </TableCell>
-                  <TableCell>{item.produto.medida.nome}</TableCell>
-                  <TableCell>
-                    {[item.produto.tecido, item.produto.cor].filter(Boolean).join(" / ") || "—"}
                   </TableCell>
                   <TableCell className="text-right">{item.quantidade}</TableCell>
                   <TableCell className="text-right">
@@ -387,8 +381,6 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
         formaPagamento={pedido.formaPagamento}
         itens={pedido.itens.map((item) => ({
           produtoNome: item.produto.nome,
-          medidaNome: item.produto.medida.nome,
-          tecidoCor: [item.produto.tecido, item.produto.cor].filter(Boolean).join(" / ") || null,
           quantidade: item.quantidade,
           precoUnitario: Number(item.precoUnitario),
         }))}

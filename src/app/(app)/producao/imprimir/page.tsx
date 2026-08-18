@@ -13,7 +13,22 @@ export const dynamic = "force-dynamic";
 export default async function ProducaoImprimirPage() {
   const cartoes = await buscarCartoesProducao();
 
-  const pendentes = cartoes.filter((cartao) => cartao.status !== "CONCLUIDO");
+  // Ordenado por data programada e, dentro do mesmo dia (ou "sem
+  // data"), por cliente — sem isso, a lista cai na ordem de criação
+  // pura e itens de clientes diferentes ficam intercalados na folha
+  // impressa, com só a cor alternada (fraca) tentando separar. Pedro
+  // relatou "um produto de um cliente se mistura com o outro" — a
+  // causa raiz era essa falta de agrupamento visual real.
+  const pendentes = cartoes
+    .filter((cartao) => cartao.status !== "CONCLUIDO")
+    .sort((a, b) => {
+      const dataA = a.dataProgramada ? a.dataProgramada.getTime() : Infinity;
+      const dataB = b.dataProgramada ? b.dataProgramada.getTime() : Infinity;
+      if (dataA !== dataB) return dataA - dataB;
+      return (
+        a.clienteLabel.localeCompare(b.clienteLabel) || a.createdAt.getTime() - b.createdAt.getTime()
+      );
+    });
   const coresPorCliente = coresAlternadasPorCliente(pendentes);
   const totalPecas = pendentes.reduce((total, cartao) => total + cartao.quantidade, 0);
   const fonteFolha =

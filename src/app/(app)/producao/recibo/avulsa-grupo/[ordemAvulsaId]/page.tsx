@@ -59,8 +59,6 @@ export default async function ReciboAvulsaGrupoPage({ params }: PageProps) {
       clienteNome={clienteNome}
       itens={ordemAvulsa.itens.map((item) => ({
         produtoNome: item.produto.nome,
-        medidaNome: item.produto.medida.nome,
-        tecidoCor: [item.produto.tecido, item.produto.cor].filter(Boolean).join(" / ") || null,
         quantidade: item.quantidade,
         precoUnitario: item.precoUnitario != null ? Number(item.precoUnitario) : null,
         observacao: item.observacao,

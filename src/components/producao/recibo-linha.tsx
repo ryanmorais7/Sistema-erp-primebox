@@ -6,8 +6,6 @@ const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", curr
 
 export type ItemRecibo = {
   produtoNome: string;
-  medidaNome?: string | null;
-  tecidoCor?: string | null;
   quantidade: number;
   precoUnitario?: number | null;
   observacao?: string | null;
@@ -129,11 +127,6 @@ export function ReciboLinha({
               <div>
                 <p className="text-xs text-muted-foreground">Produto</p>
                 <p className="font-medium">{item.produtoNome}</p>
-                {(item.medidaNome || item.tecidoCor) && (
-                  <p className="text-sm text-muted-foreground">
-                    {[item.medidaNome, item.tecidoCor].filter(Boolean).join(" · ")}
-                  </p>
-                )}
                 {item.observacao && (
                   <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
                     {item.observacao}

@@ -162,6 +162,52 @@ acontece.
 - Mensagem "Nenhum cliente encontrado com esse nome." substitui o
   texto anterior (que citava o termo buscado).
 
+## Atualização 2026-08-18 — 3 reclamações do Pedro depois do primeiro uso
+
+Pedro testou o recibo/OP do dia recém publicados e trouxe 3
+reclamações. Uma já estava resolvida pelo Bloco 0 desta mesma ADR
+(confirmado testando, não só lendo o código); as outras duas eram
+bugs reais.
+
+- **"Um produto de um cliente se mistura com o outro" ao imprimir uma
+  OP em Produção — era bug de verdade.** Causa raiz:
+  `buscarCartoesProducao()` devolve os cartões ordenados só por
+  `createdAt`, sem agrupar por cliente. Tanto `/producao/imprimir`
+  (folha geral, todos os dias pendentes) quanto a "Versão B" (folha do
+  dia, impressa) da tela "OP do dia" listavam as linhas nessa ordem
+  crua — a cor alternada (`coresAlternadasPorCliente`) muda a cada
+  troca de cliente na lista, então sem agrupamento ela deixa de separar
+  visualmente qualquer coisa (dois clientes intercalados viram 4+
+  blocos de cor picotados, não 2). **Fix:** ambas as páginas agora
+  ordenam por `dataProgramada` (ou "sem data" por último) e, dentro do
+  mesmo dia, por `clienteLabel` — antes de calcular as cores e montar
+  as linhas. Efeito colateral bom: os cards da Versão A (interativa) da
+  OP do dia também saem agrupados por cliente, não pela ordem de
+  criação.
+- **Status (Em carteira/Faturado) aparecendo no canhoto do Pedido —
+  já estava resolvido.** O canhoto do Pedido usa `ReciboLinha`
+  (Bloco 0 desta ADR), que nunca renderizou status; o bloco antigo que
+  mostrava o badge de status é o card interativo, já `print:hidden` por
+  completo. Testado com `emulateMedia("print")` + screenshot pra
+  confirmar de verdade (não só ler o código) — o badge realmente não
+  aparece impresso. Pedro provavelmente testou antes do deploy ou com
+  cache de página antiga.
+- **Barra cinza aparecendo (e "expandir a tela")** — a barra é a
+  rolagem horizontal espelhada do componente `Table`
+  (`src/components/ui/table.tsx`, pensada pra tabelas longas como
+  Clientes), que aparecia porque a tabela de itens do Pedido tinha 9
+  colunas e não cabia no container. **Fix:** removidas as colunas
+  "Medida" e "Tecido/Cor" da tabela interativa de `/pedidos/[id]` e do
+  bloco de itens do `ReciboLinha` (afeta os 5 lugares que usam o
+  componente — Pedidos e os 4 recibos de Produção) — like Pedro
+  apontou, o campo Produto já aceita texto livre, então essa
+  informação normalmente já está no nome digitado. `ItemRecibo` perdeu
+  os campos `medidaNome`/`tecidoCor` do tipo. Container principal do
+  app (`(app)/layout.tsx`) alargado de `max-w-5xl` pra `max-w-7xl`
+  ("expandir a tela") — sem as duas colunas, a tabela já cabe
+  confortavelmente, e a barra não aparece mais (confirmado com
+  screenshot).
+
 ## Consequências
 
 - `docs/requisitos/requisitos-fase5.md` precisa refletir que Expedição
