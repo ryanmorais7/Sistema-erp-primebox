@@ -22,10 +22,11 @@ de fora por decisão explícita (ver ADR-013).
 
 | Item | Status | Observações |
 |---|---|---|
-| Expedição | Implementado e validado localmente | Gerada a partir de qualquer pedido (`/pedidos/[id]/expedicao/nova`), sem exigir pedido faturado. Quadro em `/expedicao` com ações "Iniciar rota" e "Marcar entregue" |
+| Expedição | Removida da UI em 2026-08-18 | Ryan pediu pra tirar do menu (rota incluída) — ver ADR-034. Modelo `Expedicao` continua no banco (dado histórico), só não tem mais tela/rota/link em lugar nenhum |
 | Boleto real | Não iniciado | Aguardando Ryan decidir/contratar um gateway de pagamento |
 | Nota fiscal eletrônica | Não iniciado | Aguardando decisão de certificado digital/provedor de NF-e, envolvendo o contador |
 
 ## Decisões de modelagem relevantes
 
-- Ver [ADR-013](../decisoes/ADR-013-expedicao.md) — modelo de Expedição e escopo da fase.
+- Ver [ADR-013](../decisoes/ADR-013-expedicao.md) — modelo de Expedição e escopo da fase original.
+- Ver [ADR-034](../decisoes/ADR-034-recibo-forma-pagamento-baixa-criacao-expedicao.md) — remoção da Expedição da UI (feature revertida, não nova).

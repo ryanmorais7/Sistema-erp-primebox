@@ -10,7 +10,6 @@ import {
   ClipboardList,
   Factory,
   Warehouse,
-  Truck,
   Search,
   CalendarDays,
   KeyRound,
@@ -55,7 +54,6 @@ const itensComercial = [
 const itensFabrica = [
   { href: "/producao", label: "Produção", icon: Factory },
   { href: "/estoque", label: "Estoque", icon: Warehouse },
-  { href: "/expedicao", label: "Expedição", icon: Truck },
 ];
 
 const itensRelatorios = [

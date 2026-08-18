@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { normalizarBusca } from "@/lib/texto";
 import { PageHeader } from "@/components/layout/page-header";
+import { BuscaClienteInput } from "@/components/relatorios/busca-cliente-input";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -66,18 +67,26 @@ function agruparPorAno(pedidos: { createdAt: Date; valorTotal: number }[]) {
 export default async function RelatorioClientesPage({ searchParams }: PageProps) {
   const { q, clienteId } = await searchParams;
 
+  // Busca acento/maiúscula-insensível — feita em JS (normalizarBusca)
+  // em vez de `contains` do Prisma, porque o Postgres não ignora
+  // acento por padrão (só maiúscula/minúscula com mode:"insensitive").
+  // Lista de clientes é pequena o bastante pra filtrar toda em memória,
+  // e essa mesma lista também alimenta o autocomplete do campo de busca.
+  const todosClientes = await prisma.cliente.findMany({
+    select: { id: true, razaoSocial: true, nomeFantasia: true },
+    orderBy: { razaoSocial: "asc" },
+  });
+
+  const termoBusca = q ? normalizarBusca(q) : "";
   const clientesEncontrados =
-    q && !clienteId
-      ? await prisma.cliente.findMany({
-          where: {
-            OR: [
-              { razaoSocial: { contains: q, mode: "insensitive" } },
-              { nomeFantasia: { contains: q, mode: "insensitive" } },
-            ],
-          },
-          orderBy: { razaoSocial: "asc" },
-          take: 20,
-        })
+    termoBusca && !clienteId
+      ? todosClientes
+          .filter(
+            (cliente) =>
+              normalizarBusca(cliente.razaoSocial).includes(termoBusca) ||
+              (cliente.nomeFantasia && normalizarBusca(cliente.nomeFantasia).includes(termoBusca)),
+          )
+          .slice(0, 20)
       : [];
 
   // Achou exatamente 1 cliente na busca: mostra o relatório direto, sem
@@ -214,16 +223,15 @@ export default async function RelatorioClientesPage({ searchParams }: PageProps)
     <div className="flex flex-col gap-6">
       <PageHeader title="Relatório por cliente" />
 
-      <form action="/relatorios/clientes" className="flex max-w-md gap-2">
-        <Input name="q" defaultValue={q} placeholder="Buscar por nome do cliente" />
-        <Button type="submit">Buscar</Button>
+      <form action="/relatorios/clientes">
+        <BuscaClienteInput clientes={todosClientes} valorInicial={q ?? ""} />
       </form>
 
       {q && (
         <div className="rounded-lg border">
           {clientesEncontrados.length === 0 ? (
             <p className="p-4 text-sm text-muted-foreground">
-              Nenhum cliente encontrado para &quot;{q}&quot;.
+              Nenhum cliente encontrado com esse nome.
             </p>
           ) : (
             <Table>

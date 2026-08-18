@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { precoParaNumero } from "@/lib/validations/moeda";
-import { darBaixaProducaoConcluida, reverterBaixaProducaoConcluida } from "@/lib/estoque";
+import {
+  darBaixaInsumos,
+  estornarInsumos,
+  darEntradaProdutoAcabado,
+  estornarEntradaProdutoAcabado,
+} from "@/lib/estoque";
 import { inferirMedidaId, formatarNomeBonito } from "@/lib/planilhaOp";
 import {
   criarOrdemAvulsaSchema,
@@ -79,6 +84,10 @@ function normalizar(texto: string) {
   return texto.trim().toLowerCase();
 }
 
+type ResultadoCriarOrdemAvulsa =
+  | { success: true; avisosEstoque: string[] }
+  | { success: false; error: string };
+
 // Cria as linhas de uma submissão em lote. Cada linha vira produção
 // formal (Pedido → ItemPedido → OrdemProducao, agrupada por cliente,
 // mesma lógica da importação de planilha — ADR-031) se tiver um
@@ -86,7 +95,7 @@ function normalizar(texto: string) {
 // OrdemAvulsa. Ver ADR-033 para o racional completo.
 export async function criarOrdemAvulsa(
   dadosBrutos: CriarOrdemAvulsaValues,
-): Promise<ResultadoAcao> {
+): Promise<ResultadoCriarOrdemAvulsa> {
   const resultado = criarOrdemAvulsaSchema.safeParse(dadosBrutos);
   if (!resultado.success) {
     return { success: false, error: "Verifique as linhas destacadas." };
@@ -111,6 +120,8 @@ export async function criarOrdemAvulsa(
 
   const ehFormal = (linha: LinhaOrdemAvulsaValues) =>
     !!linha.clienteId && clientePorId.has(linha.clienteId);
+
+  const linhasParaBaixa: { produtoId: string; quantidade: number; rotulo: string }[] = [];
 
   await prisma.$transaction(async (tx) => {
     // Resolve o produto de cada linha: por id (selecionado/criado no
@@ -191,8 +202,13 @@ export async function criarOrdemAvulsa(
         include: { itens: true },
       });
       for (const item of pedido.itens) {
-        await tx.ordemProducao.create({
+        const ordem = await tx.ordemProducao.create({
           data: { itemPedidoId: item.id, dataProgramada: dataProgramadaParsed },
+        });
+        linhasParaBaixa.push({
+          produtoId: item.produtoId,
+          quantidade: item.quantidade,
+          rotulo: `OP #${ordem.numero}`,
         });
       }
     }
@@ -211,7 +227,7 @@ export async function criarOrdemAvulsa(
     }
 
     for (const itensDoCliente of gruposPorClienteTexto.values()) {
-      await tx.ordemAvulsa.create({
+      const ordem = await tx.ordemAvulsa.create({
         data: {
           itens: {
             create: itensDoCliente.map(({ linha, produtoId }) => ({
@@ -224,13 +240,30 @@ export async function criarOrdemAvulsa(
             })),
           },
         },
+        include: { itens: true },
       });
+      for (const item of ordem.itens) {
+        linhasParaBaixa.push({
+          produtoId: item.produtoId,
+          quantidade: item.quantidade,
+          rotulo: `OP Avulsa #${ordem.numero}`,
+        });
+      }
     }
   });
 
+  // Baixa de insumo roda fora da transação (usa o client global, ver
+  // darBaixaInsumos) — uma única vez, na criação, nunca repetida.
+  const avisosEstoque: string[] = [];
+  for (const linha of linhasParaBaixa) {
+    const { avisos } = await darBaixaInsumos(linha.produtoId, linha.quantidade, linha.rotulo);
+    avisosEstoque.push(...avisos);
+  }
+
   revalidatePath("/producao");
   revalidatePath("/pedidos");
-  return { success: true };
+  revalidatePath("/estoque");
+  return { success: true, avisosEstoque: [...new Set(avisosEstoque)] };
 }
 
 // Resolve o produto de uma linha (id, nome exato, ou cadastra um novo a
@@ -272,8 +305,7 @@ async function resolverProdutoAvulso(
 
 // Edita uma OP avulsa já existente. Só permitido em AGUARDANDO — depois
 // que a produção inicia (ou pior, conclui e dá baixa no estoque), mudar
-// produto/quantidade deixaria os dados inconsistentes, então trava
-// (mesmo espírito da trava de cancelamento pós-expedição).
+// produto/quantidade deixaria os dados inconsistentes, então trava.
 export async function atualizarItemOrdemAvulsa(
   id: string,
   dadosBrutos: EditarItemAvulsaValues,
@@ -283,7 +315,10 @@ export async function atualizarItemOrdemAvulsa(
     return { success: false, error: "Verifique os campos destacados." };
   }
 
-  const item = await prisma.itemOrdemAvulsa.findUnique({ where: { id } });
+  const item = await prisma.itemOrdemAvulsa.findUnique({
+    where: { id },
+    include: { ordemAvulsa: true },
+  });
   if (!item) {
     return { success: false, error: "OP não encontrada." };
   }
@@ -312,6 +347,16 @@ export async function atualizarItemOrdemAvulsa(
     },
   });
 
+  // Insumo já tinha sido baixado na criação, pelo produto/quantidade
+  // antigos — se algum dos dois mudou, refaz a baixa (mesmo racional do
+  // lado formal, atualizarOrdemProducao).
+  if (produto.id !== item.produtoId || quantidade !== item.quantidade) {
+    const rotulo = `OP Avulsa #${item.ordemAvulsa.numero} (edição)`;
+    await estornarInsumos(item.produtoId, item.quantidade, rotulo);
+    await darBaixaInsumos(produto.id, quantidade, rotulo);
+    revalidatePath("/estoque");
+  }
+
   revalidatePath("/producao");
   return { success: true };
 }
@@ -328,7 +373,10 @@ export async function atualizarGrupoAvulsa(
   }
 
   for (const linha of resultado.data.linhas) {
-    const item = await prisma.itemOrdemAvulsa.findUnique({ where: { id: linha.itemId } });
+    const item = await prisma.itemOrdemAvulsa.findUnique({
+      where: { id: linha.itemId },
+      include: { ordemAvulsa: true },
+    });
     if (!item || item.status !== "AGUARDANDO") {
       continue;
     }
@@ -350,9 +398,16 @@ export async function atualizarGrupoAvulsa(
         dataProgramada: linha.dataProgramada ? new Date(`${linha.dataProgramada}T00:00:00`) : null,
       },
     });
+
+    if (produto.id !== item.produtoId || linha.quantidade !== item.quantidade) {
+      const rotulo = `OP Avulsa #${item.ordemAvulsa.numero} (edição)`;
+      await estornarInsumos(item.produtoId, item.quantidade, rotulo);
+      await darBaixaInsumos(produto.id, linha.quantidade, rotulo);
+    }
   }
 
   revalidatePath("/producao");
+  revalidatePath("/estoque");
   return { success: true };
 }
 
@@ -382,7 +437,9 @@ export async function concluirProducaoAvulsa(id: string) {
   }
 
   await prisma.itemOrdemAvulsa.update({ where: { id }, data: { status: "CONCLUIDO" } });
-  await darBaixaProducaoConcluida(
+  // Só entrada do produto acabado — baixa de insumo já aconteceu na
+  // criação (ver criarOrdemAvulsa).
+  await darEntradaProdutoAcabado(
     item.produtoId,
     item.quantidade,
     `OP Avulsa #${item.ordemAvulsa.numero}`,
@@ -394,11 +451,13 @@ export async function concluirProducaoAvulsa(id: string) {
 
 // Volta um passo (Em produção → Aguardando, Concluído → Em produção),
 // sem apagar a linha — mesma lógica de voltarOrdemProducao no fluxo
-// formal. Bloqueia se já tem expedição gerada (mesma trava do cancelar).
+// formal. Só estorna a entrada do produto acabado — insumo não é
+// tocado aqui (baixado na criação, só volta se a linha for cancelada
+// de vez).
 export async function voltarProducaoAvulsa(id: string) {
   const item = await prisma.itemOrdemAvulsa.findUnique({
     where: { id },
-    include: { ordemAvulsa: true, expedicao: true },
+    include: { ordemAvulsa: true },
   });
   if (!item) {
     return;
@@ -411,10 +470,7 @@ export async function voltarProducaoAvulsa(id: string) {
   }
 
   if (item.status === "CONCLUIDO") {
-    if (item.expedicao) {
-      return;
-    }
-    await reverterBaixaProducaoConcluida(
+    await estornarEntradaProdutoAcabado(
       item.produtoId,
       item.quantidade,
       `OP Avulsa #${item.ordemAvulsa.numero}`,
@@ -427,8 +483,7 @@ export async function voltarProducaoAvulsa(id: string) {
 
 // Checkbox "Feito" da tela OP do dia — mesmo racional do lado formal
 // (marcarItemFeito/desmarcarItemFeito em producao/actions.ts): binário,
-// reaproveitando as funções de 3 passos por baixo. "Marcar" não tem
-// trava de expedição (só "desmarcar" tem, herdada de voltarProducaoAvulsa).
+// reaproveitando as funções de 3 passos por baixo.
 export async function marcarItemFeitoAvulsa(id: string) {
   const item = await prisma.itemOrdemAvulsa.findUnique({ where: { id } });
   if (!item || item.status === "CONCLUIDO") {
@@ -480,23 +535,21 @@ export async function desconfirmarConclusaoGrupoAvulsa(ordemAvulsaId: string) {
 export async function cancelarItemOrdemAvulsa(id: string) {
   const item = await prisma.itemOrdemAvulsa.findUnique({
     where: { id },
-    include: { ordemAvulsa: true, expedicao: true },
+    include: { ordemAvulsa: true },
   });
   if (!item) {
     return;
   }
-  // Já tem expedição gerada a partir dessa linha — cancelar deixaria a
-  // expedição órfã, então trava aqui (mesma lógica de excluirPedido).
-  if (item.expedicao) {
-    return;
-  }
   if (item.status === "CONCLUIDO") {
-    await reverterBaixaProducaoConcluida(
+    await estornarEntradaProdutoAcabado(
       item.produtoId,
       item.quantidade,
       `OP Avulsa #${item.ordemAvulsa.numero}`,
     );
   }
+  // Insumo foi baixado na criação, então estorna sempre, independente
+  // do status atual da linha.
+  await estornarInsumos(item.produtoId, item.quantidade, `OP Avulsa #${item.ordemAvulsa.numero}`);
   await prisma.itemOrdemAvulsa.delete({ where: { id } });
   revalidatePath("/producao");
   revalidatePath("/estoque");
@@ -505,7 +558,7 @@ export async function cancelarItemOrdemAvulsa(id: string) {
 // Cancela de uma vez todos os itens do card agrupado (mesma OP, mesmo
 // status) — mesma lógica de cancelarItemOrdemAvulsa, só que em lote,
 // pra não precisar cancelar linha por linha quando quer descartar a OP
-// inteira. Itens com expedição são pulados (não travam os outros).
+// inteira.
 export async function cancelarGrupoAvulsa(ids: string[]) {
   for (const id of ids) {
     await cancelarItemOrdemAvulsa(id);

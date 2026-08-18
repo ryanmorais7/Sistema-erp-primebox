@@ -1,19 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, X, Receipt, Truck, Pencil, CheckCircle2, Box, Plus, Square, CheckSquare } from "lucide-react";
-import {
-  cancelarGrupoOrdemProducao,
-  marcarItemFeito,
-  desmarcarItemFeito,
-  desconfirmarConclusaoGrupo,
-} from "../../../actions";
+import { ArrowLeft, X, Receipt, CheckCircle2, Box, Plus } from "lucide-react";
+import { cancelarGrupoOrdemProducao, desconfirmarConclusaoGrupo } from "../../../actions";
 import {
   cancelarGrupoAvulsa,
-  marcarItemFeitoAvulsa,
-  desmarcarItemFeitoAvulsa,
   desconfirmarConclusaoGrupoAvulsa,
 } from "../../../ordem-avulsa/actions";
-import { gerarExpedicao, gerarExpedicaoAvulsa } from "@/app/(app)/expedicao/actions";
 import { buscarCartoesProducao, coresAlternadasPorCliente, type Cartao } from "@/lib/producaoCartoes";
 import { NavegacaoPassos } from "@/components/producao/navegacao-passos";
 import { AgendaSemanalCard } from "@/components/producao/agenda-semanal-card";
@@ -144,7 +136,7 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
           </div>
         ) : (
           <>
-            {/* Versão A — interativa, com Recibo/Expedição/Editar/Cancelar. Nunca aparece impressa. */}
+            {/* Versão A — interativa, com Recibo/Editar/Cancelar por OP. Nunca aparece impressa. */}
             <div className="mt-4 flex flex-col gap-4 print:hidden">
               {grupos.map((grupo) => {
                 const coresDoGrupo = coresAlternadasPorCliente(grupo.itens);
@@ -193,6 +185,24 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                             origem={grupo.primeiro.origem}
                           />
                         )}
+                        <Button
+                          render={
+                            <Link
+                              href={
+                                grupo.primeiro.origem === "formal"
+                                  ? `/producao/recibo/formal-grupo/${grupo.grupoOpId}`
+                                  : `/producao/recibo/avulsa-grupo/${grupo.grupoOpId}`
+                              }
+                              target="_blank"
+                            />
+                          }
+                          nativeButton={false}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Receipt />
+                          Recibo
+                        </Button>
                         {grupo.algumAguardando && (
                           <Button
                             render={
@@ -208,7 +218,6 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                             variant="outline"
                             size="sm"
                           >
-                            <Pencil />
                             Editar
                           </Button>
                         )}
@@ -241,19 +250,12 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                             <th className="p-2 text-left font-medium">Observação</th>
                             <th className="p-2 text-right font-medium">Preço unit.</th>
                             <th className="p-2 text-right font-medium">Subtotal</th>
-                            <th className="p-2 text-center font-medium">Feito</th>
-                            <th className="p-2 text-center font-medium">Recibo</th>
-                            <th className="p-2 text-center font-medium">Expedição</th>
                           </tr>
                         </thead>
                         <tbody>
                           {grupo.itens.map((cartao) => {
                             const chaveCartao = `${cartao.origem}-${cartao.id}`;
                             const corLinha = coresDoGrupo.get(chaveCartao);
-                            // Avulsa com expedição já gerada não pode desmarcar
-                            // "Feito" (mesma trava que já existia no botão Voltar).
-                            const feitoTravado = cartao.origem === "avulsa" && cartao.temExpedicao;
-                            const feito = cartao.status === "CONCLUIDO";
                             return (
                               <tr
                                 key={chaveCartao}
@@ -272,77 +274,6 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
                                   {cartao.precoUnitario != null
                                     ? formatadorMoeda.format(cartao.precoUnitario * cartao.quantidade)
                                     : "—"}
-                                </td>
-                                <td className="p-2 text-center">
-                                  {feito && feitoTravado ? (
-                                    <CheckSquare className="mx-auto size-4 text-muted-foreground" />
-                                  ) : (
-                                    <form
-                                      action={async () => {
-                                        "use server";
-                                        if (cartao.origem === "formal") {
-                                          if (feito) await desmarcarItemFeito(cartao.id);
-                                          else await marcarItemFeito(cartao.id);
-                                        } else {
-                                          if (feito) await desmarcarItemFeitoAvulsa(cartao.id);
-                                          else await marcarItemFeitoAvulsa(cartao.id);
-                                        }
-                                      }}
-                                    >
-                                      <button
-                                        type="submit"
-                                        aria-label={feito ? "Desmarcar como feito" : "Marcar como feito"}
-                                        title={feito ? "Desmarcar como feito" : "Marcar como feito"}
-                                        className="inline-flex"
-                                      >
-                                        {feito ? (
-                                          <CheckSquare className="size-4 text-brand" />
-                                        ) : (
-                                          <Square className="size-4 text-muted-foreground" />
-                                        )}
-                                      </button>
-                                    </form>
-                                  )}
-                                </td>
-                                <td className="p-2 text-center">
-                                  <Link
-                                    href={
-                                      cartao.origem === "formal"
-                                        ? `/producao/recibo/formal/${cartao.id}`
-                                        : `/producao/recibo/avulsa/${cartao.id}`
-                                    }
-                                    target="_blank"
-                                    aria-label="Gerar recibo desta linha"
-                                    title="Gerar recibo desta linha"
-                                    className="inline-flex"
-                                  >
-                                    <Receipt className="size-4 text-brand" />
-                                  </Link>
-                                </td>
-                                <td className="p-2 text-center">
-                                  {cartao.temExpedicao ? (
-                                    <span className="text-xs text-muted-foreground">Já gerada</span>
-                                  ) : (
-                                    <form
-                                      action={async () => {
-                                        "use server";
-                                        if (cartao.origem === "formal") {
-                                          await gerarExpedicao(cartao.grupoOpId, "");
-                                        } else {
-                                          await gerarExpedicaoAvulsa(cartao.id);
-                                        }
-                                      }}
-                                    >
-                                      <button
-                                        type="submit"
-                                        aria-label="Gerar expedição desta linha"
-                                        title="Gerar expedição desta linha"
-                                        className="inline-flex"
-                                      >
-                                        <Truck className="size-4" style={{ color: "#0F6E56" }} />
-                                      </button>
-                                    </form>
-                                  )}
                                 </td>
                               </tr>
                             );

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, Pencil, Check, Trash2, Printer, Upload, AlertCircle, CircleCheck, CircleDashed } from "lucide-react";
+import { Eye, Check, Trash2, Printer, Upload, AlertCircle, CircleCheck, CircleDashed } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { excluirPedido, faturarPedido } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
@@ -179,11 +179,9 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                         render={<Link href={`/pedidos/${pedido.id}/editar`} />}
                         nativeButton={false}
                         variant="outline"
-                        size="icon-sm"
-                        aria-label="Editar pedido"
-                        title="Editar"
+                        size="sm"
                       >
-                        <Pencil />
+                        Editar
                       </Button>
                     )}
                     {/* Excluir também fica disponível em qualquer status
@@ -216,12 +214,11 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                       >
                         <Button
                           type="submit"
-                          variant="outline"
-                          size="icon-sm"
-                          aria-label="Faturar pedido"
-                          title="Faturar"
+                          size="sm"
+                          className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
                         >
                           <Check />
+                          Faturar
                         </Button>
                       </form>
                     )}

@@ -108,6 +108,12 @@ model Pedido {
   status      StatusPedido @default(EM_CARTEIRA)
   valorTotal  Decimal      @db.Decimal(10, 2)
   observacoes String?
+  // Texto livre (Pix, Cartão de Crédito, Boleto, Cheque, ou qualquer
+  // outra coisa digitada) — sugestões rápidas no formulário, mas nunca
+  // travado nelas. Só existe do lado Pedido, não em Produção/OP avulsa
+  // (decisão fechada nesta rodada). Aparece no recibo só quando
+  // preenchido.
+  formaPagamento String?
   itens       ItemPedido[]
   expedicao   Expedicao?
   createdAt   DateTime     @default(now())
@@ -121,7 +127,7 @@ model Pedido {
   // não é derivado automaticamente de todo item estar com status
   // CONCLUIDO. Só vira true pelo botão "Marcar como concluída" no
   // cabeçalho do grupo (ver ADR-033). É o que pinta os cards de dia/
-  // semana de amarelo e conta pro alerta de "esperando expedição".
+  // semana de amarelo.
   concluidaConfirmada Boolean @default(false)
 }
 

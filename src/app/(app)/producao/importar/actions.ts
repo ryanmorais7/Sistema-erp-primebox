@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { parsePlanilhaOp, type LinhaPlanilha } from "@/lib/planilhaOp";
 import { precoParaNumero } from "@/lib/validations/moeda";
+import { darBaixaInsumos } from "@/lib/estoque";
 import {
   confirmarImportacaoProducaoSchema,
   type ConfirmarImportacaoProducaoValues,
@@ -72,7 +73,9 @@ export async function analisarPlanilhaProducao(formData: FormData): Promise<Anal
 
 type OpCriada = { tipo: "formal" | "avulsa"; numeroLabel: string; clienteNome: string; itens: number };
 
-type ConfirmarResultado = { success: true; ops: OpCriada[] } | { success: false; error: string };
+type ConfirmarResultado =
+  | { success: true; ops: OpCriada[]; avisosEstoque: string[] }
+  | { success: false; error: string };
 
 // Mesma decisão formal-vs-avulsa do formulário manual de Criar OP (ver
 // ADR-033, criarOrdemAvulsa): cliente cadastrado (existente ou marcado
@@ -158,6 +161,11 @@ export async function confirmarImportacaoProducao(
       });
 
       const criadas: OpCriada[] = [];
+      // Linhas pra dar baixa de insumo depois que a transação confirmar
+      // (ver darBaixaInsumos — usa o client global, não o `tx`, então
+      // roda fora da transação, mesmo padrão já usado em
+      // concluirProducao/concluirProducaoAvulsa).
+      const linhasParaBaixa: { produtoId: string; quantidade: number; rotulo: string }[] = [];
 
       const formaisPorCliente = new Map<string, typeof itensResolvidos>();
       const avulsosPorClienteTexto = new Map<string, typeof itensResolvidos>();
@@ -200,8 +208,13 @@ export async function confirmarImportacaoProducao(
           include: { itens: true, cliente: true },
         });
         for (const itemPedido of pedido.itens) {
-          await tx.ordemProducao.create({
+          const ordem = await tx.ordemProducao.create({
             data: { itemPedidoId: itemPedido.id, dataProgramada: dataProgramadaParsed },
+          });
+          linhasParaBaixa.push({
+            produtoId: itemPedido.produtoId,
+            quantidade: itemPedido.quantidade,
+            rotulo: `OP #${ordem.numero}`,
           });
         }
         criadas.push({
@@ -226,7 +239,15 @@ export async function confirmarImportacaoProducao(
               })),
             },
           },
+          include: { itens: true },
         });
+        for (const item of ordem.itens) {
+          linhasParaBaixa.push({
+            produtoId: item.produtoId,
+            quantidade: item.quantidade,
+            rotulo: `OP Avulsa #${ordem.numero}`,
+          });
+        }
         criadas.push({
           tipo: "avulsa",
           numeroLabel: `OP Avulsa #${ordem.numero}`,
@@ -235,14 +256,21 @@ export async function confirmarImportacaoProducao(
         });
       }
 
-      return criadas;
+      return { criadas, linhasParaBaixa };
     });
+
+    const avisosEstoque: string[] = [];
+    for (const linha of opsCriadas.linhasParaBaixa) {
+      const { avisos } = await darBaixaInsumos(linha.produtoId, linha.quantidade, linha.rotulo);
+      avisosEstoque.push(...avisos);
+    }
 
     revalidatePath("/producao");
     revalidatePath("/pedidos");
     revalidatePath("/clientes");
     revalidatePath("/produtos");
-    return { success: true, ops: opsCriadas };
+    revalidatePath("/estoque");
+    return { success: true, ops: opsCriadas.criadas, avisosEstoque: [...new Set(avisosEstoque)] };
   } catch (erro) {
     return {
       success: false,

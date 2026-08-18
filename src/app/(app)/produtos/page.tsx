@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Pencil, Check, X, Layers } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { alternarAtivoProduto } from "./actions";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
@@ -82,49 +81,34 @@ export default async function ProdutosPage() {
                       : "—"}
                   </TableCell>
                   <TableCell>
-                    {produto.ativo ? (
-                      <Badge className="bg-positive-soft text-positive">Ativo</Badge>
-                    ) : (
-                      <Badge variant="secondary">Inativo</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="flex justify-end gap-2">
-                    <Button
-                      render={<Link href={`/produtos/${produto.id}/ficha-tecnica`} />}
-                      nativeButton={false}
-                      variant="outline"
-                      size="icon-sm"
-                      aria-label="Ficha técnica"
-                      title="Ficha técnica"
-                    >
-                      <Layers />
-                    </Button>
-                    <Button
-                      render={<Link href={`/produtos/${produto.id}/editar`} />}
-                      nativeButton={false}
-                      variant="outline"
-                      size="icon-sm"
-                      aria-label="Editar produto"
-                      title="Editar"
-                    >
-                      <Pencil />
-                    </Button>
                     <form
                       action={async () => {
                         "use server";
                         await alternarAtivoProduto(produto.id, !produto.ativo);
                       }}
                     >
-                      <Button
+                      <button
                         type="submit"
-                        variant="outline"
-                        size="icon-sm"
                         aria-label={produto.ativo ? "Desativar produto" : "Ativar produto"}
-                        title={produto.ativo ? "Desativar" : "Ativar"}
+                        title={produto.ativo ? "Clique pra desativar" : "Clique pra ativar"}
                       >
-                        {produto.ativo ? <X /> : <Check />}
-                      </Button>
+                        {produto.ativo ? (
+                          <Badge className="bg-positive-soft text-positive">Ativo</Badge>
+                        ) : (
+                          <Badge variant="secondary">Inativo</Badge>
+                        )}
+                      </button>
                     </form>
+                  </TableCell>
+                  <TableCell className="flex justify-end gap-2">
+                    <Button
+                      render={<Link href={`/produtos/${produto.id}/editar`} />}
+                      nativeButton={false}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Editar
+                    </Button>
                   </TableCell>
                 </TableRow>
                 );

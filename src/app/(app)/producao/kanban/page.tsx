@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, ArrowLeft, X, Plus, List, Receipt, Truck, CalendarClock, CalendarDays, Pencil } from "lucide-react";
+import { ArrowRight, ArrowLeft, X, Plus, List, Receipt, CalendarClock, CalendarDays, Pencil } from "lucide-react";
 import {
   iniciarProducao,
   concluirProducao,
@@ -15,7 +15,6 @@ import {
   voltarProducaoAvulsa,
   alternarPagamentoAvulsa,
 } from "../ordem-avulsa/actions";
-import { gerarExpedicaoAvulsa } from "@/app/(app)/expedicao/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
 import { FolhaProducao, type LinhaFolha } from "@/components/producao/folha-producao";
@@ -268,24 +267,23 @@ export default async function ProducaoKanbanPage() {
                                   </form>
                                 )}
 
-                                {(coluna.status === "EM_PRODUCAO" || coluna.status === "CONCLUIDO") &&
-                                  !(cartao.origem === "avulsa" && cartao.temExpedicao) && (
-                                    <form
-                                      action={async () => {
-                                        "use server";
-                                        if (cartao.origem === "formal") {
-                                          await voltarOrdemProducao(cartao.id);
-                                        } else {
-                                          await voltarProducaoAvulsa(cartao.id);
-                                        }
-                                      }}
-                                    >
-                                      <Button type="submit" variant="outline" size="xs">
-                                        <ArrowLeft />
-                                        Voltar
-                                      </Button>
-                                    </form>
-                                  )}
+                                {(coluna.status === "EM_PRODUCAO" || coluna.status === "CONCLUIDO") && (
+                                  <form
+                                    action={async () => {
+                                      "use server";
+                                      if (cartao.origem === "formal") {
+                                        await voltarOrdemProducao(cartao.id);
+                                      } else {
+                                        await voltarProducaoAvulsa(cartao.id);
+                                      }
+                                    }}
+                                  >
+                                    <Button type="submit" variant="outline" size="xs">
+                                      <ArrowLeft />
+                                      Voltar
+                                    </Button>
+                                  </form>
+                                )}
 
                                 {coluna.status === "EM_PRODUCAO" && (
                                   <form
@@ -304,26 +302,6 @@ export default async function ProducaoKanbanPage() {
                                     </Button>
                                   </form>
                                 )}
-
-                                {coluna.status === "CONCLUIDO" &&
-                                  cartao.origem === "avulsa" &&
-                                  !cartao.temExpedicao && (
-                                    <form
-                                      action={async () => {
-                                        "use server";
-                                        await gerarExpedicaoAvulsa(cartao.id);
-                                      }}
-                                    >
-                                      <Button
-                                        type="submit"
-                                        size="xs"
-                                        className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
-                                      >
-                                        <Truck />
-                                        Gerar expedição
-                                      </Button>
-                                    </form>
-                                  )}
                               </div>
                             </div>
                           ))}

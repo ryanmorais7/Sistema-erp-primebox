@@ -29,6 +29,10 @@ type ReciboLinhaProps = {
   // Observação geral do pedido (Pedido.observacoes, formal) — diferente
   // da observação por item (avulsa), mostrada dentro de cada linha.
   observacaoGeral?: string | null;
+  // Só existe do lado Pedido (Pedido.formaPagamento) — OP avulsa nunca
+  // passa esse prop, então o bloco simplesmente não aparece (ver
+  // ADR sobre forma de pagamento).
+  formaPagamento?: string | null;
   representanteNome: string;
   autoImprimir: boolean;
 };
@@ -42,6 +46,7 @@ export function ReciboLinha({
   clienteEndereco,
   itens,
   observacaoGeral,
+  formaPagamento,
   representanteNome,
   autoImprimir,
 }: ReciboLinhaProps) {
@@ -64,6 +69,14 @@ export function ReciboLinha({
         <ImprimirButton />
       </div>
 
+      {/* Container do tamanho de uma folha A4 em coluna flexível — o
+          conteúdo principal cresce (flex-1) e o canhoto (mt-auto, fora
+          desse crescimento) fica sempre grudado no rodapé, mesmo com
+          poucos itens. Se o conteúdo passar de uma página, o canhoto só
+          aparece no fim do fluxo normal (sem position fixed/absolute),
+          então nunca se repete. */}
+      <div className="mx-auto flex min-h-[297mm] w-full max-w-[800px] flex-col print:min-h-[277mm]">
+      <div className="flex-1">
       <div className="rounded-lg border p-6 print:border-none print:p-0">
         <div className="flex items-start justify-between border-b pb-4 print:pb-2">
           <div className="flex items-center gap-2">
@@ -94,6 +107,15 @@ export function ReciboLinha({
           )}
           {clienteEndereco && <p className="text-sm text-muted-foreground">{clienteEndereco}</p>}
         </div>
+
+        {formaPagamento && (
+          <div className="mt-4">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              Forma de pagamento
+            </p>
+            <p className="font-medium">{formaPagamento}</p>
+          </div>
+        )}
 
         <div className="mt-6 flex flex-col gap-3 rounded-lg border p-4">
           {itens.map((item, index) => (
@@ -149,7 +171,18 @@ export function ReciboLinha({
         )}
       </div>
 
-      <div>
+      <div className="mt-10 flex justify-end print:break-inside-avoid">
+        <div className="flex flex-col items-end gap-1">
+          <div className="w-56 border-b border-foreground/40" />
+          <p className="text-sm font-semibold">{representanteNome}</p>
+          <p className="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
+            Representante
+          </p>
+        </div>
+      </div>
+      </div>
+
+      <div className="mt-auto">
         <div className="relative my-8 print:my-6">
           <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-muted-foreground/50" />
           <p className="relative mx-auto flex w-fit items-center gap-1.5 bg-background px-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
@@ -191,16 +224,7 @@ export function ReciboLinha({
             </div>
           </div>
         </div>
-
-        <div className="mt-10 flex justify-end print:break-inside-avoid">
-          <div className="flex flex-col items-end gap-1">
-            <div className="w-56 border-b border-foreground/40" />
-            <p className="text-sm font-semibold">{representanteNome}</p>
-            <p className="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-              Representante
-            </p>
-          </div>
-        </div>
+      </div>
       </div>
     </div>
   );

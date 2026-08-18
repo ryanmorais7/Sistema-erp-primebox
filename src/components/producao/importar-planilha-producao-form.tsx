@@ -58,6 +58,7 @@ export function ImportarPlanilhaProducaoForm({ medidas }: { medidas: Medida[] })
   const [analise, setAnalise] = useState<AnaliseSucesso | null>(null);
   const [erroConfirmacao, setErroConfirmacao] = useState<string | null>(null);
   const [opsCriadas, setOpsCriadas] = useState<OpCriada[] | null>(null);
+  const [avisosEstoque, setAvisosEstoque] = useState<string[]>([]);
 
   const {
     register,
@@ -130,6 +131,7 @@ export function ImportarPlanilhaProducaoForm({ medidas }: { medidas: Medida[] })
       return;
     }
     setOpsCriadas(resultado.ops);
+    setAvisosEstoque(resultado.avisosEstoque);
   }
 
   if (opsCriadas) {
@@ -152,6 +154,21 @@ export function ImportarPlanilhaProducaoForm({ medidas }: { medidas: Medida[] })
             ))}
           </ul>
           <p className="text-sm text-muted-foreground">{totalItens} peça(s) programadas ao todo.</p>
+          {avisosEstoque.length > 0 && (
+            <div
+              className="rounded-lg border p-3 text-sm"
+              style={{ backgroundColor: "#FDF0D2", borderColor: "#F0B429" }}
+            >
+              <p className="font-medium" style={{ color: "#8A6A16" }}>
+                Insumo abaixo do mínimo depois dessa baixa:
+              </p>
+              <ul className="mt-1 list-inside list-disc" style={{ color: "#8A6A16" }}>
+                {avisosEstoque.map((aviso) => (
+                  <li key={aviso}>{aviso}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="flex flex-wrap gap-3">
             <Button render={<Link href="/producao" />} nativeButton={false}>
               <Factory />

@@ -93,6 +93,7 @@ export async function criarPedido(dadosBrutos: PedidoFormValues): Promise<Result
     data: {
       clienteId: resultado.data.clienteId,
       observacoes: resultado.data.observacoes || null,
+      formaPagamento: resultado.data.formaPagamento || null,
       valorTotal,
       itens: { create: itensComPreco },
     },
@@ -145,6 +146,7 @@ export async function atualizarPedido(
     data: {
       clienteId: resultado.data.clienteId,
       observacoes: resultado.data.observacoes || null,
+      formaPagamento: resultado.data.formaPagamento || null,
       valorTotal,
       itens: {
         deleteMany: {},

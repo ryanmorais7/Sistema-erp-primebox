@@ -2,9 +2,7 @@ import Link from "next/link";
 import {
   FileDown,
   MessageCircle,
-  Truck,
   Box,
-  Scissors,
   Wrench,
   CircleCheck,
   Warehouse,
@@ -15,10 +13,10 @@ import { prisma } from "@/lib/prisma";
 import { verificarSessao } from "@/lib/dal";
 import { calcularSaldosProdutos } from "@/lib/estoque";
 import { ImprimirButton } from "@/components/pedidos/imprimir-button";
-import { AutoImprimir } from "@/components/pedidos/auto-imprimir";
 import { tipoProdutoLabels } from "@/lib/validations/produto";
 import { gerarOrdemProducao, cancelarOrdemProducao } from "@/app/(app)/producao/actions";
 import { atenderItemDoEstoque } from "@/app/(app)/estoque/actions";
+import { ReciboLinha } from "@/components/producao/recibo-linha";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -26,12 +24,6 @@ const statusOrdemProducaoLabels = {
   AGUARDANDO: "Aguardando",
   EM_PRODUCAO: "Em produção",
   CONCLUIDO: "Concluído",
-} as const;
-
-const statusExpedicaoLabels = {
-  AGUARDANDO: "Aguardando",
-  EM_ROTA: "Em rota",
-  ENTREGUE: "Entregue",
 } as const;
 
 const statusPedidoLabels = {
@@ -97,7 +89,6 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
       include: {
         cliente: true,
         itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
-        expedicao: true,
       },
     }),
     calcularSaldosProdutos(),
@@ -127,9 +118,9 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
   const margemPercentual = valorTotal > 0 ? (margemTotal / valorTotal) * 100 : 0;
 
   return (
-    <div className="flex flex-col gap-6 print:gap-4">
-      <AutoImprimir ativo={print === "1"} />
-      <div className="flex items-start justify-between print:hidden">
+    <>
+    <div className="flex flex-col gap-6 print:hidden">
+      <div className="flex items-start justify-between">
         <div>
           <p className="font-mono text-[0.7rem] tracking-widest text-brand uppercase">
             PrimeBox ERP
@@ -193,6 +184,15 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
           )}
           {endereco && <p className="text-sm text-muted-foreground">{endereco}</p>}
         </div>
+
+        {pedido.formaPagamento && (
+          <div className="mt-4">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              Forma de pagamento
+            </p>
+            <p className="font-medium">{pedido.formaPagamento}</p>
+          </div>
+        )}
 
         <div className="mt-6">
           <Table>
@@ -342,51 +342,7 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
         </div>
       </div>
 
-      <div>
-        <div className="relative my-8 print:my-6">
-          <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-muted-foreground/50" />
-          <p className="relative mx-auto flex w-fit items-center gap-1.5 bg-background px-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-            <Scissors className="size-3" />
-            Cortar aqui · Canhoto fica com a PrimeBox
-          </p>
-        </div>
-
-        <div className="rounded-lg border print:break-inside-avoid">
-          <div className="flex flex-wrap items-start justify-between gap-4 p-4">
-            <div>
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Cliente
-              </p>
-              <p className="font-medium">{nomeExibido}</p>
-            </div>
-            <p className="max-w-xs text-right text-sm text-muted-foreground">
-              Confirmo o recebimento dos produtos citados acima, em perfeitas condições.
-            </p>
-          </div>
-          <div className="grid grid-cols-[1fr_auto_auto] border-t">
-            <div className="flex flex-col gap-6 p-4">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Assinatura do cliente
-              </p>
-              <div className="border-b border-foreground/40" />
-            </div>
-            <div className="flex flex-col gap-6 border-l p-4">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Data
-              </p>
-              <p className="text-sm text-muted-foreground">___ / ___ / ______</p>
-            </div>
-            <div className="flex flex-col gap-6 border-l p-4">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Pedido nº
-              </p>
-              <p className="text-sm font-semibold">#{pedido.numero}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-lg border p-4 print:hidden">
+      <div className="rounded-lg border p-4">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Rentabilidade (uso interno, não aparece na impressão)
         </p>
@@ -409,40 +365,37 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
       </div>
 
       {pedido.observacoes && (
-        <div className="rounded-lg border p-4 print:hidden">
+        <div className="rounded-lg border p-4">
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Observações (uso interno, não aparece na impressão)
           </p>
           <p className="mt-1 text-sm whitespace-pre-wrap">{pedido.observacoes}</p>
         </div>
       )}
-
-      <div className="flex items-center justify-between rounded-lg border p-4 print:hidden">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Expedição
-        </p>
-        {pedido.expedicao ? (
-          <Button
-            render={<Link href="/expedicao" />}
-            nativeButton={false}
-            variant="outline"
-            size="sm"
-          >
-            <Truck />
-            Exp. #{pedido.expedicao.numero} · {statusExpedicaoLabels[pedido.expedicao.status]}
-          </Button>
-        ) : (
-          <Button
-            render={<Link href={`/pedidos/${pedido.id}/expedicao/nova`} />}
-            nativeButton={false}
-            variant="outline"
-            size="sm"
-          >
-            <Truck />
-            Gerar expedição
-          </Button>
-        )}
-      </div>
     </div>
+
+    {/* Impressão reaproveita o mesmo componente de recibo usado por
+        Produção (ver Bloco 0) — nada de canhoto duplicado aqui. */}
+    <div className="hidden print:block">
+      <ReciboLinha
+        titulo={`Pedido #${pedido.numero}`}
+        numeroLabel={`Pedido #${pedido.numero}`}
+        dataFormatada={formatadorData.format(pedido.createdAt)}
+        clienteNome={nomeExibido}
+        clienteSecundaria={linhaSecundariaCliente || null}
+        clienteEndereco={endereco}
+        formaPagamento={pedido.formaPagamento}
+        itens={pedido.itens.map((item) => ({
+          produtoNome: item.produto.nome,
+          medidaNome: item.produto.medida.nome,
+          tecidoCor: [item.produto.tecido, item.produto.cor].filter(Boolean).join(" / ") || null,
+          quantidade: item.quantidade,
+          precoUnitario: Number(item.precoUnitario),
+        }))}
+        representanteNome={sessao.nome}
+        autoImprimir={print === "1"}
+      />
+    </div>
+    </>
   );
 }

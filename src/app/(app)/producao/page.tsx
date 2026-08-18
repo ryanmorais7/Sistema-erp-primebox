@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { List, Plus, ArrowRight, Folder, Printer, Upload } from "lucide-react";
+import { List, Plus, ArrowRight, Folder, Printer, Upload, TriangleAlert } from "lucide-react";
 import { buscarCartoesProducao } from "@/lib/producaoCartoes";
+import { listarInsumosAbaixoDoMinimo } from "@/lib/estoque";
 import { PageHeader } from "@/components/layout/page-header";
 import { NavegacaoPassos } from "@/components/producao/navegacao-passos";
 import { AgendaSemanalCard } from "@/components/producao/agenda-semanal-card";
@@ -32,14 +33,10 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
   const hojeChave = formatadorChaveDiaBr.format(new Date());
   const [anoHoje, mesHoje, diaHoje] = hojeChave.split("-").map(Number);
 
-  const cartoes = await buscarCartoesProducao();
-
-  // Alerta: OPs com conclusão CONFIRMADA (botão "Marcar como concluída",
-  // não é automático — ver ADR-033), ainda sem expedição gerada. O
-  // Pedro só usa esse status (amarelo); não existe conceito de atraso.
-  const concluidasSemExpedicao = cartoes.filter(
-    (cartao) => cartao.concluidaConfirmada && !cartao.temExpedicao,
-  );
+  const [cartoes, insumosAbaixoDoMinimo] = await Promise.all([
+    buscarCartoesProducao(),
+    listarInsumosAbaixoDoMinimo(),
+  ]);
 
   // Card "Hoje"
   const cartoesHoje = cartoes.filter((cartao) => cartao.diaChave === hojeChave);
@@ -97,35 +94,23 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
             </div>
           }
         />
+
+        {/* Indicador fixo — sem botão de fechar, some sozinho quando o
+            insumo voltar pra cima do mínimo cadastrado em Estoque. */}
+        {insumosAbaixoDoMinimo.length > 0 && (
+          <Link
+            href="/estoque"
+            className="flex w-fit items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium hover:brightness-95"
+            style={{ backgroundColor: "#FDF0D2", borderColor: "#F0B429", color: "#8A6A16" }}
+          >
+            <TriangleAlert className="size-4" />
+            {insumosAbaixoDoMinimo.length}{" "}
+            {insumosAbaixoDoMinimo.length === 1 ? "insumo" : "insumos"} abaixo do mínimo
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-col gap-6 print:hidden">
-        {concluidasSemExpedicao.length > 0 && (
-          <div className="flex items-center justify-between rounded-lg border bg-white p-4 shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
-            <div className="flex items-center gap-3">
-              <span
-                className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: "#F0B429", boxShadow: "0 0 0 4px rgba(240,180,41,0.25)" }}
-              />
-              <p className="text-sm">
-                <span className="font-semibold">
-                  {concluidasSemExpedicao.length} OP{concluidasSemExpedicao.length > 1 ? "s" : ""}
-                </span>{" "}
-                concluída{concluidasSemExpedicao.length > 1 ? "s" : ""} · esperando você confirmar e
-                gerar expedição
-              </p>
-            </div>
-            <a
-              href="#semana"
-              className="flex shrink-0 items-center gap-1 text-sm font-medium hover:underline"
-              style={{ color: "#8A6A16" }}
-            >
-              Ver
-              <ArrowRight className="size-3.5" />
-            </a>
-          </div>
-        )}
-
         <div
           className="flex flex-wrap items-center justify-between gap-4 rounded-lg p-5 text-white"
           style={{ backgroundColor: "#1C2321" }}
@@ -170,7 +155,7 @@ export default async function ProducaoMesPage({ searchParams }: PageProps) {
                   <Link
                     key={`${ano}-${mes}`}
                     href={`/producao/${ano}/${String(mes).padStart(2, "0")}`}
-                    className="flex flex-col items-center gap-2 rounded-lg p-4 text-center transition-colors hover:brightness-95"
+                    className="flex h-32 flex-col items-center justify-center gap-2 rounded-lg p-4 text-center transition-colors hover:brightness-95"
                     style={
                       destaque
                         ? { backgroundColor: "#F4E2D6", border: "2px solid #C9622B" }

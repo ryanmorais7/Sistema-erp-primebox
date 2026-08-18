@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { darBaixaProducaoConcluida, reverterBaixaProducaoConcluida } from "@/lib/estoque";
+import {
+  darBaixaInsumos,
+  estornarInsumos,
+  darEntradaProdutoAcabado,
+  estornarEntradaProdutoAcabado,
+} from "@/lib/estoque";
 import { precoParaNumero } from "@/lib/validations/moeda";
 import { resolverProdutoFormal } from "@/lib/resolverProdutoFormal";
 import {
@@ -80,6 +85,20 @@ export async function atualizarOrdemProducao(
     });
   });
 
+  // Insumo já tinha sido baixado na criação (ver gerarOrdemProducao),
+  // pelo produto/quantidade antigos — se algum dos dois mudou aqui,
+  // estorna a baixa antiga e dá a baixa certa pelo produto/quantidade
+  // novos, senão o estoque de matéria-prima fica errado.
+  if (produto.id !== ordem.itemPedido.produtoId || quantidade !== ordem.itemPedido.quantidade) {
+    await estornarInsumos(
+      ordem.itemPedido.produtoId,
+      ordem.itemPedido.quantidade,
+      `OP #${ordem.numero} (edição)`,
+    );
+    await darBaixaInsumos(produto.id, quantidade, `OP #${ordem.numero} (edição)`);
+    revalidatePath("/estoque");
+  }
+
   revalidatePath("/producao");
   revalidatePath("/pedidos");
   return { success: true };
@@ -153,6 +172,20 @@ export async function atualizarGrupoOrdemProducao(
       }),
     ]);
 
+    // Mesmo racional de atualizarOrdemProducao: se produto/quantidade
+    // mudou, a baixa de insumo feita na criação ficou desatualizada.
+    if (
+      produto.id !== ordem.itemPedido.produtoId ||
+      linha.quantidade !== ordem.itemPedido.quantidade
+    ) {
+      await estornarInsumos(
+        ordem.itemPedido.produtoId,
+        ordem.itemPedido.quantidade,
+        `OP #${ordem.numero} (edição)`,
+      );
+      await darBaixaInsumos(produto.id, linha.quantidade, `OP #${ordem.numero} (edição)`);
+    }
+
     valoresPorItem.set(ordem.itemPedido.id, precoUnitarioNumero * linha.quantidade);
   }
 
@@ -161,6 +194,7 @@ export async function atualizarGrupoOrdemProducao(
 
   revalidatePath("/producao");
   revalidatePath("/pedidos");
+  revalidatePath("/estoque");
   return { success: true };
 }
 
@@ -183,9 +217,17 @@ export async function gerarOrdemProducao(itemPedidoId: string) {
   if (existente) {
     return;
   }
-  await prisma.ordemProducao.create({ data: { itemPedidoId } });
+  const itemPedido = await prisma.itemPedido.findUnique({ where: { id: itemPedidoId } });
+  if (!itemPedido) {
+    return;
+  }
+  const ordem = await prisma.ordemProducao.create({ data: { itemPedidoId } });
+  // Baixa de insumo acontece aqui, na criação, uma única vez — nunca na
+  // conclusão (ver ADR sobre baixa automática de insumo).
+  await darBaixaInsumos(itemPedido.produtoId, itemPedido.quantidade, `OP #${ordem.numero}`);
   revalidatePath("/producao");
   revalidatePath("/pedidos");
+  revalidatePath("/estoque");
 }
 
 export async function cancelarOrdemProducao(id: string) {
@@ -196,17 +238,19 @@ export async function cancelarOrdemProducao(id: string) {
   if (!ordem) {
     return;
   }
-  // Se já tinha sido concluída, o estoque foi movimentado — estorna
-  // antes de apagar. Apaga de verdade em vez de marcar como cancelada,
-  // então o botão "Gerar OP" volta a aparecer no pedido como se a OP
-  // nunca tivesse sido criada.
+  // Apaga de verdade em vez de marcar como cancelada, então o botão
+  // "Gerar OP" volta a aparecer no pedido como se a OP nunca tivesse
+  // sido criada.
   if (ordem.status === "CONCLUIDO") {
-    await reverterBaixaProducaoConcluida(
+    await estornarEntradaProdutoAcabado(
       ordem.itemPedido.produtoId,
       ordem.itemPedido.quantidade,
       `OP #${ordem.numero}`,
     );
   }
+  // Insumo foi baixado na criação (ver gerarOrdemProducao), então
+  // estorna sempre, independente do status atual da OP.
+  await estornarInsumos(ordem.itemPedido.produtoId, ordem.itemPedido.quantidade, `OP #${ordem.numero}`);
   await prisma.ordemProducao.delete({ where: { id } });
   revalidatePath("/producao");
   revalidatePath("/pedidos");
@@ -242,7 +286,9 @@ export async function concluirProducao(id: string) {
 
   await prisma.ordemProducao.update({ where: { id }, data: { status: "CONCLUIDO" } });
 
-  await darBaixaProducaoConcluida(
+  // Só entrada do produto acabado agora — baixa de insumo já aconteceu
+  // na criação (ver gerarOrdemProducao).
+  await darEntradaProdutoAcabado(
     ordem.itemPedido.produtoId,
     ordem.itemPedido.quantidade,
     `OP #${ordem.numero}`,
@@ -255,7 +301,8 @@ export async function concluirProducao(id: string) {
 // Volta um passo (Em produção → Aguardando, Concluído → Em produção),
 // sem apagar a OP — pra quando desistiu de ter iniciado/concluído sem
 // querer, sem precisar cancelar a OP inteira. Voltar de Concluído
-// estorna o estoque do mesmo jeito que cancelar faria.
+// estorna só a entrada do produto acabado — insumo não é tocado aqui
+// (baixado na criação, só volta se a OP for cancelada de vez).
 export async function voltarOrdemProducao(id: string) {
   const ordem = await prisma.ordemProducao.findUnique({
     where: { id },
@@ -272,7 +319,7 @@ export async function voltarOrdemProducao(id: string) {
   }
 
   if (ordem.status === "CONCLUIDO") {
-    await reverterBaixaProducaoConcluida(
+    await estornarEntradaProdutoAcabado(
       ordem.itemPedido.produtoId,
       ordem.itemPedido.quantidade,
       `OP #${ordem.numero}`,

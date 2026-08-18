@@ -21,6 +21,9 @@ export const itemPedidoSchema = z.object({
 export const pedidoSchema = z.object({
   clienteId: z.string().trim().min(1, "Selecione um cliente"),
   observacoes: z.string().trim().max(1000, "Observações muito longas").optional(),
+  // Texto livre com sugestões rápidas (Pix, Cartão, Boleto, Cheque) no
+  // formulário — nunca obrigatório, nunca travado num select fechado.
+  formaPagamento: z.string().trim().max(100, "Forma de pagamento muito longa").optional(),
   itens: z
     .array(itemPedidoSchema)
     .min(1, "Adicione pelo menos um item")

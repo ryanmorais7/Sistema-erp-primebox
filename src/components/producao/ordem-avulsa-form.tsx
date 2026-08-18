@@ -50,6 +50,7 @@ export function OrdemAvulsaForm({
 }: OrdemAvulsaFormProps) {
   const router = useRouter();
   const [erroGeral, setErroGeral] = useState<string | null>(null);
+  const [avisosEstoque, setAvisosEstoque] = useState<string[] | null>(null);
   const {
     register,
     control,
@@ -109,8 +110,49 @@ export function OrdemAvulsaForm({
       setErroGeral(resultado.error);
       return;
     }
+    // Aviso não bloqueante de insumo abaixo do mínimo — a OP já foi
+    // criada, só não navega direto pra dar tempo de ler antes de sair
+    // dessa tela (ver estoque.ts, darBaixaInsumos).
+    if (resultado.avisosEstoque.length > 0) {
+      setAvisosEstoque(resultado.avisosEstoque);
+      return;
+    }
     router.push("/producao");
     router.refresh();
+  }
+
+  if (avisosEstoque) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col gap-4 pt-6">
+          <p className="font-heading text-lg font-semibold">OP criada com sucesso</p>
+          <div
+            className="rounded-lg border p-3 text-sm"
+            style={{ backgroundColor: "#FDF0D2", borderColor: "#F0B429" }}
+          >
+            <p className="font-medium" style={{ color: "#8A6A16" }}>
+              Insumo abaixo do mínimo depois dessa baixa:
+            </p>
+            <ul className="mt-1 list-inside list-disc" style={{ color: "#8A6A16" }}>
+              {avisosEstoque.map((aviso) => (
+                <li key={aviso}>{aviso}</li>
+              ))}
+            </ul>
+          </div>
+          <Button
+            type="button"
+            className="self-start bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
+            onClick={() => {
+              router.push("/producao");
+              router.refresh();
+            }}
+          >
+            <Factory />
+            Ir para Produção
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

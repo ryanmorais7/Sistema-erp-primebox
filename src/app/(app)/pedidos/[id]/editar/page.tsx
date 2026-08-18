@@ -82,6 +82,7 @@ export default async function EditarPedidoPage({ params }: PageProps) {
   const valoresIniciais: PedidoFormValues = {
     clienteId: pedido.clienteId,
     observacoes: pedido.observacoes ?? "",
+    formaPagamento: pedido.formaPagamento ?? "",
     itens: pedido.itens.map((item) => ({
       produtoTexto: produtoNomePorId.get(item.produtoId) ?? "",
       produtoId: item.produtoId,

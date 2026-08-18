@@ -32,12 +32,90 @@ export async function calcularSaldoMateriaPrima(materiaPrimaId: string): Promise
   return saldos.get(materiaPrimaId) ?? 0;
 }
 
-// Efeitos no estoque de concluir uma produção (formal ou avulsa): dá
-// entrada do produto acabado e saída automática das matérias-primas da
-// ficha técnica (ver ADR-011 e ADR-016). Não bloqueia se o saldo de
-// matéria-prima ficar negativo — é só um sinal visível de ajuste
-// necessário, não uma trava.
-export async function darBaixaProducaoConcluida(
+// Matérias-primas com saldo abaixo do próprio estoqueMinimo (ou
+// negativo) — usado tanto pelo indicador persistente em Produção
+// quanto pelo aviso inline na criação de OP.
+export async function listarInsumosAbaixoDoMinimo(): Promise<
+  { id: string; nome: string; saldo: number; estoqueMinimo: number }[]
+> {
+  const [materiasPrimas, saldos] = await Promise.all([
+    prisma.materiaPrima.findMany({ where: { ativo: true } }),
+    calcularSaldosMateriasPrimas(),
+  ]);
+  return materiasPrimas
+    .map((mp) => ({
+      id: mp.id,
+      nome: mp.nome,
+      saldo: saldos.get(mp.id) ?? 0,
+      estoqueMinimo: Number(mp.estoqueMinimo),
+    }))
+    .filter((mp) => mp.saldo < mp.estoqueMinimo);
+}
+
+// Baixa automática de insumo (matéria-prima) pela ficha técnica —
+// acontece uma única vez, no momento de CRIAR a OP (formal ou avulsa),
+// nunca em "Feito" ou na conclusão (ver ADR sobre baixa automática de
+// insumo). Produto sem ficha técnica cadastrada: não baixa nada, OP
+// criada normalmente. Nunca bloqueia por saldo insuficiente — só
+// retorna quais insumos ficaram abaixo do mínimo depois da baixa, pra
+// quem chamou decidir se mostra aviso.
+export async function darBaixaInsumos(
+  produtoId: string,
+  quantidade: number,
+  rotuloOP: string,
+): Promise<{ avisos: string[] }> {
+  const fichaTecnica = await prisma.consumoMateriaPrima.findMany({
+    where: { produtoId },
+    include: { materiaPrima: true },
+  });
+  if (fichaTecnica.length === 0) {
+    return { avisos: [] };
+  }
+
+  const avisos: string[] = [];
+  for (const consumo of fichaTecnica) {
+    const consumido = Number(consumo.quantidade) * quantidade;
+    await prisma.movimentoEstoqueMateriaPrima.create({
+      data: {
+        materiaPrimaId: consumo.materiaPrimaId,
+        tipo: "SAIDA",
+        quantidade: consumido,
+        observacao: `Baixa automática na criação — ${rotuloOP}`,
+      },
+    });
+
+    const saldoAtual = await calcularSaldoMateriaPrima(consumo.materiaPrimaId);
+    const minimo = Number(consumo.materiaPrima.estoqueMinimo);
+    if (saldoAtual < minimo) {
+      avisos.push(
+        `${consumo.materiaPrima.nome} — saldo ${saldoAtual} ${consumo.materiaPrima.unidade} (mínimo ${minimo})`,
+      );
+    }
+  }
+  return { avisos };
+}
+
+// Estorna darBaixaInsumos — usado ao cancelar uma OP, em qualquer
+// status (Aguardando, Em produção ou Concluído), já que a baixa
+// acontece na criação, não na conclusão.
+export async function estornarInsumos(produtoId: string, quantidade: number, rotuloOP: string) {
+  const fichaTecnica = await prisma.consumoMateriaPrima.findMany({ where: { produtoId } });
+  for (const consumo of fichaTecnica) {
+    await prisma.movimentoEstoqueMateriaPrima.create({
+      data: {
+        materiaPrimaId: consumo.materiaPrimaId,
+        tipo: "ENTRADA",
+        quantidade: Number(consumo.quantidade) * quantidade,
+        observacao: `Estorno de baixa — cancelamento da ${rotuloOP}`,
+      },
+    });
+  }
+}
+
+// Entrada do produto acabado no estoque — só isso acontece na
+// conclusão da produção agora (baixa de insumo já aconteceu na
+// criação, ver darBaixaInsumos).
+export async function darEntradaProdutoAcabado(
   produtoId: string,
   quantidade: number,
   rotuloOP: string,
@@ -50,25 +128,12 @@ export async function darBaixaProducaoConcluida(
       observacao: `Produção concluída — ${rotuloOP}`,
     },
   });
-
-  const fichaTecnica = await prisma.consumoMateriaPrima.findMany({ where: { produtoId } });
-  for (const consumo of fichaTecnica) {
-    await prisma.movimentoEstoqueMateriaPrima.create({
-      data: {
-        materiaPrimaId: consumo.materiaPrimaId,
-        tipo: "SAIDA",
-        quantidade: Number(consumo.quantidade) * quantidade,
-        observacao: `Consumo da produção — ${rotuloOP}`,
-      },
-    });
-  }
 }
 
-// Estorna os efeitos de darBaixaProducaoConcluida — usado ao cancelar
-// uma OP que já tinha sido concluída (saída do produto acabado,
-// entrada de volta das matérias-primas). Sempre lança movimentos novos
-// em vez de apagar os antigos, pra manter o histórico rastreável.
-export async function reverterBaixaProducaoConcluida(
+// Estorna darEntradaProdutoAcabado — usado ao cancelar/voltar uma OP
+// que já tinha sido concluída. Sempre lança movimentos novos em vez de
+// apagar os antigos, pra manter o histórico rastreável.
+export async function estornarEntradaProdutoAcabado(
   produtoId: string,
   quantidade: number,
   rotuloOP: string,
@@ -81,18 +146,6 @@ export async function reverterBaixaProducaoConcluida(
       observacao: `Cancelamento de produção já concluída — ${rotuloOP}`,
     },
   });
-
-  const fichaTecnica = await prisma.consumoMateriaPrima.findMany({ where: { produtoId } });
-  for (const consumo of fichaTecnica) {
-    await prisma.movimentoEstoqueMateriaPrima.create({
-      data: {
-        materiaPrimaId: consumo.materiaPrimaId,
-        tipo: "ENTRADA",
-        quantidade: Number(consumo.quantidade) * quantidade,
-        observacao: `Estorno de consumo — cancelamento da ${rotuloOP}`,
-      },
-    });
-  }
 }
 
 function acumularSaldos(

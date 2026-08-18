@@ -60,7 +60,6 @@ export type Cartao = {
   // dia (ver ADR-033).
   grupoOpId: string;
   createdAt: Date;
-  temExpedicao: boolean;
   // Confirmação explícita da OP inteira (não é "todo item concluído",
   // é o botão "Marcar como concluída" clicado — ver ADR-033).
   concluidaConfirmada: boolean;
@@ -89,7 +88,7 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
         itemPedido: {
           include: {
             produto: { include: { medida: true } },
-            pedido: { include: { cliente: true, expedicao: true } },
+            pedido: { include: { cliente: true } },
           },
         },
       },
@@ -100,7 +99,6 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
         produto: { include: { medida: true } },
         ordemAvulsa: true,
         cliente: true,
-        expedicao: true,
       },
       orderBy: { createdAt: "asc" },
     }),
@@ -120,9 +118,6 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
     precoUnitario: Number(ordem.itemPedido.precoUnitario),
     grupoOpId: ordem.itemPedido.pedidoId,
     createdAt: ordem.createdAt,
-    // Expedicao do fluxo formal é por Pedido inteiro (não por linha) —
-    // ver Expedicao.pedidoId no schema.
-    temExpedicao: !!ordem.itemPedido.pedido.expedicao,
     concluidaConfirmada: ordem.itemPedido.pedido.concluidaConfirmada,
     dataProgramada: ordem.dataProgramada,
     pago: ordem.itemPedido.pago,
@@ -142,7 +137,6 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
     precoUnitario: item.precoUnitario ? Number(item.precoUnitario) : null,
     grupoOpId: item.ordemAvulsaId,
     createdAt: item.createdAt,
-    temExpedicao: !!item.expedicao,
     concluidaConfirmada: item.ordemAvulsa.concluidaConfirmada,
     dataProgramada: item.dataProgramada,
     pago: item.pago,

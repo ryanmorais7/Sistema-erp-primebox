@@ -10,6 +10,7 @@ import { atualizarPedido, criarPedido } from "@/app/(app)/pedidos/actions";
 import { pedidoSchema, type PedidoFormValues } from "@/lib/validations/pedido";
 import { formatarPrecoBr, precoParaNumero } from "@/lib/validations/moeda";
 import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
+import { FormaPagamentoField } from "@/components/pedidos/forma-pagamento-field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", curr
 const valoresPadrao: PedidoFormValues = {
   clienteId: "",
   observacoes: "",
+  formaPagamento: "",
   itens: [
     { produtoTexto: "", produtoId: "", quantidade: 1, precoUnitario: "", custoUnitario: "0" },
   ],
@@ -298,6 +300,17 @@ export function PedidoForm({
               </div>
             );
           })}
+
+          <div className="flex flex-col gap-2">
+            <Label>Forma de pagamento</Label>
+            <Controller
+              control={control}
+              name="formaPagamento"
+              render={({ field }) => (
+                <FormaPagamentoField value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
+          </div>
 
           <Button
             type="button"
