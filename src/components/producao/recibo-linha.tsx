@@ -115,48 +115,52 @@ export function ReciboLinha({
           </div>
         )}
 
-        <div className="mt-6 flex flex-col gap-3 rounded-lg border p-4">
-          {itens.map((item, index) => (
-            <div
-              key={index}
-              className={
-                "flex flex-wrap items-start justify-between gap-2" +
-                (index > 0 ? " border-t pt-3" : "")
-              }
-            >
-              <div>
-                <p className="text-xs text-muted-foreground">Produto</p>
-                <p className="font-medium">{item.produtoNome}</p>
-                {item.observacao && (
-                  <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
-                    {item.observacao}
-                  </p>
-                )}
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Quantidade</p>
-                <p className="font-medium">{item.quantidade}</p>
-                {item.precoUnitario != null && (
-                  <p className="text-sm text-muted-foreground">
-                    {formatadorMoeda.format(item.precoUnitario)}/un ·{" "}
-                    {formatadorMoeda.format(item.precoUnitario * item.quantidade)}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {itens.length > 1 && (
-            <div className="flex items-start justify-between gap-2 border-t pt-3">
-              <p className="text-sm font-medium">Total</p>
-              <div className="text-right">
-                <p className="font-medium">{totalQuantidade} peças</p>
-                {temPreco && (
-                  <p className="text-sm text-muted-foreground">{formatadorMoeda.format(totalGeral)}</p>
-                )}
-              </div>
-            </div>
-          )}
+        <div className="mt-6 overflow-hidden rounded-lg border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
+                <th className="p-3 text-left font-medium">Produto</th>
+                <th className="p-3 text-center font-medium">Qtd.</th>
+                <th className="p-3 text-right font-medium">Preço unit.</th>
+                <th className="p-3 text-right font-medium">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {itens.map((item, index) => (
+                <tr key={index} className="border-b last:border-0">
+                  <td className="p-3">
+                    <p className="font-medium">{item.produtoNome}</p>
+                    {item.observacao && (
+                      <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
+                        {item.observacao}
+                      </p>
+                    )}
+                  </td>
+                  <td className="p-3 text-center font-medium">{item.quantidade}</td>
+                  <td className="p-3 text-right text-muted-foreground">
+                    {item.precoUnitario != null ? formatadorMoeda.format(item.precoUnitario) : "—"}
+                  </td>
+                  <td className="p-3 text-right font-medium">
+                    {item.precoUnitario != null
+                      ? formatadorMoeda.format(item.precoUnitario * item.quantidade)
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            {itens.length > 1 && (
+              <tfoot>
+                <tr className="border-t bg-muted/20">
+                  <td className="p-3 font-medium">Total</td>
+                  <td className="p-3 text-center font-medium">{totalQuantidade}</td>
+                  <td className="p-3"></td>
+                  <td className="p-3 text-right font-medium">
+                    {temPreco ? formatadorMoeda.format(totalGeral) : "—"}
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
         </div>
 
         {observacaoGeral && (

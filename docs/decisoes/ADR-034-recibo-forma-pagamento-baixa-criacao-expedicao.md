@@ -208,6 +208,29 @@ bugs reais.
   confortavelmente, e a barra não aparece mais (confirmado com
   screenshot).
 
+## Atualização 2026-08-18 (parte 2) — recibo: tabela de verdade e reconfirmação do status
+
+Ao trocar pra 4 colunas (Produto/Qtd./Preço unit./Subtotal), a lista de
+itens do `ReciboLinha` tinha ficado como uma sequência de `<div>`s em
+flex-wrap ("Produto" / "Quantidade" em blocos separados, sem cabeçalho
+nem alinhamento de coluna) — visualmente parecia texto solto, não uma
+tabela. Trocado por uma `<table>` HTML de verdade (thead com as 4
+colunas, Qtd. centralizado, Preço unit./Subtotal à direita, Produto à
+esquerda; tfoot com a linha "Total" quando tem mais de um item).
+Deliberadamente uma `<table>` simples, não o componente `Table`
+compartilhado (`src/components/ui/table.tsx`) — esse tem a rolagem
+espelhada do topo (a mesma "barra cinza" da atualização anterior), que
+não faz sentido reintroduzir numa tabela de recibo com só 4 colunas
+fixas.
+
+Sobre a etiqueta de status "aparecer de novo": conferido de novo o
+`ReciboLinha` e as 5 páginas que o chamam — nenhuma jamais passou
+status pro componente. Testado com screenshot em `emulateMedia print`
+pra dois pedidos, um "Faturado" e um "Em carteira" — nenhum dos dois
+mostra qualquer etiqueta no cabeçalho. Não houve regressão aqui; a
+reclamação provavelmente veio de um teste antes do deploy anterior
+propagar ou de cache de página antiga.
+
 ## Consequências
 
 - `docs/requisitos/requisitos-fase5.md` precisa refletir que Expedição
