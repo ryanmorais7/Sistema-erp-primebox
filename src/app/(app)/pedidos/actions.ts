@@ -93,9 +93,11 @@ export async function atualizarPedido(
   if (!pedidoAtual) {
     return { success: false, error: "Pedido não encontrado." };
   }
-  if (pedidoAtual.status === "FATURADO") {
-    return { success: false, error: "Pedido faturado não pode ser editado." };
-  }
+  // Pedido faturado pode ser editado (ver ADR-006, atualizado) — o que
+  // não pode mudar é a data de faturamento: valorTotal/itens ficam
+  // livres, mas faturadoEm é gravado uma vez só em faturarPedido e
+  // nunca tocado aqui, então o relatório de Faturamento/Painel
+  // continua confiável mesmo que o pedido seja editado depois.
   if (pedidoAtual.itens.some((item) => item.ordemProducao)) {
     return {
       success: false,
@@ -132,7 +134,14 @@ export async function atualizarPedido(
 }
 
 export async function faturarPedido(id: string) {
-  await prisma.pedido.update({ where: { id }, data: { status: "FATURADO" } });
+  // faturadoEm é gravado uma única vez aqui — fica fixo mesmo que o
+  // pedido seja editado depois (ver ADR-009). É o que o relatório de
+  // Faturamento e o Painel usam pra saber em que dia o pedido faturou
+  // de verdade, em vez de updatedAt (que mudaria a cada edição).
+  await prisma.pedido.update({
+    where: { id },
+    data: { status: "FATURADO", faturadoEm: new Date() },
+  });
   revalidatePath("/pedidos");
 }
 

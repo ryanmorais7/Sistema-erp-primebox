@@ -112,6 +112,11 @@ model Pedido {
   expedicao   Expedicao?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  // Data real do faturamento — gravada uma única vez em faturarPedido,
+  // nunca alterada depois (nem quando o pedido é editado pós-fatura,
+  // ver ADR-006/ADR-009). Relatório de Faturamento e Painel usam este
+  // campo, não updatedAt, pra não ficarem instáveis com edições.
+  faturadoEm  DateTime?
   // Confirmação explícita de que a OP (todos os itens) foi concluída —
   // não é derivado automaticamente de todo item estar com status
   // CONCLUIDO. Só vira true pelo botão "Marcar como concluída" no

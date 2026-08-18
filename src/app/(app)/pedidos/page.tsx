@@ -170,37 +170,41 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                     >
                       <Printer />
                     </Button>
+                    {/* Editar fica disponível em qualquer status (Em carteira ou
+                        Faturado) — só trava se algum item já tem OP, porque
+                        editar recriaria os itens do zero e apagaria a OP em
+                        cascata (ver ADR-006/ADR-010, atualizado). */}
+                    {!pedido.itens.some((item) => item.ordemProducao) && (
+                      <Button
+                        render={<Link href={`/pedidos/${pedido.id}/editar`} />}
+                        nativeButton={false}
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label="Editar pedido"
+                        title="Editar"
+                      >
+                        <Pencil />
+                      </Button>
+                    )}
                     {pedido.status === "EM_CARTEIRA" && (
                       <>
                         {!pedido.itens.some((item) => item.ordemProducao) && (
-                          <>
+                          <form
+                            action={async () => {
+                              "use server";
+                              await excluirPedido(pedido.id);
+                            }}
+                          >
                             <Button
-                              render={<Link href={`/pedidos/${pedido.id}/editar`} />}
-                              nativeButton={false}
+                              type="submit"
                               variant="outline"
                               size="icon-sm"
-                              aria-label="Editar pedido"
-                              title="Editar"
+                              aria-label="Excluir pedido"
+                              title="Excluir"
                             >
-                              <Pencil />
+                              <Trash2 />
                             </Button>
-                            <form
-                              action={async () => {
-                                "use server";
-                                await excluirPedido(pedido.id);
-                              }}
-                            >
-                              <Button
-                                type="submit"
-                                variant="outline"
-                                size="icon-sm"
-                                aria-label="Excluir pedido"
-                                title="Excluir"
-                              >
-                                <Trash2 />
-                              </Button>
-                            </form>
-                          </>
+                          </form>
                         )}
                         <form
                           action={async () => {

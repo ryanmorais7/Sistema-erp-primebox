@@ -77,3 +77,21 @@ model ItemPedido {
   foi selecionado.
 - Ainda não existe uma tela de impressão/visualização formatada do
   pedido — isso é o item 4 do escopo, a ser feito na sequência.
+
+## Atualização 2026-08-17 — pedido faturado agora pode ser editado
+
+Ryan pediu para habilitar "Editar" em qualquer status (carteira ou
+faturado) — a trava original ("pedido faturado não pode mais ser
+editado", linha 61 acima) não era mais o comportamento desejado.
+
+- **Removida a trava por `status = FATURADO`** em `atualizarPedido`,
+  no redirect de `/pedidos/[id]/editar` e no botão "Editar" da
+  listagem (3 pontos, ver ADR-009 pro campo novo que isso exigiu).
+- **Trava por OP continua existindo, agora independente do status**:
+  se algum item já tem `OrdemProducao` vinculada, "Editar" some e a
+  rota redireciona de volta — editar recria os itens do zero
+  (`deleteMany` + `create`), o que apagaria a OP em cascata (ver
+  ADR-010). Essa trava nunca foi sobre o status faturado, é sobre ter
+  OP gerada.
+- **Excluir continua bloqueado em pedido faturado** — não foi pedido
+  para mudar, só "Editar" foi mencionado.

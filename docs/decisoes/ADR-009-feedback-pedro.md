@@ -80,3 +80,28 @@ informação interna, não para o cliente).
   (data de faturamento, quando `status = FATURADO`) — se essa regra de
   imutabilidade pós-faturamento mudar no futuro, o relatório de
   faturamento por dia precisa ser revisto.
+
+## Atualização 2026-08-17 — a regra de imutabilidade mudou; `updatedAt` foi trocado por `faturadoEm`
+
+O aviso do parágrafo acima se confirmou: Ryan pediu para permitir
+editar pedido faturado (ver ADR-006, atualizado), o que quebraria
+`updatedAt` como proxy de data de faturamento — editar um pedido já
+faturado passaria a "mover" ele de mês nos relatórios, mesmo sem
+ter sido faturado de novo.
+
+- **Novo campo `Pedido.faturadoEm DateTime?`** — gravado uma única vez
+  em `faturarPedido`, nunca tocado por `atualizarPedido`. Migração
+  `20260817214417_adiciona_faturado_em` faz backfill
+  (`faturadoEm = updatedAt` para pedidos já `FATURADO` antes da
+  migração, mesma aproximação que já estava em uso).
+- **`/relatorios/faturamento` e o Painel (`/`) passaram a filtrar e
+  agrupar por `faturadoEm`**, não mais `updatedAt`, no lado formal
+  (Pedido). Testado: editar um pedido faturado hoje não muda o mês em
+  que ele aparece nesses dois relatórios — continua no mês real do
+  faturamento.
+- **Lado avulso (`ItemOrdemAvulsa`) continua em `updatedAt`** — não
+  tem campo próprio ainda, e não foi pedido para mudar agora. Editar
+  um item avulso já `CONCLUIDO` ainda pode deslocar a data dele nesses
+  relatórios — risco conhecido, mesma classe de problema que este
+  aviso descrevia, deixado para uma próxima rodada se incomodar o
+  Pedro na prática.

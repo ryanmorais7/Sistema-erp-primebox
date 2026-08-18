@@ -45,14 +45,17 @@ export default async function RelatorioFaturamentoPage({ searchParams }: PagePro
     prisma.pedido.findMany({
       where: {
         status: "FATURADO",
-        updatedAt: { gte: inicio, lt: fim },
+        faturadoEm: { gte: inicio, lt: fim },
       },
       include: { cliente: true },
       orderBy: { numero: "asc" },
     }),
     // OP avulsa concluída também entra no faturamento — a data que conta
-    // é quando ela virou CONCLUIDO (updatedAt), mesma convenção usada
-    // pra Pedido faturado (ver ADR-009). Preço em branco conta como 0.
+    // é quando ela virou CONCLUIDO (updatedAt). Diferente do lado
+    // formal (que agora usa faturadoEm, fixo — ver ADR-009 atualizado),
+    // o avulso não tem um campo próprio ainda; editar um item avulso já
+    // concluído pode deslocar essa data — risco pré-existente, fora do
+    // escopo desta correção. Preço em branco conta como 0.
     prisma.itemOrdemAvulsa.findMany({
       where: {
         status: "CONCLUIDO",
@@ -70,7 +73,7 @@ export default async function RelatorioFaturamentoPage({ searchParams }: PagePro
     href: `/pedidos/${pedido.id}`,
     clienteLabel: pedido.cliente.nomeFantasia || pedido.cliente.razaoSocial,
     valor: Number(pedido.valorTotal),
-    data: pedido.updatedAt,
+    data: pedido.faturadoEm!,
   }));
 
   const linhasAvulsas: LinhaFaturamento[] = itensAvulsos.map((item) => ({

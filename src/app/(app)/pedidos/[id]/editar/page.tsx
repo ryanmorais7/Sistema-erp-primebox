@@ -24,7 +24,10 @@ export default async function EditarPedidoPage({ params }: PageProps) {
     notFound();
   }
 
-  if (pedido.status === "FATURADO" || pedido.itens.some((item) => item.ordemProducao)) {
+  // Pedido faturado pode ser editado (ver ADR-006, atualizado) — só
+  // continua bloqueado se algum item já tem OP (editar recriaria os
+  // itens do zero, apagando a OP em cascata, ver ADR-010).
+  if (pedido.itens.some((item) => item.ordemProducao)) {
     redirect(`/pedidos/${pedido.id}`);
   }
 

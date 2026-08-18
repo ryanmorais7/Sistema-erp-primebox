@@ -116,12 +116,13 @@ export default async function PainelPage() {
         where: { createdAt: { gte: inicioJanela } },
         select: { createdAt: true, clienteId: true, status: true, valorTotal: true },
       }),
-      // updatedAt é a data de faturamento: um pedido faturado nunca mais
-      // é editado, então o momento da transição pra FATURADO é confiável
-      // (mesma convenção do relatório de faturamento por dia, ver ADR-009).
+      // faturadoEm é gravado uma única vez em faturarPedido e nunca
+      // muda depois, mesmo que o pedido seja editado (ver ADR-009
+      // atualizado — antes usava updatedAt, que quebrava se o pedido
+      // fosse editado pós-fatura).
       prisma.pedido.findMany({
-        where: { status: "FATURADO", updatedAt: { gte: inicioJanela } },
-        select: { updatedAt: true, valorTotal: true },
+        where: { status: "FATURADO", faturadoEm: { gte: inicioJanela } },
+        select: { faturadoEm: true, valorTotal: true },
       }),
       // OP avulsa concluída também conta como ganho da empresa — mesma
       // convenção usada em "Faturamento por período" (ADR-033).
@@ -150,7 +151,7 @@ export default async function PainelPage() {
 
   const faturamentoPorMes = new Map<string, { pedidos: number; valor: number }>();
   for (const pedido of faturadosNoPeriodo) {
-    const chave = chaveMesBr(pedido.updatedAt);
+    const chave = chaveMesBr(pedido.faturadoEm!);
     const atual = faturamentoPorMes.get(chave) ?? { pedidos: 0, valor: 0 };
     atual.pedidos += 1;
     atual.valor += Number(pedido.valorTotal);
