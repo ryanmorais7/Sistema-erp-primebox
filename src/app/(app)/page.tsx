@@ -223,7 +223,7 @@ export default async function PainelPage() {
       return {
         id: `avulsa-${ordem.id}`,
         href: `/producao/recibo/avulsa-grupo/${ordem.id}`,
-        numeroLabel: `OP Avulsa #${ordem.numero}`,
+        numeroLabel: `OP #${ordem.numero}`,
         clienteLabel: clientesUnicos.join(" · "),
         valor,
         status: { label: "Avulsa", className: "" },

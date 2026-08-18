@@ -49,8 +49,8 @@ export default async function ReciboAvulsaGrupoPage({ params }: PageProps) {
 
   return (
     <ReciboLinha
-      titulo={`Recibo · OP Avulsa #${ordemAvulsa.numero}`}
-      numeroLabel={`OP Avulsa #${ordemAvulsa.numero}`}
+      titulo={`Recibo · OP #${ordemAvulsa.numero}`}
+      numeroLabel={`OP #${ordemAvulsa.numero}`}
       dataFormatada={
         dataProgramadaComum
           ? formatadorDataProgramada.format(dataProgramadaComum)

@@ -79,7 +79,7 @@ export default async function RelatorioFaturamentoPage({ searchParams }: PagePro
   const linhasAvulsas: LinhaFaturamento[] = itensAvulsos.map((item) => ({
     id: item.id,
     origem: "avulsa",
-    numeroLabel: `OP Avulsa #${item.ordemAvulsa.numero}`,
+    numeroLabel: `OP #${item.ordemAvulsa.numero}`,
     href: null,
     clienteLabel: item.clienteTexto,
     valor: item.precoUnitario ? Number(item.precoUnitario) * item.quantidade : 0,

@@ -127,7 +127,7 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
   const cartoesAvulsos: Cartao[] = itensAvulsos.map((item) => ({
     id: item.id,
     origem: "avulsa",
-    numeroLabel: `OP Avulsa #${item.ordemAvulsa.numero}`,
+    numeroLabel: `OP #${item.ordemAvulsa.numero}`,
     status: item.status,
     quantidade: item.quantidade,
     produtoTexto: textoProduto(item.produto),

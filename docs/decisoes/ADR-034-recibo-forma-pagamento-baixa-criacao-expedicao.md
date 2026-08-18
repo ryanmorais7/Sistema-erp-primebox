@@ -231,6 +231,39 @@ mostra qualquer etiqueta no cabeçalho. Não houve regressão aqui; a
 reclamação provavelmente veio de um teste antes do deploy anterior
 propagar ou de cache de página antiga.
 
+## Atualização 2026-08-18 (parte 3) — OP do dia: moldura única por dia, e some o "Avulsa" do rótulo
+
+Ryan comparou dois dias: um com uma OP avulsa antiga (3 clientes
+diferentes numa mesma `OrdemAvulsa`, moldura única) e outro com 5 OPs
+avulsas recentes (uma por cliente — regra atual, "uma OP avulsa só
+pode ter um cliente", ver ADR-033), cada uma na sua própria caixa com
+borda e espaçamento. Perguntei se ele queria unificar só visualmente
+ou de verdade mesclar os registros no banco (apagando a separação por
+cliente); confirmou: só visual.
+
+- **Versão A (interativa) da tela "OP do dia"** — o `<div
+  className="flex flex-col gap-4">` com uma caixa (`rounded-lg
+  border`) por grupo virou um `<div className="divide-y rounded-lg
+  border">` só, com cada grupo ocupando uma seção interna (`p-4`,
+  sem borda própria) separada por linha divisória. Cada OP continua
+  sendo um registro independente por baixo — botões de "Marcar como
+  concluída"/"Recibo"/"Editar"/"Cancelar OP" continuam por grupo, só a
+  moldura visual foi unificada. Fundo creme sutil (`#FBF7F0`) alternado
+  a cada seção (índice ímpar), pra ajudar a distinguir onde uma OP
+  termina e a próxima começa sem precisar de borda.
+- **Removido "Avulsa" de todo rótulo gerado automaticamente** — "OP
+  Avulsa #N" virou "OP #N" em: `Cartao.numeroLabel`
+  (`producaoCartoes.ts`, fonte de tudo que usa o rótulo — OP do dia,
+  Kanban), Painel ("Pedidos e OPs recentes"), Faturamento por período,
+  os 2 recibos avulsos (`titulo`/`numeroLabel`), e os 2 títulos de
+  página "Editar OP". **Não mexido**: o texto `clienteTexto` que o
+  Pedro digita (ex: "Avulso" como nome de cliente quando não tem
+  cliente real) — só o rótulo automático da OP perdia a palavra, nunca
+  o que foi digitado por ele. Também não mexido: os `rotulo` internos
+  passados pro histórico de movimento de estoque
+  (`observacao` de `MovimentoEstoqueMateriaPrima`/`Produto`) — são
+  auditoria técnica, não a tela que o Pedro olha.
+
 ## Consequências
 
 - `docs/requisitos/requisitos-fase5.md` precisa refletir que Expedição

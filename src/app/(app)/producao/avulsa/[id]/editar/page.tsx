@@ -54,7 +54,7 @@ export default async function EditarItemAvulsaPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={`Editar OP Avulsa`} />
+      <PageHeader title="Editar OP" />
       <EditarItemAvulsaForm
         itemId={item.id}
         valoresIniciais={{

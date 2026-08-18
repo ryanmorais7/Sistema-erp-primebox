@@ -55,7 +55,7 @@ export default async function EditarGrupoAvulsaPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={`Editar OP Avulsa #${ordemAvulsa.numero}`} />
+      <PageHeader title={`Editar OP #${ordemAvulsa.numero}`} />
       <EditarGrupoAvulsaForm
         valoresIniciais={{
           linhas: itensEditaveis.map((item) => ({

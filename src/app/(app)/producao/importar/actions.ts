@@ -250,7 +250,7 @@ export async function confirmarImportacaoProducao(
         }
         criadas.push({
           tipo: "avulsa",
-          numeroLabel: `OP Avulsa #${ordem.numero}`,
+          numeroLabel: `OP #${ordem.numero}`,
           clienteNome: clienteTexto,
           itens: itens.length,
         });

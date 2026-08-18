@@ -147,18 +147,24 @@ export default async function ProducaoOpDoDiaPage({ params, searchParams }: Page
           </div>
         ) : (
           <>
-            {/* Versão A — interativa, com Recibo/Editar/Cancelar por OP. Nunca aparece impressa. */}
-            <div className="mt-4 flex flex-col gap-4 print:hidden">
-              {grupos.map((grupo) => {
+            {/* Versão A — interativa, com Recibo/Editar/Cancelar por OP. Nunca
+                aparece impressa. Um frame só pro dia inteiro (não uma
+                borda por OP) — cada OP continua sendo um registro
+                separado por baixo (botões de Concluir/Editar/Cancelar
+                próprios), só a moldura visual é unificada. */}
+            <div className="mt-4 divide-y overflow-hidden rounded-lg border print:hidden">
+              {grupos.map((grupo, indice) => {
                 const coresDoGrupo = coresAlternadasPorCliente(grupo.itens);
                 return (
                   <div
                     key={grupo.grupoOpId}
-                    className="rounded-lg border p-4"
+                    className="p-4"
                     style={
                       grupo.concluidaConfirmada
-                        ? { backgroundColor: "#FDF0D2", borderColor: "#F0B429" }
-                        : undefined
+                        ? { backgroundColor: "#FDF0D2" }
+                        : indice % 2 === 1
+                          ? { backgroundColor: "#FBF7F0" }
+                          : undefined
                     }
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
