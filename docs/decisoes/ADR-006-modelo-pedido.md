@@ -94,4 +94,33 @@ editado", linha 61 acima) não era mais o comportamento desejado.
   ADR-010). Essa trava nunca foi sobre o status faturado, é sobre ter
   OP gerada.
 - **Excluir continua bloqueado em pedido faturado** — não foi pedido
-  para mudar, só "Editar" foi mencionado.
+  para mudar, só "Editar" foi mencionado. *(Atualizado no dia
+  seguinte — ver abaixo.)*
+
+## Atualização 2026-08-18 — Excluir também liberado em Faturados, e produto por texto livre
+
+Dois pedidos do Ryan no mesmo dia:
+
+- **Excluir agora funciona em qualquer status**, igual ao Editar do dia
+  anterior — a frase "Excluir continua bloqueado em pedido faturado"
+  logo acima não vale mais. Mesma trava única: só bloqueia se algum
+  item já tem `OrdemProducao` (`excluirPedido`, `pedidos/actions.ts`).
+- **Campo Produto do formulário de Pedido deixou de ser um `<Select>`
+  fechado** (só produtos já cadastrados) **e virou texto livre com
+  autocomplete**, reaproveitando o `ProdutoTextoField` que já existia
+  pro fluxo de Produção/OP avulsa (ver ADR-033): digita, escolhe uma
+  sugestão, ou cadastra um produto novo sem sair do formulário.
+  - `itemPedidoSchema` ganhou `produtoTexto` (obrigatório) e
+    `produtoId` virou opcional — mesmo padrão do
+    `editarItemPedidoSchema` que já existia pro card de Produção.
+  - **`resolverProdutoFormal`** (antes vivia só dentro de
+    `producao/actions.ts`) foi extraído pra `src/lib/resolverProdutoFormal.ts`
+    e passou a ser usado também por `montarItensComPreco`
+    (`pedidos/actions.ts`): resolve por id, por nome exato já
+    cadastrado, ou cadastra um produto novo a partir do texto —
+    funciona mesmo se o vendedor digitar e não clicar em nada (rede de
+    segurança no servidor, não só no popup do cliente).
+  - `ProdutoTextoField`/`criarProdutoRapido` ganharam `custo` no tipo
+    `Produto` (antes só tinham `preco`, suficiente pro lado avulso que
+    não rastreia custo) — Pedido precisa dos dois pra pré-preencher
+    "Custo unit." ao selecionar/cadastrar um produto.

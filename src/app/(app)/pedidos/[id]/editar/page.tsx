@@ -31,7 +31,7 @@ export default async function EditarPedidoPage({ params }: PageProps) {
     redirect(`/pedidos/${pedido.id}`);
   }
 
-  const [clientesAtivos, produtosAtivos] = await Promise.all([
+  const [clientesAtivos, produtosAtivos, medidas] = await Promise.all([
     prisma.cliente.findMany({
       where: { ativo: true },
       orderBy: { razaoSocial: "asc" },
@@ -41,6 +41,11 @@ export default async function EditarPedidoPage({ params }: PageProps) {
       where: { ativo: true },
       orderBy: { nome: "asc" },
       select: { id: true, nome: true, preco: true, custo: true },
+    }),
+    prisma.medida.findMany({
+      where: { ativo: true },
+      orderBy: { ordem: "asc" },
+      select: { id: true, nome: true },
     }),
   ]);
 
@@ -72,11 +77,13 @@ export default async function EditarPedidoPage({ params }: PageProps) {
     preco: Number(produto.preco),
     custo: Number(produto.custo),
   }));
+  const produtoNomePorId = new Map(produtos.map((produto) => [produto.id, produto.nome]));
 
   const valoresIniciais: PedidoFormValues = {
     clienteId: pedido.clienteId,
     observacoes: pedido.observacoes ?? "",
     itens: pedido.itens.map((item) => ({
+      produtoTexto: produtoNomePorId.get(item.produtoId) ?? "",
       produtoId: item.produtoId,
       quantidade: item.quantidade,
       precoUnitario: formatarPrecoBr(Number(item.precoUnitario)),
@@ -91,6 +98,7 @@ export default async function EditarPedidoPage({ params }: PageProps) {
         pedidoId={pedido.id}
         clientes={clientes}
         produtos={produtos}
+        medidas={medidas}
         valoresIniciais={valoresIniciais}
       />
     </div>

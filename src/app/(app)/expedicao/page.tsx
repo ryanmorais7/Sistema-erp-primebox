@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Trash2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { iniciarRota, marcarEntregue } from "./actions";
+import { iniciarRota, marcarEntregue, cancelarExpedicao } from "./actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,35 +77,55 @@ export default async function ExpedicaoPage() {
                         </p>
                       )}
 
-                      {coluna.status === "AGUARDANDO" && (
-                        <form
-                          action={async () => {
-                            "use server";
-                            await iniciarRota(expedicao.id);
-                          }}
-                          className="mt-3"
-                        >
-                          <Button type="submit" variant="outline" size="sm">
-                            Iniciar rota
-                            <ArrowRight />
-                          </Button>
-                        </form>
-                      )}
+                      <div className="mt-3 flex items-center gap-2">
+                        {coluna.status === "AGUARDANDO" && (
+                          <form
+                            action={async () => {
+                              "use server";
+                              await iniciarRota(expedicao.id);
+                            }}
+                          >
+                            <Button type="submit" variant="outline" size="sm">
+                              Iniciar rota
+                              <ArrowRight />
+                            </Button>
+                          </form>
+                        )}
 
-                      {coluna.status === "EM_ROTA" && (
+                        {coluna.status === "EM_ROTA" && (
+                          <form
+                            action={async () => {
+                              "use server";
+                              await marcarEntregue(expedicao.id);
+                            }}
+                          >
+                            <Button type="submit" variant="outline" size="sm">
+                              Marcar entregue
+                              <ArrowRight />
+                            </Button>
+                          </form>
+                        )}
+
+                        {/* Cancelar fica disponível nas 3 etapas (pedido do
+                            Ryan) — apaga a expedição, o "Gerar expedição"
+                            volta a aparecer no Pedido/OP de origem. */}
                         <form
                           action={async () => {
                             "use server";
-                            await marcarEntregue(expedicao.id);
+                            await cancelarExpedicao(expedicao.id);
                           }}
-                          className="mt-3"
                         >
-                          <Button type="submit" variant="outline" size="sm">
-                            Marcar entregue
-                            <ArrowRight />
+                          <Button
+                            type="submit"
+                            variant="outline"
+                            size="icon-sm"
+                            aria-label="Cancelar expedição"
+                            title="Cancelar expedição"
+                          >
+                            <Trash2 />
                           </Button>
                         </form>
-                      )}
+                      </div>
                     </div>
                   ))
                 )}

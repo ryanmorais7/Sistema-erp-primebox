@@ -103,12 +103,20 @@ export default async function PainelPage() {
   const meses = ultimosMeses(6);
   const inicioJanela = dataBr(`${meses[0].ano}-${String(meses[0].mes).padStart(2, "0")}-01`);
 
-  const [pedidosRecentes, pedidosCriadosNoPeriodo, faturadosNoPeriodo, avulsosNoPeriodo] =
+  const [pedidosRecentes, ordensAvulsasRecentes, pedidosCriadosNoPeriodo, faturadosNoPeriodo, avulsosNoPeriodo] =
     await Promise.all([
       prisma.pedido.findMany({
         include: { cliente: true },
-        orderBy: { numero: "desc" },
-        take: 5,
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      }),
+      // OP avulsa nunca cria um Pedido (ver ADR-033) — sem isso, ela
+      // fica invisível em "Pedidos recentes" mesmo sendo, no dia a dia
+      // do Pedro, mais frequente que Pedido criado direto em Pedidos.
+      prisma.ordemAvulsa.findMany({
+        include: { itens: true },
+        orderBy: { createdAt: "desc" },
+        take: 8,
       }),
       // Base para "pedidos em carteira" e "clientes ativos" por mês —
       // agrupados pela data de criação do pedido.
@@ -176,6 +184,57 @@ export default async function PainelPage() {
     clientesAtivos: clientesPorMes.get(m.chave)?.size ?? 0,
   }));
 
+  // Uma linha só de "atividade recente" — Pedido (formal, cadastrado
+  // direto em Pedidos ou criado por trás de uma OP formal em Produção)
+  // e OP avulsa (que nunca vira Pedido, ver ADR-033) juntos, ordenados
+  // por data de criação. Sem isso, OP avulsa — que no dia a dia do
+  // Pedro é mais comum que Pedido — nunca aparecia aqui.
+  type LinhaRecente = {
+    id: string;
+    href: string;
+    numeroLabel: string;
+    clienteLabel: string;
+    valor: number;
+    status: { label: string; className: string };
+    createdAt: Date;
+  };
+
+  const linhasPedidos: LinhaRecente[] = pedidosRecentes.map((pedido) => ({
+    id: `pedido-${pedido.id}`,
+    href: `/pedidos/${pedido.id}`,
+    numeroLabel: `#${pedido.numero}`,
+    clienteLabel: pedido.cliente.nomeFantasia || pedido.cliente.razaoSocial,
+    valor: Number(pedido.valorTotal),
+    status:
+      pedido.status === "FATURADO"
+        ? { label: "Faturado", className: "bg-positive-soft text-positive" }
+        : { label: "Em carteira", className: "" },
+    createdAt: pedido.createdAt,
+  }));
+
+  const linhasAvulsas: LinhaRecente[] = ordensAvulsasRecentes
+    .filter((ordem) => ordem.itens.length > 0)
+    .map((ordem) => {
+      const clientesUnicos = [...new Set(ordem.itens.map((item) => item.clienteTexto))];
+      const valor = ordem.itens.reduce(
+        (total, item) => total + (item.precoUnitario ? Number(item.precoUnitario) * item.quantidade : 0),
+        0,
+      );
+      return {
+        id: `avulsa-${ordem.id}`,
+        href: `/producao/recibo/avulsa-grupo/${ordem.id}`,
+        numeroLabel: `OP Avulsa #${ordem.numero}`,
+        clienteLabel: clientesUnicos.join(" · "),
+        valor,
+        status: { label: "Avulsa", className: "" },
+        createdAt: ordem.createdAt,
+      };
+    });
+
+  const atividadeRecente = [...linhasPedidos, ...linhasAvulsas]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 8);
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title="Painel" />
@@ -184,12 +243,12 @@ export default async function PainelPage() {
 
       <div className="rounded-lg border shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
         <div className="flex items-center justify-between border-b p-4">
-          <p className="font-heading text-sm font-semibold">Pedidos recentes</p>
+          <p className="font-heading text-sm font-semibold">Pedidos e OPs recentes</p>
           <Link href="/pedidos" className="text-sm text-muted-foreground hover:text-foreground">
             ver todos
           </Link>
         </div>
-        {pedidosRecentes.length === 0 ? (
+        {atividadeRecente.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">Nenhum pedido cadastrado ainda.</p>
         ) : (
           <Table>
@@ -202,18 +261,16 @@ export default async function PainelPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pedidosRecentes.map((pedido) => (
-                <LinhaPedidoRecente key={pedido.id} href={`/pedidos/${pedido.id}`}>
-                  <TableCell className="font-mono">#{pedido.numero}</TableCell>
-                  <TableCell className="font-medium">
-                    {pedido.cliente.nomeFantasia || pedido.cliente.razaoSocial}
-                  </TableCell>
-                  <TableCell>{formatadorMoeda.format(Number(pedido.valorTotal))}</TableCell>
+              {atividadeRecente.map((linha) => (
+                <LinhaPedidoRecente key={linha.id} href={linha.href}>
+                  <TableCell className="font-mono">{linha.numeroLabel}</TableCell>
+                  <TableCell className="font-medium">{linha.clienteLabel}</TableCell>
+                  <TableCell>{formatadorMoeda.format(linha.valor)}</TableCell>
                   <TableCell>
-                    {pedido.status === "FATURADO" ? (
-                      <Badge className="bg-positive-soft text-positive">Faturado</Badge>
+                    {linha.status.className ? (
+                      <Badge className={linha.status.className}>{linha.status.label}</Badge>
                     ) : (
-                      <Badge variant="secondary">Em carteira</Badge>
+                      <Badge variant="secondary">{linha.status.label}</Badge>
                     )}
                   </TableCell>
                 </LinhaPedidoRecente>

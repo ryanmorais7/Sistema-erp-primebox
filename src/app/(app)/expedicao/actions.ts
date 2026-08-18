@@ -44,3 +44,21 @@ export async function marcarEntregue(id: string) {
   await prisma.expedicao.update({ where: { id }, data: { status: "ENTREGUE" } });
   revalidatePath("/expedicao");
 }
+
+// Cancela em qualquer etapa (Aguardando, Em rota ou Entregue) — mesmo
+// racional do "Cancelar OP" em Produção: apaga o registro de vez, sem
+// status de cancelado, e o botão "Gerar expedição" volta a aparecer no
+// Pedido/OP avulsa de origem, como se nunca tivesse sido gerada.
+export async function cancelarExpedicao(id: string) {
+  const expedicao = await prisma.expedicao.findUnique({ where: { id } });
+  if (!expedicao) {
+    return;
+  }
+  await prisma.expedicao.delete({ where: { id } });
+  revalidatePath("/expedicao");
+  if (expedicao.pedidoId) {
+    revalidatePath(`/pedidos/${expedicao.pedidoId}`);
+  } else {
+    revalidatePath("/producao");
+  }
+}

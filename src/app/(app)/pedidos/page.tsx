@@ -186,43 +186,44 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                         <Pencil />
                       </Button>
                     )}
-                    {pedido.status === "EM_CARTEIRA" && (
-                      <>
-                        {!pedido.itens.some((item) => item.ordemProducao) && (
-                          <form
-                            action={async () => {
-                              "use server";
-                              await excluirPedido(pedido.id);
-                            }}
-                          >
-                            <Button
-                              type="submit"
-                              variant="outline"
-                              size="icon-sm"
-                              aria-label="Excluir pedido"
-                              title="Excluir"
-                            >
-                              <Trash2 />
-                            </Button>
-                          </form>
-                        )}
-                        <form
-                          action={async () => {
-                            "use server";
-                            await faturarPedido(pedido.id);
-                          }}
+                    {/* Excluir também fica disponível em qualquer status
+                        agora (pedido do Ryan) — mesma trava de Editar,
+                        só some se algum item já tem OP. */}
+                    {!pedido.itens.some((item) => item.ordemProducao) && (
+                      <form
+                        action={async () => {
+                          "use server";
+                          await excluirPedido(pedido.id);
+                        }}
+                      >
+                        <Button
+                          type="submit"
+                          variant="outline"
+                          size="icon-sm"
+                          aria-label="Excluir pedido"
+                          title="Excluir"
                         >
-                          <Button
-                            type="submit"
-                            variant="outline"
-                            size="icon-sm"
-                            aria-label="Faturar pedido"
-                            title="Faturar"
-                          >
-                            <Check />
-                          </Button>
-                        </form>
-                      </>
+                          <Trash2 />
+                        </Button>
+                      </form>
+                    )}
+                    {pedido.status === "EM_CARTEIRA" && (
+                      <form
+                        action={async () => {
+                          "use server";
+                          await faturarPedido(pedido.id);
+                        }}
+                      >
+                        <Button
+                          type="submit"
+                          variant="outline"
+                          size="icon-sm"
+                          aria-label="Faturar pedido"
+                          title="Faturar"
+                        >
+                          <Check />
+                        </Button>
+                      </form>
                     )}
                   </TableCell>
                 </TableRow>

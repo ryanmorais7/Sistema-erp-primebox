@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/layout/page-header";
 export const dynamic = "force-dynamic";
 
 export default async function NovoPedidoPage() {
-  const [clientes, produtos] = await Promise.all([
+  const [clientes, produtos, medidas] = await Promise.all([
     prisma.cliente.findMany({
       where: { ativo: true },
       orderBy: { razaoSocial: "asc" },
@@ -15,6 +15,11 @@ export default async function NovoPedidoPage() {
       where: { ativo: true },
       orderBy: { nome: "asc" },
       select: { id: true, nome: true, preco: true, custo: true },
+    }),
+    prisma.medida.findMany({
+      where: { ativo: true },
+      orderBy: { ordem: "asc" },
+      select: { id: true, nome: true },
     }),
   ]);
 
@@ -27,7 +32,7 @@ export default async function NovoPedidoPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Novo pedido" />
-      <PedidoForm clientes={clientes} produtos={produtosComPrecoNumero} />
+      <PedidoForm clientes={clientes} produtos={produtosComPrecoNumero} medidas={medidas} />
     </div>
   );
 }

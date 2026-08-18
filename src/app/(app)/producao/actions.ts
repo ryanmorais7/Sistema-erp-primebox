@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { darBaixaProducaoConcluida, reverterBaixaProducaoConcluida } from "@/lib/estoque";
 import { precoParaNumero } from "@/lib/validations/moeda";
-import { inferirMedidaId, formatarNomeBonito } from "@/lib/planilhaOp";
+import { resolverProdutoFormal } from "@/lib/resolverProdutoFormal";
 import {
   editarItemPedidoSchema,
   editarGrupoPedidoSchema,
@@ -13,47 +13,6 @@ import {
 } from "@/lib/validations/pedido";
 
 type ResultadoAcao = { success: true } | { success: false; error: string };
-
-function normalizar(texto: string) {
-  return texto.trim().toLowerCase();
-}
-
-// Resolve o produto de uma linha (id, nome exato, ou cadastra um novo a
-// partir do texto digitado) — mesma lógica usada por
-// atualizarOrdemProducao e atualizarGrupoOrdemProducao.
-async function resolverProdutoFormal(
-  produtoTexto: string,
-  produtoId: string | undefined,
-  precoUnitario: string,
-  custoUnitario: string,
-): Promise<{ id: string } | { erro: string }> {
-  const nomeNormalizado = normalizar(produtoTexto);
-  let produto = produtoId ? await prisma.produto.findUnique({ where: { id: produtoId } }) : null;
-  if (!produto) {
-    produto = await prisma.produto.findFirst({
-      where: { ativo: true, nome: { equals: nomeNormalizado, mode: "insensitive" } },
-    });
-  }
-  if (produto) {
-    return { id: produto.id };
-  }
-
-  const medidas = await prisma.medida.findMany({ where: { ativo: true } });
-  const medidaId = inferirMedidaId(produtoTexto, medidas) ?? medidas[0]?.id;
-  if (!medidaId) {
-    return { erro: "Não há nenhuma medida cadastrada no sistema pra usar como padrão." };
-  }
-  const criado = await prisma.produto.create({
-    data: {
-      nome: formatarNomeBonito(produtoTexto),
-      tipo: "BASE",
-      medidaId,
-      preco: precoParaNumero(precoUnitario),
-      custo: precoParaNumero(custoUnitario),
-    },
-  });
-  return { id: criado.id };
-}
 
 // Edita uma linha de Pedido formal direto do card de Produção — mesma
 // trava e mesmo racional de atualizarItemOrdemAvulsa: só enquanto

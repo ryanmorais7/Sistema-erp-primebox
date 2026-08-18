@@ -60,3 +60,19 @@ model Expedicao {
   certificado digital + provedor de NF-e com o contador — ambos exigem
   uma nova conversa de escopo antes de qualquer código, dado o peso
   legal/financeiro envolvido.
+
+## Atualização 2026-08-18 — cancelar expedição em qualquer etapa
+
+Ryan pediu um "cancelar" disponível nas 3 colunas (Aguardando, Em rota,
+Entregue) — hoje só existia avançar (Iniciar rota / Marcar entregue),
+sem jeito de desfazer uma expedição gerada por engano ou que não vai
+mais sair.
+
+- **`cancelarExpedicao(id)`** (`expedicao/actions.ts`) — mesmo racional
+  do "Cancelar OP" em Produção (ver ADR-033, parte 21): apaga o
+  registro de vez, sem status de "cancelada" no enum, funciona igual
+  nas 3 etapas. `pedido.expedicao`/`item.expedicao` voltam a `null`,
+  então o botão "Gerar expedição" reaparece na tela de origem, como se
+  a expedição nunca tivesse sido gerada.
+- Botão de lixeira novo ao lado dos botões de avançar etapa, em todo
+  card do quadro (`/expedicao`), independente da coluna.

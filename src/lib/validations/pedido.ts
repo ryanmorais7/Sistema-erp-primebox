@@ -2,7 +2,13 @@ import { z } from "zod";
 import { precoSchema, custoSchema } from "./moeda";
 
 export const itemPedidoSchema = z.object({
-  produtoId: z.string().trim().min(1, "Selecione um produto"),
+  // Produto por texto livre (igual à OP avulsa/Produção) — produtoId é
+  // preenchido ao selecionar uma sugestão, mas o servidor resolve de
+  // novo por nome exato ou cadastra um produto novo se precisar (ver
+  // resolverProdutoFormal), então não trava o envio se o usuário digitou
+  // e não clicou em nada.
+  produtoTexto: z.string().trim().min(1, "Informe o produto"),
+  produtoId: z.string().trim().optional(),
   quantidade: z
     .number()
     .int("Quantidade deve ser um número inteiro")
@@ -19,7 +25,12 @@ export const pedidoSchema = z.object({
     .array(itemPedidoSchema)
     .min(1, "Adicione pelo menos um item")
     .refine(
-      (itens) => new Set(itens.map((item) => item.produtoId)).size === itens.length,
+      // Compara por texto (não por produtoId) — produtoId pode ainda
+      // não estar preenchido se o usuário só digitou e não confirmou a
+      // sugestão, mas o texto digitado já é o sinal real de duplicidade.
+      (itens) =>
+        new Set(itens.map((item) => item.produtoTexto.trim().toLowerCase())).size ===
+        itens.length,
       "Não repita o mesmo produto no pedido",
     ),
 });

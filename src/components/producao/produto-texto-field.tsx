@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type Produto = { id: string; nome: string; preco: number };
+type Produto = { id: string; nome: string; preco: number; custo?: number };
 type Medida = { id: string; nome: string };
 
 type ProdutoTextoFieldProps = {

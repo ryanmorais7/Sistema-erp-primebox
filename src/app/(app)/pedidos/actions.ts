@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { pedidoSchema, type PedidoFormValues } from "@/lib/validations/pedido";
 import { precoParaNumero } from "@/lib/validations/moeda";
+import { resolverProdutoFormal } from "@/lib/resolverProdutoFormal";
 
 type ResultadoAcao =
   | { success: true; pedidoId?: string }
@@ -21,33 +22,48 @@ function extrairErrosDeCampo(issues: { path: PropertyKey[]; message: string }[])
 }
 
 // Preço e custo unitários vêm do formulário (o vendedor pode negociar
-// preço e o custo pode variar por lote), não do cadastro do produto —
-// só confirmamos que o produto ainda existe.
+// preço e o custo pode variar por lote), não do cadastro do produto.
+// Produto por texto livre (igual à OP avulsa/Produção, ver
+// resolverProdutoFormal): resolve por id, por nome exato já cadastrado,
+// ou cadastra um produto novo a partir do texto digitado.
 async function montarItensComPreco(
   itens: {
-    produtoId: string;
+    produtoTexto: string;
+    produtoId?: string;
     quantidade: number;
     precoUnitario: string;
     custoUnitario: string;
   }[],
-) {
-  const produtosExistentes = await prisma.produto.findMany({
-    where: { id: { in: itens.map((item) => item.produtoId) } },
-    select: { id: true },
-  });
-  const idsExistentes = new Set(produtosExistentes.map((produto) => produto.id));
-
-  const itensComPreco = itens.map((item) => {
-    if (!idsExistentes.has(item.produtoId)) {
-      throw new Error("Produto selecionado não existe mais.");
+): Promise<
+  | { erro: string }
+  | {
+      itensComPreco: {
+        produtoId: string;
+        quantidade: number;
+        precoUnitario: number;
+        custoUnitario: number;
+      }[];
+      valorTotal: number;
     }
-    return {
-      produtoId: item.produtoId,
+> {
+  const itensComPreco = [];
+  for (const item of itens) {
+    const produto = await resolverProdutoFormal(
+      item.produtoTexto,
+      item.produtoId,
+      item.precoUnitario,
+      item.custoUnitario,
+    );
+    if ("erro" in produto) {
+      return { erro: produto.erro };
+    }
+    itensComPreco.push({
+      produtoId: produto.id,
       quantidade: item.quantidade,
       precoUnitario: precoParaNumero(item.precoUnitario),
       custoUnitario: precoParaNumero(item.custoUnitario),
-    };
-  });
+    });
+  }
 
   const valorTotal = itensComPreco.reduce(
     (total, item) => total + item.precoUnitario * item.quantidade,
@@ -67,7 +83,11 @@ export async function criarPedido(dadosBrutos: PedidoFormValues): Promise<Result
     };
   }
 
-  const { itensComPreco, valorTotal } = await montarItensComPreco(resultado.data.itens);
+  const montado = await montarItensComPreco(resultado.data.itens);
+  if ("erro" in montado) {
+    return { success: false, error: montado.erro };
+  }
+  const { itensComPreco, valorTotal } = montado;
 
   const pedido = await prisma.pedido.create({
     data: {
@@ -114,7 +134,11 @@ export async function atualizarPedido(
     };
   }
 
-  const { itensComPreco, valorTotal } = await montarItensComPreco(resultado.data.itens);
+  const montado = await montarItensComPreco(resultado.data.itens);
+  if ("erro" in montado) {
+    return { success: false, error: montado.erro };
+  }
+  const { itensComPreco, valorTotal } = montado;
 
   await prisma.pedido.update({
     where: { id },
@@ -146,11 +170,16 @@ export async function faturarPedido(id: string) {
 }
 
 export async function excluirPedido(id: string) {
+  // Excluir agora funciona em qualquer status (carteira ou faturado,
+  // pedido do Ryan) — igual à trava de Editar (ver ADR-006, atualizado):
+  // só continua bloqueado se algum item já tem OP, porque apagar o
+  // Pedido apagaria a OP em cascata sem passar pelo fluxo de "Cancelar
+  // OP" (que estorna estoque quando preciso).
   const pedido = await prisma.pedido.findUnique({
     where: { id },
     include: { itens: { include: { ordemProducao: true } } },
   });
-  if (!pedido || pedido.status === "FATURADO") {
+  if (!pedido) {
     return;
   }
   if (pedido.itens.some((item) => item.ordemProducao)) {

@@ -8,20 +8,14 @@ import { Plus, Trash2 } from "lucide-react";
 
 import { atualizarPedido, criarPedido } from "@/app/(app)/pedidos/actions";
 import { pedidoSchema, type PedidoFormValues } from "@/lib/validations/pedido";
-import { precoParaNumero, formatarPrecoBr } from "@/lib/validations/moeda";
+import { formatarPrecoBr, precoParaNumero } from "@/lib/validations/moeda";
+import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Combobox,
   ComboboxInput,
@@ -34,11 +28,13 @@ import {
 type Cliente = { id: string; razaoSocial: string; nomeFantasia: string | null };
 type ClienteOption = { value: string; label: string };
 type Produto = { id: string; nome: string; preco: number; custo: number };
+type Medida = { id: string; nome: string };
 
 type PedidoFormProps = {
   pedidoId?: string;
   clientes: Cliente[];
   produtos: Produto[];
+  medidas: Medida[];
   valoresIniciais?: PedidoFormValues;
 };
 
@@ -47,10 +43,18 @@ const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", curr
 const valoresPadrao: PedidoFormValues = {
   clienteId: "",
   observacoes: "",
-  itens: [{ produtoId: "", quantidade: 1, precoUnitario: "", custoUnitario: "0" }],
+  itens: [
+    { produtoTexto: "", produtoId: "", quantidade: 1, precoUnitario: "", custoUnitario: "0" },
+  ],
 };
 
-export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: PedidoFormProps) {
+export function PedidoForm({
+  pedidoId,
+  clientes,
+  produtos,
+  medidas,
+  valoresIniciais,
+}: PedidoFormProps) {
   const router = useRouter();
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const {
@@ -68,12 +72,10 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
   const { fields, append, remove } = useFieldArray({ control, name: "itens" });
   const itensObservados = useWatch({ control, name: "itens" });
 
-  const produtosPorId = new Map(produtos.map((produto) => [produto.id, produto]));
   const clienteOptions: ClienteOption[] = clientes.map((cliente) => ({
     value: cliente.id,
     label: cliente.nomeFantasia || cliente.razaoSocial,
   }));
-  const produtosItems = Object.fromEntries(produtos.map((produto) => [produto.id, produto.nome]));
 
   type ItemObservado =
     | { precoUnitario?: string; custoUnitario?: string; quantidade?: number }
@@ -188,42 +190,35 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
                     </Label>
                     <Controller
                       control={control}
-                      name={`itens.${index}.produtoId`}
-                      render={({ field: selectField }) => (
-                        <Select
-                          items={produtosItems}
-                          value={selectField.value}
-                          onValueChange={(value) => {
-                            selectField.onChange(value);
-                            const produto = produtosPorId.get(value ?? "");
+                      name={`itens.${index}.produtoTexto`}
+                      render={({ field: textoField }) => (
+                        <ProdutoTextoField
+                          texto={textoField.value ?? ""}
+                          produtoId={itensObservados?.[index]?.produtoId ?? ""}
+                          produtos={produtos}
+                          medidas={medidas}
+                          onChange={(texto, produto) => {
+                            textoField.onChange(texto);
+                            setValue(`itens.${index}.produtoId`, produto?.id ?? "");
                             if (produto) {
                               setValue(
                                 `itens.${index}.precoUnitario`,
                                 formatarPrecoBr(produto.preco),
                               );
-                              setValue(
-                                `itens.${index}.custoUnitario`,
-                                formatarPrecoBr(produto.custo),
-                              );
+                              if (produto.custo !== undefined) {
+                                setValue(
+                                  `itens.${index}.custoUnitario`,
+                                  formatarPrecoBr(produto.custo),
+                                );
+                              }
                             }
                           }}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione o produto" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {produtos.map((produto) => (
-                              <SelectItem key={produto.id} value={produto.id}>
-                                {produto.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        />
                       )}
                     />
-                    {errors.itens?.[index]?.produtoId && (
+                    {errors.itens?.[index]?.produtoTexto && (
                       <p className="text-sm text-destructive">
-                        {errors.itens[index]?.produtoId?.message}
+                        {errors.itens[index]?.produtoTexto?.message}
                       </p>
                     )}
                   </div>
@@ -310,7 +305,13 @@ export function PedidoForm({ pedidoId, clientes, produtos, valoresIniciais }: Pe
             size="sm"
             className="self-start"
             onClick={() =>
-              append({ produtoId: "", quantidade: 1, precoUnitario: "", custoUnitario: "0" })
+              append({
+                produtoTexto: "",
+                produtoId: "",
+                quantidade: 1,
+                precoUnitario: "",
+                custoUnitario: "0",
+              })
             }
           >
             <Plus />

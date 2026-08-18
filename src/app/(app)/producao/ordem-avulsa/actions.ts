@@ -42,7 +42,7 @@ export async function criarClienteRapido(
 }
 
 type ResultadoProdutoRapido =
-  | { success: true; produto: { id: string; nome: string; preco: number } }
+  | { success: true; produto: { id: string; nome: string; preco: number; custo: number } }
   | { success: false; error: string };
 
 export async function criarProdutoRapido(
@@ -66,7 +66,12 @@ export async function criarProdutoRapido(
   revalidatePath("/produtos");
   return {
     success: true,
-    produto: { id: produto.id, nome: produto.nome, preco: Number(produto.preco) },
+    produto: {
+      id: produto.id,
+      nome: produto.nome,
+      preco: Number(produto.preco),
+      custo: Number(produto.custo),
+    },
   };
 }
 
