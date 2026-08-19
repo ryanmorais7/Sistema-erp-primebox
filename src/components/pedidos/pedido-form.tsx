@@ -46,7 +46,13 @@ const valoresPadrao: PedidoFormValues = {
   observacoes: "",
   formaPagamento: "",
   itens: [
-    { produtoTexto: "", produtoId: "", quantidade: 1, precoUnitario: "", custoUnitario: "0" },
+    {
+      produtoTexto: "",
+      produtoId: "",
+      quantidade: undefined as unknown as number,
+      precoUnitario: "",
+      custoUnitario: "0",
+    },
   ],
 };
 
@@ -226,15 +232,20 @@ export function PedidoForm({
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Label>
-                      Qtd.
-                      <CampoObrigatorio />
-                    </Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      step={1}
-                      {...register(`itens.${index}.quantidade`, { valueAsNumber: true })}
+                    <Label>Qtd.</Label>
+                    <Controller
+                      control={control}
+                      name={`itens.${index}.quantidade`}
+                      render={({ field: qtdField }) => (
+                        <Input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={Number.isFinite(qtdField.value) ? qtdField.value : ""}
+                          onChange={(e) => qtdField.onChange(e.target.valueAsNumber)}
+                          onBlur={qtdField.onBlur}
+                        />
+                      )}
                     />
                     {errors.itens?.[index]?.quantidade && (
                       <p className="text-sm text-destructive">
@@ -321,7 +332,7 @@ export function PedidoForm({
               append({
                 produtoTexto: "",
                 produtoId: "",
-                quantidade: 1,
+                quantidade: undefined as unknown as number,
                 precoUnitario: "",
                 custoUnitario: "0",
               })

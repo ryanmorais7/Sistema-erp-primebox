@@ -58,7 +58,7 @@ export function CriarPedidoEstoqueForm({
     resolver: zodResolver(pedidoEstoqueSchema),
     defaultValues: {
       clienteId: "",
-      quantidade: 1,
+      quantidade: undefined as unknown as number,
       precoUnitario: formatarPrecoBr(precoUnitario),
     },
   });
@@ -134,17 +134,22 @@ export function CriarPedidoEstoqueForm({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="quantidade">
-                Quantidade
-                <CampoObrigatorio />
-              </Label>
-              <Input
-                id="quantidade"
-                type="number"
-                min={1}
-                max={saldoAtual}
-                step={1}
-                {...register("quantidade", { valueAsNumber: true })}
+              <Label htmlFor="quantidade">Quantidade</Label>
+              <Controller
+                control={control}
+                name="quantidade"
+                render={({ field: qtdField }) => (
+                  <Input
+                    id="quantidade"
+                    type="number"
+                    min={1}
+                    max={saldoAtual}
+                    step={1}
+                    value={Number.isFinite(qtdField.value) ? qtdField.value : ""}
+                    onChange={(e) => qtdField.onChange(e.target.valueAsNumber)}
+                    onBlur={qtdField.onBlur}
+                  />
+                )}
               />
               {errors.quantidade && (
                 <p className="text-sm text-destructive">{errors.quantidade.message}</p>
