@@ -237,7 +237,7 @@ export default async function PainelPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader title="Painel" />
+      <PageHeader title="Painel" dataCy="painel-heading" />
 
       <PainelInterativo dadosPorMes={dadosPorMes} />
 

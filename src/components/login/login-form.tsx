@@ -11,7 +11,7 @@ import { CampoObrigatorio } from "@/components/ui/campo-obrigatorio";
 function BotaoEntrar() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
+    <Button type="submit" disabled={pending} className="w-full" data-cy="login-submit">
       {pending ? "Entrando..." : "Entrar"}
     </Button>
   );
@@ -34,6 +34,7 @@ export function LoginForm() {
           autoComplete="username"
           placeholder="seu@email.com"
           required
+          data-cy="login-email"
         />
       </div>
 
@@ -42,11 +43,20 @@ export function LoginForm() {
           Senha
           <CampoObrigatorio />
         </Label>
-        <Input id="senha" name="senha" type="password" autoComplete="current-password" required />
+        <Input
+          id="senha"
+          name="senha"
+          type="password"
+          autoComplete="current-password"
+          required
+          data-cy="login-password"
+        />
       </div>
 
       {estado && !estado.success && (
-        <p className="text-sm text-destructive">{estado.error}</p>
+        <p className="text-sm text-destructive" data-cy="login-error-message">
+          {estado.error}
+        </p>
       )}
 
       <BotaoEntrar />
