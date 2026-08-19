@@ -302,6 +302,57 @@ diversos clientes".
   um deploy de código normal. Perguntado ao Ryan separadamente antes
   de fazer.
 
+## Atualização 2026-08-18 (parte 5) — OP avulsa aberta é reaproveitada em vez de gerar número novo pro mesmo dia
+
+Continuação direta da parte 4: lá ficou registrado que cada chamada de
+`criarOrdemAvulsa` ainda gera uma `OrdemAvulsa` própria, e que juntar as
+que já existiam (dia 18) precisaria de uma migração no banco de
+produção, "perguntado ao Ryan separadamente antes de fazer". Essa
+pergunta aconteceu nesta atualização — Ryan trouxe o caso concreto (dia
+18/08 acumulou OP #24 a #28, cada submissão avulsa virando um número
+novo, enquanto o dia 17/08 tinha ficado inteiro na OP #21) e pediu os
+dois lados: corrigir a regra de criação e migrar os dados já errados.
+
+- **Regra de criação mudou** em `criarOrdemAvulsa`
+  (`producao/ordem-avulsa/actions.ts`): antes de criar uma `OrdemAvulsa`
+  nova pras linhas avulsas de uma submissão, busca por um item de
+  `OrdemAvulsa` ainda aberta (`concluidaConfirmada: false`) cujo "dia"
+  bata com o da submissão atual. Se achar, os itens novos entram nela
+  (`ordemAvulsaId` existente, um `create` por linha); senão, cria uma
+  `OrdemAvulsa` vazia primeiro e usa o id dela — mesmo efeito de antes.
+  Continua criando uma `OrdemAvulsa` nova quando a OP do dia já foi
+  confirmada como concluída (`concluidaConfirmada: true`), que é
+  exatamente o outro caso que Ryan queria preservado.
+- **"Mesmo dia" usa a mesma regra de bucket que a tela "OP do dia" já
+  usa** (`chaveDiaCartao` em `producaoCartoes.ts`, exportada e
+  reaproveitada aqui) — `dataProgramada` quando presente, senão o dia
+  de criação no fuso do Brasil. Evita duas definições divergentes de
+  "dia" no mesmo módulo.
+- **Baixa de insumo não duplica**: como cada linha agora é criada com
+  `itemOrdemAvulsa.create` individual (em vez do `create` aninhado
+  dentro de `ordemAvulsa.create`/`update`), só os itens novos da
+  submissão atual entram em `linhasParaBaixa` — os itens que já
+  existiam na OP reaproveitada não são tocados nem baixados de novo.
+- **Total da OP com item sem preço**: já funcionava corretamente antes
+  desta mudança — tanto a tela "OP do dia"
+  (`(cartao.precoUnitario ?? 0) * cartao.quantidade`) quanto o recibo
+  agrupado (`ReciboLinha`) já somam preço ausente como R$ 0,00, sem
+  excluir o item da contagem de peças. Conferido, não precisou de
+  ajuste.
+- **Migração dos dados de produção**: script `tsx` throwaway (rodado
+  contra a `DATABASE_URL` de produção via `vercel env pull`, e apagado
+  depois de aplicado — nunca versionado) reparentou os itens de
+  `OrdemAvulsa` #25, #26, #27 e #28 pra dentro da #24 (menor número
+  vira o alvo, mesmo padrão que o dia 17/08 já tinha organicamente) e
+  apagou as 4 `OrdemAvulsa` vazias resultantes. Rodado primeiro em
+  modo dry-run (só lê e mostra o resultado esperado, sem escrever) pra
+  conferir os números antes de aplicar. Resultado confirmado: OP #24
+  passou a ter 13 itens, 42 peças, R$ 7.970,00 — bate exatamente com o
+  que Ryan reportou como esperado. Testado antes contra o Postgres
+  local (dev) com um script equivalente simulando duas submissões no
+  mesmo dia, confirmando que caem na mesma OP, que uma OP concluída
+  gera número novo, e que item sem preço soma R$ 0,00 sem travar.
+
 ## Consequências
 
 - `docs/requisitos/requisitos-fase5.md` precisa refletir que Expedição

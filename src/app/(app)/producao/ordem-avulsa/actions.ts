@@ -10,6 +10,7 @@ import {
   estornarEntradaProdutoAcabado,
 } from "@/lib/estoque";
 import { inferirMedidaId, formatarNomeBonito } from "@/lib/planilhaOp";
+import { chaveDiaCartao } from "@/lib/producaoCartoes";
 import {
   criarOrdemAvulsaSchema,
   clienteRapidoSchema,
@@ -221,26 +222,54 @@ export async function criarOrdemAvulsa(
     // tela "OP do dia", o que o Ryan não queria).
     const linhasAvulsas = produtos.filter((p) => !ehFormal(p.linha));
     if (linhasAvulsas.length > 0) {
-      const ordem = await tx.ordemAvulsa.create({
-        data: {
-          itens: {
-            create: linhasAvulsas.map(({ linha, produtoId }) => ({
-              produtoId,
-              quantidade: linha.quantidade,
-              clienteTexto: linha.clienteTexto,
-              observacao: linha.observacao || null,
-              precoUnitario: linha.precoUnitario ? precoParaNumero(linha.precoUnitario) : null,
-              dataProgramada: dataProgramadaParsed,
-            })),
-          },
+      // Se já existe uma OP avulsa aberta (não confirmada como concluída)
+      // pro mesmo dia, os itens entram nela em vez de abrir uma OP nova —
+      // senão cada submissão do mesmo dia virava um número novo (bug
+      // relatado em 2026-08-18, ver ADR-035). "Mesmo dia" usa a mesma
+      // regra de bucket de chaveDiaCartao (dataProgramada quando tem,
+      // senão o dia de criação no fuso do Brasil), pra ficar consistente
+      // com o agrupamento que a tela "OP do dia" já usa.
+      const diaChaveAlvo = chaveDiaCartao(dataProgramadaParsed, new Date());
+      const itensAbertos = await tx.itemOrdemAvulsa.findMany({
+        where: { ordemAvulsa: { concluidaConfirmada: false } },
+        select: {
+          dataProgramada: true,
+          createdAt: true,
+          ordemAvulsaId: true,
+          ordemAvulsa: { select: { numero: true } },
         },
-        include: { itens: true },
       });
-      for (const item of ordem.itens) {
+      const candidato = itensAbertos
+        .filter((item) => chaveDiaCartao(item.dataProgramada, item.createdAt) === diaChaveAlvo)
+        .sort((a, b) => a.ordemAvulsa.numero - b.ordemAvulsa.numero)[0];
+
+      let ordemId: string;
+      let ordemNumero: number;
+      if (candidato) {
+        ordemId = candidato.ordemAvulsaId;
+        ordemNumero = candidato.ordemAvulsa.numero;
+      } else {
+        const nova = await tx.ordemAvulsa.create({ data: {} });
+        ordemId = nova.id;
+        ordemNumero = nova.numero;
+      }
+
+      for (const { linha, produtoId } of linhasAvulsas) {
+        const item = await tx.itemOrdemAvulsa.create({
+          data: {
+            ordemAvulsaId: ordemId,
+            produtoId,
+            quantidade: linha.quantidade,
+            clienteTexto: linha.clienteTexto,
+            observacao: linha.observacao || null,
+            precoUnitario: linha.precoUnitario ? precoParaNumero(linha.precoUnitario) : null,
+            dataProgramada: dataProgramadaParsed,
+          },
+        });
         linhasParaBaixa.push({
           produtoId: item.produtoId,
           quantidade: item.quantidade,
-          rotulo: `OP Avulsa #${ordem.numero}`,
+          rotulo: `OP Avulsa #${ordemNumero}`,
         });
       }
     }
