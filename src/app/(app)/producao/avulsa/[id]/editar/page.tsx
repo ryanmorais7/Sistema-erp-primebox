@@ -16,7 +16,6 @@ export default async function EditarItemAvulsaPage({ params }: PageProps) {
 
   const item = await prisma.itemOrdemAvulsa.findUnique({
     where: { id },
-    include: { produto: true },
   });
 
   if (!item) {
@@ -59,7 +58,7 @@ export default async function EditarItemAvulsaPage({ params }: PageProps) {
         itemId={item.id}
         valoresIniciais={{
           produtoId: item.produtoId,
-          produtoTexto: item.produto.nome,
+          produtoTexto: item.produtoTexto,
           quantidade: item.quantidade,
           clienteTexto: item.clienteTexto,
           clienteId: item.clienteId ?? undefined,

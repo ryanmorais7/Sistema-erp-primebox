@@ -25,7 +25,7 @@ export default async function ReciboAvulsaPage({ params }: PageProps) {
 
   const item = await prisma.itemOrdemAvulsa.findUnique({
     where: { id },
-    include: { produto: { include: { medida: true } }, ordemAvulsa: true },
+    include: { ordemAvulsa: true },
   });
 
   if (!item) {
@@ -44,7 +44,7 @@ export default async function ReciboAvulsaPage({ params }: PageProps) {
       clienteNome={item.clienteTexto}
       itens={[
         {
-          produtoNome: item.produto.nome,
+          produtoNome: item.produtoTexto,
           quantidade: item.quantidade,
           precoUnitario: item.precoUnitario != null ? Number(item.precoUnitario) : null,
           observacao: item.observacao,

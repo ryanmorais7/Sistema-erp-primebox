@@ -52,7 +52,7 @@ export default async function ReciboFormalGrupoPage({ params }: PageProps) {
     where: { id: pedidoId },
     include: {
       cliente: true,
-      itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
+      itens: { include: { ordemProducao: true }, orderBy: { ordem: "asc" } },
     },
   });
 
@@ -92,7 +92,7 @@ export default async function ReciboFormalGrupoPage({ params }: PageProps) {
       clienteSecundaria={clienteSecundaria || null}
       clienteEndereco={formatarEndereco(pedido.cliente)}
       itens={pedido.itens.map((item) => ({
-        produtoNome: item.produto.nome,
+        produtoNome: item.produtoTexto,
         quantidade: item.quantidade,
         precoUnitario: Number(item.precoUnitario),
       }))}

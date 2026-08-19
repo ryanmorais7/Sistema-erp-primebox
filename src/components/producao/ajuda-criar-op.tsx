@@ -18,10 +18,11 @@ export function AjudaCriarOp() {
       </button>
       {aberto && (
         <p className="mt-2 text-sm text-muted-foreground">
-          Adicione quantas linhas precisar. Produto pode ser digitado livremente. Se não bater com o
-          catálogo, é cadastrado sozinho ao salvar. Se o cliente não tiver cadastro (ex:
-          &quot;Avulso&quot;), vira uma OP avulsa, fora do fluxo formal de Pedidos. Se você escolher ou
-          cadastrar um cliente, essa linha vira um Pedido formal de verdade, do jeito de sempre.
+          Adicione quantas linhas precisar, na ordem que preferir — a OP salva mantém exatamente
+          essa ordem e o texto do Produto exatamente como foi digitado (sem trocar por um nome de
+          catálogo). Se o cliente não tiver cadastro (ex: &quot;Avulso&quot;), vira uma OP avulsa,
+          fora do fluxo formal de Pedidos. Se você escolher ou cadastrar um cliente, essa linha
+          vira um Pedido formal de verdade, do jeito de sempre.
         </p>
       )}
     </div>

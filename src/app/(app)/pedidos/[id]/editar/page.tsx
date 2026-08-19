@@ -17,7 +17,10 @@ export default async function EditarPedidoPage({ params }: PageProps) {
 
   const pedido = await prisma.pedido.findUnique({
     where: { id },
-    include: { cliente: true, itens: { include: { ordemProducao: true } } },
+    include: {
+      cliente: true,
+      itens: { include: { ordemProducao: true }, orderBy: { ordem: "asc" } },
+    },
   });
 
   if (!pedido) {
@@ -60,31 +63,21 @@ export default async function EditarPedidoPage({ params }: PageProps) {
         ...clientesAtivos,
       ];
 
-  const produtosAtivosIds = new Set(produtosAtivos.map((produto) => produto.id));
-  const produtosDosItensFaltantes = pedido.itens.filter(
-    (item) => !produtosAtivosIds.has(item.produtoId),
-  );
-  const produtosFaltantes =
-    produtosDosItensFaltantes.length > 0
-      ? await prisma.produto.findMany({
-          where: { id: { in: produtosDosItensFaltantes.map((item) => item.produtoId) } },
-          select: { id: true, nome: true, preco: true, custo: true },
-        })
-      : [];
-
-  const produtos = [...produtosAtivos, ...produtosFaltantes].map((produto) => ({
+  // Não precisa mais buscar produtos inativos já referenciados pelo
+  // pedido — o texto exibido/editado vem direto de item.produtoTexto,
+  // nunca do cadastro do produto (ver ADR-035).
+  const produtos = produtosAtivos.map((produto) => ({
     ...produto,
     preco: Number(produto.preco),
     custo: Number(produto.custo),
   }));
-  const produtoNomePorId = new Map(produtos.map((produto) => [produto.id, produto.nome]));
 
   const valoresIniciais: PedidoFormValues = {
     clienteId: pedido.clienteId,
     observacoes: pedido.observacoes ?? "",
     formaPagamento: pedido.formaPagamento ?? "",
     itens: pedido.itens.map((item) => ({
-      produtoTexto: produtoNomePorId.get(item.produtoId) ?? "",
+      produtoTexto: item.produtoTexto,
       produtoId: item.produtoId,
       quantidade: item.quantidade,
       precoUnitario: formatarPrecoBr(Number(item.precoUnitario)),

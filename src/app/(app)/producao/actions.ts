@@ -60,6 +60,7 @@ export async function atualizarOrdemProducao(
       where: { id: ordem.itemPedido.id },
       data: {
         produtoId: produto.id,
+        produtoTexto,
         quantidade,
         precoUnitario: precoUnitarioNumero,
         custoUnitario: custoUnitarioNumero,
@@ -159,6 +160,7 @@ export async function atualizarGrupoOrdemProducao(
         where: { id: ordem.itemPedido.id },
         data: {
           produtoId: produto.id,
+          produtoTexto: linha.produtoTexto,
           quantidade: linha.quantidade,
           precoUnitario: precoUnitarioNumero,
           custoUnitario: custoUnitarioNumero,

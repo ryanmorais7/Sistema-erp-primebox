@@ -11,7 +11,6 @@ import {
   criarOrdemAvulsaSchema,
   type CriarOrdemAvulsaValues,
 } from "@/lib/validations/ordemAvulsa";
-import { formatarPrecoBr } from "@/lib/validations/moeda";
 import { mascararMoeda } from "@/lib/mascaras";
 import { ClienteTextoField } from "@/components/producao/cliente-texto-field";
 import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
@@ -43,9 +42,7 @@ const linhaVazia = {
 };
 
 export function OrdemAvulsaForm({
-  produtos,
   clientes,
-  medidas,
   dataProgramadaInicial,
 }: OrdemAvulsaFormProps) {
   const router = useRouter();
@@ -218,19 +215,7 @@ export function OrdemAvulsaForm({
                   render={({ field: textoField }) => (
                     <ProdutoTextoField
                       texto={textoField.value ?? ""}
-                      produtoId={linhasObservadas?.[index]?.produtoId ?? ""}
-                      produtos={produtos}
-                      medidas={medidas}
-                      onChange={(texto, produto) => {
-                        textoField.onChange(texto);
-                        setValue(`linhas.${index}.produtoId`, produto?.id ?? "");
-                        if (produto && !linhasObservadas?.[index]?.precoUnitario) {
-                          setValue(
-                            `linhas.${index}.precoUnitario`,
-                            formatarPrecoBr(produto.preco),
-                          );
-                        }
-                      }}
+                      onChange={textoField.onChange}
                     />
                   )}
                 />

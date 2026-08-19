@@ -54,7 +54,6 @@ export default async function ReciboFormalPage({ params }: PageProps) {
     include: {
       itemPedido: {
         include: {
-          produto: { include: { medida: true } },
           pedido: { include: { cliente: true } },
         },
       },
@@ -90,7 +89,7 @@ export default async function ReciboFormalPage({ params }: PageProps) {
       clienteEndereco={formatarEndereco(item.pedido.cliente)}
       itens={[
         {
-          produtoNome: item.produto.nome,
+          produtoNome: item.produtoTexto,
           quantidade: item.quantidade,
           precoUnitario: Number(item.precoUnitario),
         },

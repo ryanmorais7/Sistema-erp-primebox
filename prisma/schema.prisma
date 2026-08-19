@@ -137,6 +137,20 @@ model ItemPedido {
   pedido        Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   produtoId     String
   produto       Produto @relation(fields: [produtoId], references: [id])
+  // Texto exatamente como foi digitado no formulário (mesma caixa alta/
+  // baixa, mesma acentuação) — é a ÚNICA fonte usada pra exibir o
+  // produto (tela, impressão, recibo). produtoId continua existindo só
+  // pro vínculo interno de estoque/ficha técnica; nunca mais é usado
+  // pra reconstruir o nome exibido, nem quando bate com um produto já
+  // cadastrado (ver ADR-035).
+  produtoTexto  String
+  // Posição da linha na ordem em que foi digitada no formulário —
+  // usada pra ordenar a exibição em vez de depender de createdAt (que
+  // empata entre linhas da mesma transação) ou da ordem não garantida
+  // de um include do Prisma depois de um create aninhado (ver
+  // ADR-035). Uma linha nova (edição/"+ Adicionar") sempre recebe um
+  // valor maior que o atual máximo do grupo, então entra no final.
+  ordem         Int     @default(0)
   quantidade    Int
   precoUnitario Decimal @db.Decimal(10, 2)
   custoUnitario Decimal @default(0) @db.Decimal(10, 2)
@@ -196,6 +210,12 @@ model ItemOrdemAvulsa {
   ordemAvulsa   OrdemAvulsa @relation(fields: [ordemAvulsaId], references: [id], onDelete: Cascade)
   produtoId     String
   produto       Produto  @relation(fields: [produtoId], references: [id])
+  // Mesmo racional do ItemPedido.produtoTexto — texto exatamente como
+  // digitado, única fonte de exibição, nunca sobrescrito pelo nome do
+  // produto vinculado (ver ADR-035).
+  produtoTexto  String
+  // Mesmo racional do ItemPedido.ordem (ver ADR-035).
+  ordem         Int      @default(0)
   quantidade    Int
   // Nome digitado livremente — é o dado que aparece pro usuário. clienteId
   // é só um vínculo informativo opcional (nunca usado pelos relatórios

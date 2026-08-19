@@ -1,6 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { tipoProdutoLabels } from "@/lib/validations/produto";
-import type { TipoProduto } from "@/generated/prisma/enums";
 
 // Fuso do Brasil, fixo (-03:00, sem horário de verão desde 2019) — usado
 // pra "bucketar" itens sem dataProgramada pelo dia de criação (calendário
@@ -24,22 +22,6 @@ export function chaveDiaCartao(dataProgramada: Date | null, createdAt: Date): st
   return formatadorChaveDia.format(createdAt);
 }
 
-export function textoProduto(item: {
-  nome: string;
-  tipo: TipoProduto;
-  tecido: string | null;
-  cor: string | null;
-  medida: { nome: string };
-}) {
-  const prefixo = item.tipo === "BASE" ? tipoProdutoLabels[item.tipo] : item.medida.nome;
-  // Planilhas importadas às vezes já trazem o prefixo no nome (ex: "Base
-  // queen sat 07") — evita duplicar ("Base Base queen sat 07").
-  const nomeJaTemPrefixo = item.nome.toLowerCase().startsWith(prefixo.toLowerCase());
-  const base = nomeJaTemPrefixo ? item.nome : `${prefixo} ${item.nome}`;
-  const tecidoCor = [item.tecido, item.cor].filter(Boolean).join(" ");
-  return tecidoCor ? `${base} · ${tecidoCor}` : base;
-}
-
 export type Cartao = {
   id: string;
   origem: "formal" | "avulsa";
@@ -60,6 +42,10 @@ export type Cartao = {
   // dia (ver ADR-033).
   grupoOpId: string;
   createdAt: Date;
+  // Posição da linha na ordem em que foi digitada — desempate do sort
+  // abaixo quando duas linhas da mesma OP têm o mesmo createdAt (ver
+  // ADR-035, ItemPedido.ordem/ItemOrdemAvulsa.ordem).
+  ordem: number;
   // Confirmação explícita da OP inteira (não é "todo item concluído",
   // é o botão "Marcar como concluída" clicado — ver ADR-033).
   concluidaConfirmada: boolean;
@@ -87,7 +73,6 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
       include: {
         itemPedido: {
           include: {
-            produto: { include: { medida: true } },
             pedido: { include: { cliente: true } },
           },
         },
@@ -96,7 +81,6 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
     }),
     prisma.itemOrdemAvulsa.findMany({
       include: {
-        produto: { include: { medida: true } },
         ordemAvulsa: true,
         cliente: true,
       },
@@ -110,7 +94,7 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
     numeroLabel: `OP #${ordem.numero}`,
     status: ordem.status,
     quantidade: ordem.itemPedido.quantidade,
-    produtoTexto: textoProduto(ordem.itemPedido.produto),
+    produtoTexto: ordem.itemPedido.produtoTexto,
     clienteLabel:
       ordem.itemPedido.pedido.cliente.nomeFantasia || ordem.itemPedido.pedido.cliente.razaoSocial,
     clienteHref: `/pedidos/${ordem.itemPedido.pedido.id}`,
@@ -118,6 +102,7 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
     precoUnitario: Number(ordem.itemPedido.precoUnitario),
     grupoOpId: ordem.itemPedido.pedidoId,
     createdAt: ordem.createdAt,
+    ordem: ordem.itemPedido.ordem,
     concluidaConfirmada: ordem.itemPedido.pedido.concluidaConfirmada,
     dataProgramada: ordem.dataProgramada,
     pago: ordem.itemPedido.pago,
@@ -130,21 +115,26 @@ export async function buscarCartoesProducao(): Promise<Cartao[]> {
     numeroLabel: `OP #${item.ordemAvulsa.numero}`,
     status: item.status,
     quantidade: item.quantidade,
-    produtoTexto: textoProduto(item.produto),
+    produtoTexto: item.produtoTexto,
     clienteLabel: item.clienteTexto,
     clienteHref: item.clienteId ? `/clientes/${item.clienteId}/editar` : null,
     observacao: item.observacao || "",
     precoUnitario: item.precoUnitario ? Number(item.precoUnitario) : null,
     grupoOpId: item.ordemAvulsaId,
     createdAt: item.createdAt,
+    ordem: item.ordem,
     concluidaConfirmada: item.ordemAvulsa.concluidaConfirmada,
     dataProgramada: item.dataProgramada,
     pago: item.pago,
     diaChave: chaveDiaCartao(item.dataProgramada, item.createdAt),
   }));
 
+  // Ordem de inserção sempre — createdAt como critério principal (cada OP
+  // criada em momentos diferentes), "ordem" como desempate dentro da
+  // mesma OP (mesma transação = mesmo createdAt, ver ADR-035). Nenhum
+  // outro critério (alfabético, cliente, categoria) entra aqui.
   return [...cartoesFormais, ...cartoesAvulsos].sort(
-    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.ordem - b.ordem,
   );
 }
 

@@ -183,8 +183,12 @@ export async function confirmarImportacaoProducao(
       }
 
       for (const [clienteId, itens] of formaisPorCliente) {
-        const itensPedido = itens.map(({ item, produto }) => ({
+        const itensPedido = itens.map(({ item, produto }, indice) => ({
           produtoId: produto.id,
+          // Texto exatamente como veio na planilha — nunca o nome do
+          // produto vinculado (ver ADR-035).
+          produtoTexto: item.produtoTexto,
+          ordem: indice,
           quantidade: item.quantidade,
           precoUnitario: produto.preco,
           custoUnitario: produto.custo,
@@ -207,7 +211,11 @@ export async function confirmarImportacaoProducao(
           },
           include: { itens: true, cliente: true },
         });
-        for (const itemPedido of pedido.itens) {
+        // O include acima não garante a ordem de inserção (ver ADR-035) —
+        // reordena por "ordem" antes de criar a OrdemProducao de cada
+        // item, senão o número da OP não segue a ordem da planilha.
+        const itensPedidoOrdenados = [...pedido.itens].sort((a, b) => a.ordem - b.ordem);
+        for (const itemPedido of itensPedidoOrdenados) {
           const ordem = await tx.ordemProducao.create({
             data: { itemPedidoId: itemPedido.id, dataProgramada: dataProgramadaParsed },
           });
@@ -229,8 +237,12 @@ export async function confirmarImportacaoProducao(
         const ordem = await tx.ordemAvulsa.create({
           data: {
             itens: {
-              create: avulsos.map(({ item, produto }) => ({
+              create: avulsos.map(({ item, produto }, indice) => ({
                 produtoId: produto.id,
+                // Texto exatamente como veio na planilha — nunca o nome
+                // do produto vinculado (ver ADR-035).
+                produtoTexto: item.produtoTexto,
+                ordem: indice,
                 quantidade: item.quantidade,
                 clienteTexto: item.clienteTexto,
                 observacao: item.observacao || null,

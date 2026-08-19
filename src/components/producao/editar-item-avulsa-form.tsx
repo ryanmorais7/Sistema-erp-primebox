@@ -11,7 +11,6 @@ import {
   editarItemAvulsaSchema,
   type EditarItemAvulsaValues,
 } from "@/lib/validations/ordemAvulsa";
-import { formatarPrecoBr } from "@/lib/validations/moeda";
 import { mascararMoeda } from "@/lib/mascaras";
 import { ClienteTextoField } from "@/components/producao/cliente-texto-field";
 import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
@@ -36,9 +35,7 @@ type EditarItemAvulsaFormProps = {
 export function EditarItemAvulsaForm({
   itemId,
   valoresIniciais,
-  produtos,
   clientes,
-  medidas,
 }: EditarItemAvulsaFormProps) {
   const router = useRouter();
   const [erroGeral, setErroGeral] = useState<string | null>(null);
@@ -111,16 +108,7 @@ export function EditarItemAvulsaForm({
                 render={({ field: textoField }) => (
                   <ProdutoTextoField
                     texto={textoField.value ?? ""}
-                    produtoId={linhaObservada?.produtoId ?? ""}
-                    produtos={produtos}
-                    medidas={medidas}
-                    onChange={(texto, produto) => {
-                      textoField.onChange(texto);
-                      setValue("produtoId", produto?.id ?? "");
-                      if (produto && !linhaObservada?.precoUnitario) {
-                        setValue("precoUnitario", formatarPrecoBr(produto.preco));
-                      }
-                    }}
+                    onChange={textoField.onChange}
                   />
                 )}
               />

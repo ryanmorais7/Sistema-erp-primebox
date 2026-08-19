@@ -28,7 +28,7 @@ export default async function ReciboAvulsaGrupoPage({ params }: PageProps) {
 
   const ordemAvulsa = await prisma.ordemAvulsa.findUnique({
     where: { id: ordemAvulsaId },
-    include: { itens: { include: { produto: { include: { medida: true } } } } },
+    include: { itens: { orderBy: { ordem: "asc" } } },
   });
 
   if (!ordemAvulsa || ordemAvulsa.itens.length === 0) {
@@ -58,7 +58,7 @@ export default async function ReciboAvulsaGrupoPage({ params }: PageProps) {
       }
       clienteNome={clienteNome}
       itens={ordemAvulsa.itens.map((item) => ({
-        produtoNome: item.produto.nome,
+        produtoNome: item.produtoTexto,
         quantidade: item.quantidade,
         precoUnitario: item.precoUnitario != null ? Number(item.precoUnitario) : null,
         observacao: item.observacao,

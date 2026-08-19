@@ -8,7 +8,7 @@ import { Plus, Trash2 } from "lucide-react";
 
 import { atualizarPedido, criarPedido } from "@/app/(app)/pedidos/actions";
 import { pedidoSchema, type PedidoFormValues } from "@/lib/validations/pedido";
-import { formatarPrecoBr, precoParaNumero } from "@/lib/validations/moeda";
+import { precoParaNumero } from "@/lib/validations/moeda";
 import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
 import { FormaPagamentoField } from "@/components/pedidos/forma-pagamento-field";
 import { Button } from "@/components/ui/button";
@@ -59,8 +59,6 @@ const valoresPadrao: PedidoFormValues = {
 export function PedidoForm({
   pedidoId,
   clientes,
-  produtos,
-  medidas,
   valoresIniciais,
 }: PedidoFormProps) {
   const router = useRouter();
@@ -69,7 +67,6 @@ export function PedidoForm({
     register,
     control,
     handleSubmit,
-    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<PedidoFormValues>({
@@ -202,25 +199,7 @@ export function PedidoForm({
                       render={({ field: textoField }) => (
                         <ProdutoTextoField
                           texto={textoField.value ?? ""}
-                          produtoId={itensObservados?.[index]?.produtoId ?? ""}
-                          produtos={produtos}
-                          medidas={medidas}
-                          onChange={(texto, produto) => {
-                            textoField.onChange(texto);
-                            setValue(`itens.${index}.produtoId`, produto?.id ?? "");
-                            if (produto) {
-                              setValue(
-                                `itens.${index}.precoUnitario`,
-                                formatarPrecoBr(produto.preco),
-                              );
-                              if (produto.custo !== undefined) {
-                                setValue(
-                                  `itens.${index}.custoUnitario`,
-                                  formatarPrecoBr(produto.custo),
-                                );
-                              }
-                            }
-                          }}
+                          onChange={textoField.onChange}
                         />
                       )}
                     />

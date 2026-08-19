@@ -88,7 +88,10 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
       where: { id },
       include: {
         cliente: true,
-        itens: { include: { produto: { include: { medida: true } }, ordemProducao: true } },
+        itens: {
+          include: { produto: { include: { medida: true } }, ordemProducao: true },
+          orderBy: { ordem: "asc" },
+        },
       },
     }),
     calcularSaldosProdutos(),
@@ -215,7 +218,7 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
                 return (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
-                    {item.produto.nome}
+                    {item.produtoTexto}
                     <span className="block text-xs text-muted-foreground">
                       {tipoProdutoLabels[item.produto.tipo]}
                     </span>
@@ -380,7 +383,7 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
         clienteEndereco={endereco}
         formaPagamento={pedido.formaPagamento}
         itens={pedido.itens.map((item) => ({
-          produtoNome: item.produto.nome,
+          produtoNome: item.produtoTexto,
           quantidade: item.quantidade,
           precoUnitario: Number(item.precoUnitario),
         }))}

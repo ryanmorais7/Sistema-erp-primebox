@@ -21,8 +21,8 @@ export default async function EditarGrupoPedidoPage({ params }: PageProps) {
     include: {
       cliente: true,
       itens: {
-        include: { produto: true, ordemProducao: true },
-        orderBy: { id: "asc" },
+        include: { ordemProducao: true },
+        orderBy: { ordem: "asc" },
       },
     },
   });
@@ -63,7 +63,7 @@ export default async function EditarGrupoPedidoPage({ params }: PageProps) {
           linhas: itensEditaveis.map((item) => ({
             itemId: item.ordemProducao!.id,
             produtoId: item.produtoId,
-            produtoTexto: item.produto.nome,
+            produtoTexto: item.produtoTexto,
             quantidade: item.quantidade,
             precoUnitario: formatarPrecoBr(Number(item.precoUnitario)),
             custoUnitario: formatarPrecoBr(Number(item.custoUnitario)),

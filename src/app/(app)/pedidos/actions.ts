@@ -39,6 +39,8 @@ async function montarItensComPreco(
   | {
       itensComPreco: {
         produtoId: string;
+        produtoTexto: string;
+        ordem: number;
         quantidade: number;
         precoUnitario: number;
         custoUnitario: number;
@@ -47,7 +49,7 @@ async function montarItensComPreco(
     }
 > {
   const itensComPreco = [];
-  for (const item of itens) {
+  for (const [indice, item] of itens.entries()) {
     const produto = await resolverProdutoFormal(
       item.produtoTexto,
       item.produtoId,
@@ -59,6 +61,10 @@ async function montarItensComPreco(
     }
     itensComPreco.push({
       produtoId: produto.id,
+      // Texto exatamente como digitado — nunca o nome do produto
+      // vinculado (ver ADR-035). "ordem" preserva a sequência digitada.
+      produtoTexto: item.produtoTexto,
+      ordem: indice,
       quantidade: item.quantidade,
       precoUnitario: precoParaNumero(item.precoUnitario),
       custoUnitario: precoParaNumero(item.custoUnitario),

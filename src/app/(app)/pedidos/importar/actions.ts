@@ -152,13 +152,17 @@ export async function confirmarImportacao(
           throw new Error(`Cliente "${clienteTexto}" não foi encontrado nem preenchido como novo.`);
         }
 
-        const itensPedido = itens.map((item) => {
+        const itensPedido = itens.map((item, indice) => {
           const produto = resolverProduto(item.produtoTexto);
           if (!produto) {
             throw new Error(`Produto "${item.produtoTexto}" não foi encontrado nem preenchido como novo.`);
           }
           return {
             produtoId: produto.id,
+            // Texto exatamente como veio na planilha — nunca o nome do
+            // produto vinculado (ver ADR-035).
+            produtoTexto: item.produtoTexto,
+            ordem: indice,
             quantidade: item.quantidade,
             precoUnitario: produto.preco,
             custoUnitario: produto.custo,

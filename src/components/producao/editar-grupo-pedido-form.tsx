@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray, useWatch, Controller } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
 
@@ -32,8 +32,6 @@ type EditarGrupoPedidoFormProps = {
 export function EditarGrupoPedidoForm({
   clienteNome,
   valoresIniciais,
-  produtos,
-  medidas,
 }: EditarGrupoPedidoFormProps) {
   const router = useRouter();
   const [erroGeral, setErroGeral] = useState<string | null>(null);
@@ -41,7 +39,6 @@ export function EditarGrupoPedidoForm({
     register,
     control,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<EditarGrupoPedidoValues>({
     resolver: zodResolver(editarGrupoPedidoSchema),
@@ -49,7 +46,6 @@ export function EditarGrupoPedidoForm({
   });
 
   const { fields } = useFieldArray({ control, name: "linhas" });
-  const linhasObservadas = useWatch({ control, name: "linhas" });
 
   async function aoSubmeter(dados: EditarGrupoPedidoValues) {
     setErroGeral(null);
@@ -117,13 +113,7 @@ export function EditarGrupoPedidoForm({
                   render={({ field: textoField }) => (
                     <ProdutoTextoField
                       texto={textoField.value ?? ""}
-                      produtoId={linhasObservadas?.[index]?.produtoId ?? ""}
-                      produtos={produtos}
-                      medidas={medidas}
-                      onChange={(texto, produto) => {
-                        textoField.onChange(texto);
-                        setValue(`linhas.${index}.produtoId`, produto?.id ?? "");
-                      }}
+                      onChange={textoField.onChange}
                     />
                   )}
                 />

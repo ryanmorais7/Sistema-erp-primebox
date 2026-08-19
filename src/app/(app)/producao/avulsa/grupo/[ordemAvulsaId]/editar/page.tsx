@@ -18,7 +18,7 @@ export default async function EditarGrupoAvulsaPage({ params }: PageProps) {
 
   const ordemAvulsa = await prisma.ordemAvulsa.findUnique({
     where: { id: ordemAvulsaId },
-    include: { itens: { include: { produto: true }, orderBy: { createdAt: "asc" } } },
+    include: { itens: { orderBy: { ordem: "asc" } } },
   });
 
   if (!ordemAvulsa) {
@@ -61,7 +61,7 @@ export default async function EditarGrupoAvulsaPage({ params }: PageProps) {
           linhas: itensEditaveis.map((item) => ({
             itemId: item.id,
             produtoId: item.produtoId,
-            produtoTexto: item.produto.nome,
+            produtoTexto: item.produtoTexto,
             quantidade: item.quantidade,
             clienteTexto: item.clienteTexto,
             clienteId: item.clienteId ?? undefined,

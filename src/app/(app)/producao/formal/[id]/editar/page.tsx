@@ -16,7 +16,7 @@ export default async function EditarOrdemProducaoPage({ params }: PageProps) {
 
   const ordem = await prisma.ordemProducao.findUnique({
     where: { id },
-    include: { itemPedido: { include: { produto: true, pedido: { include: { cliente: true } } } } },
+    include: { itemPedido: { include: { pedido: { include: { cliente: true } } } } },
   });
 
   if (!ordem) {
@@ -57,7 +57,7 @@ export default async function EditarOrdemProducaoPage({ params }: PageProps) {
         clienteNome={cliente.nomeFantasia || cliente.razaoSocial}
         valoresIniciais={{
           produtoId: item.produtoId,
-          produtoTexto: item.produto.nome,
+          produtoTexto: item.produtoTexto,
           quantidade: item.quantidade,
           precoUnitario: formatarPrecoBr(Number(item.precoUnitario)),
           custoUnitario: formatarPrecoBr(Number(item.custoUnitario)),

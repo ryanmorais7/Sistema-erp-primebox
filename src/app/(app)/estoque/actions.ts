@@ -333,6 +333,11 @@ export async function criarPedidoDoEstoque(
           create: [
             {
               produtoId,
+              // Não vem de texto livre aqui — o produto já é escolhido
+              // direto do estoque, então o nome do cadastro É o texto
+              // certo (não há nada "digitado" pra preservar).
+              produtoTexto: produto.nome,
+              ordem: 0,
               quantidade: resultado.data.quantidade,
               precoUnitario,
               custoUnitario: Number(produto.custo),

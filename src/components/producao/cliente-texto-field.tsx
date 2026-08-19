@@ -72,15 +72,10 @@ export function ClienteTextoField({ texto, clienteId, clientes, onChange }: Clie
         }}
         onFocus={() => setAberto(true)}
         onBlur={() => {
-          // Digitou o nome exato de um cliente já cadastrado (sem
-          // clicar na sugestão) — vincula do mesmo jeito, senão a
-          // linha vira avulsa por engano, perdendo o vínculo real.
-          if (!clienteId) {
-            const clienteExato = clientes.find(
-              (cliente) => normalizar(cliente.nomeFantasia || cliente.razaoSocial) === termo,
-            );
-            if (clienteExato) selecionar(clienteExato);
-          }
+          // Não sobrescreve mais o texto digitado com o nome cadastrado
+          // ao sair do campo — só o clique explícito numa sugestão (ou
+          // no "Cadastrar") vincula um cliente (ver ADR-035). O texto
+          // exibido/salvo continua exatamente o que foi digitado.
           setTimeout(() => setAberto(false), 150);
         }}
       />

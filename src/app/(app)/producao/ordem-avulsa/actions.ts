@@ -182,8 +182,12 @@ export async function criarOrdemAvulsa(
     }
 
     for (const [clienteId, itensDoCliente] of gruposPorCliente) {
-      const itensComPreco = itensDoCliente.map(({ linha, produtoId, preco, custo }) => ({
+      const itensComPreco = itensDoCliente.map(({ linha, produtoId, preco, custo }, indice) => ({
         produtoId,
+        // Texto exatamente como digitado — nunca o nome do produto
+        // vinculado (ver ADR-035). "ordem" preserva a sequência digitada.
+        produtoTexto: linha.produtoTexto,
+        ordem: indice,
         quantidade: linha.quantidade,
         precoUnitario: linha.precoUnitario ? precoParaNumero(linha.precoUnitario) : preco,
         custoUnitario: custo,
@@ -202,7 +206,12 @@ export async function criarOrdemAvulsa(
         data: { clienteId, valorTotal, observacoes, itens: { create: itensComPreco } },
         include: { itens: true },
       });
-      for (const item of pedido.itens) {
+      // O include acima não garante a ordem de inserção (ver ADR-035) —
+      // reordena explicitamente por "ordem" antes de criar a OrdemProducao
+      // de cada item, senão o número da OP acaba não seguindo a ordem
+      // digitada.
+      const itensOrdenados = [...pedido.itens].sort((a, b) => a.ordem - b.ordem);
+      for (const item of itensOrdenados) {
         const ordem = await tx.ordemProducao.create({
           data: { itemPedidoId: item.id, dataProgramada: dataProgramadaParsed },
         });
@@ -235,19 +244,33 @@ export async function criarOrdemAvulsa(
         select: {
           dataProgramada: true,
           createdAt: true,
+          ordem: true,
           ordemAvulsaId: true,
           ordemAvulsa: { select: { numero: true } },
         },
       });
-      const candidato = itensAbertos
-        .filter((item) => chaveDiaCartao(item.dataProgramada, item.createdAt) === diaChaveAlvo)
-        .sort((a, b) => a.ordemAvulsa.numero - b.ordemAvulsa.numero)[0];
+      const itensDoCandidato = itensAbertos.filter(
+        (item) => chaveDiaCartao(item.dataProgramada, item.createdAt) === diaChaveAlvo,
+      );
+      const candidato = [...itensDoCandidato].sort(
+        (a, b) => a.ordemAvulsa.numero - b.ordemAvulsa.numero,
+      )[0];
 
       let ordemId: string;
       let ordemNumero: number;
+      // Itens adicionados depois entram no final — nunca reordenados no
+      // meio (ver ADR-035) — continua a partir do maior "ordem" já usado
+      // no grupo reaproveitado, em vez de começar de novo em 0.
+      let proximaOrdem = 0;
       if (candidato) {
         ordemId = candidato.ordemAvulsaId;
         ordemNumero = candidato.ordemAvulsa.numero;
+        proximaOrdem =
+          Math.max(
+            ...itensDoCandidato
+              .filter((item) => item.ordemAvulsaId === candidato.ordemAvulsaId)
+              .map((item) => item.ordem),
+          ) + 1;
       } else {
         const nova = await tx.ordemAvulsa.create({ data: {} });
         ordemId = nova.id;
@@ -259,6 +282,10 @@ export async function criarOrdemAvulsa(
           data: {
             ordemAvulsaId: ordemId,
             produtoId,
+            // Texto exatamente como digitado — nunca o nome do produto
+            // vinculado (ver ADR-035).
+            produtoTexto: linha.produtoTexto,
+            ordem: proximaOrdem++,
             quantidade: linha.quantidade,
             clienteTexto: linha.clienteTexto,
             observacao: linha.observacao || null,
@@ -361,6 +388,7 @@ export async function atualizarItemOrdemAvulsa(
     where: { id },
     data: {
       produtoId: produto.id,
+      produtoTexto,
       quantidade,
       clienteTexto,
       clienteId: clienteId || null,
@@ -413,6 +441,7 @@ export async function atualizarGrupoAvulsa(
       where: { id: linha.itemId },
       data: {
         produtoId: produto.id,
+        produtoTexto: linha.produtoTexto,
         quantidade: linha.quantidade,
         clienteTexto: linha.clienteTexto,
         clienteId: linha.clienteId || null,
