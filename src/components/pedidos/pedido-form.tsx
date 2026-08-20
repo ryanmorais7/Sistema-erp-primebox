@@ -362,11 +362,11 @@ export function PedidoForm({
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="observacoes">Forma de pagamento, boleto, vencimento, etc.</Label>
+            <Label htmlFor="observacoes">Anotações internas (opcional)</Label>
             <Textarea
               id="observacoes"
               rows={3}
-              placeholder="Ex: 30/60 dias, boleto emitido em 05/08, aguardando compensação"
+              placeholder="Ex: entrega combinada, pedido urgente, etc."
               {...register("observacoes")}
             />
           </div>
