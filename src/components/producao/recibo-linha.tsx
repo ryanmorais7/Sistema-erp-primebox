@@ -54,6 +54,11 @@ export function ReciboLinha({
     (total, item) => total + (item.precoUnitario ?? 0) * item.quantidade,
     0,
   );
+  // Com muitos itens (planilhas grandes lançadas de uma vez), aperta o
+  // espaçamento das linhas pra caber até ~15 itens numa folha só, sem
+  // empurrar o canhoto pra uma segunda página.
+  const compacto = itens.length > 8;
+  const paddingCelula = compacto ? "px-3 py-0.5" : "p-3";
   return (
     <div className="flex flex-col gap-6 print:gap-4">
       <AutoImprimir ativo={autoImprimir} />
@@ -115,20 +120,20 @@ export function ReciboLinha({
           </div>
         )}
 
-        <div className="mt-6 overflow-hidden rounded-lg border">
-          <table className="w-full text-sm">
+        <div className={`overflow-hidden rounded-lg border ${compacto ? "mt-4" : "mt-6"}`}>
+          <table className={`w-full ${compacto ? "text-xs" : "text-sm"}`}>
             <thead>
               <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
-                <th className="p-3 text-left font-medium">Produto</th>
-                <th className="p-3 text-center font-medium">Qtd.</th>
-                <th className="p-3 text-right font-medium">Preço unit.</th>
-                <th className="p-3 text-right font-medium">Subtotal</th>
+                <th className={`${paddingCelula} text-left font-bold`}>Produto</th>
+                <th className={`${paddingCelula} text-center font-bold`}>Qtd.</th>
+                <th className={`${paddingCelula} text-right font-bold`}>Preço unit.</th>
+                <th className={`${paddingCelula} text-right font-bold`}>Subtotal</th>
               </tr>
             </thead>
             <tbody>
               {itens.map((item, index) => (
                 <tr key={index} className="border-b last:border-0">
-                  <td className="p-3">
+                  <td className={paddingCelula}>
                     <p className="font-medium">{item.produtoNome}</p>
                     {item.observacao && (
                       <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
@@ -136,11 +141,11 @@ export function ReciboLinha({
                       </p>
                     )}
                   </td>
-                  <td className="p-3 text-center font-medium">{item.quantidade}</td>
-                  <td className="p-3 text-right text-muted-foreground">
+                  <td className={`${paddingCelula} text-center font-medium`}>{item.quantidade}</td>
+                  <td className={`${paddingCelula} text-right text-muted-foreground`}>
                     {item.precoUnitario != null ? formatadorMoeda.format(item.precoUnitario) : "—"}
                   </td>
-                  <td className="p-3 text-right font-medium">
+                  <td className={`${paddingCelula} text-right font-medium`}>
                     {item.precoUnitario != null
                       ? formatadorMoeda.format(item.precoUnitario * item.quantidade)
                       : "—"}
@@ -150,11 +155,11 @@ export function ReciboLinha({
             </tbody>
             {itens.length > 1 && (
               <tfoot>
-                <tr className="border-t bg-muted/20">
-                  <td className="p-3 font-medium">Total</td>
-                  <td className="p-3 text-center font-medium">{totalQuantidade}</td>
-                  <td className="p-3"></td>
-                  <td className="p-3 text-right font-medium">
+                <tr className="border-t-2 border-foreground/30 bg-muted/20">
+                  <td className={`${paddingCelula} font-bold`}>Total</td>
+                  <td className={`${paddingCelula} text-center font-bold`}>{totalQuantidade}</td>
+                  <td className={paddingCelula}></td>
+                  <td className={`${paddingCelula} text-right font-bold`}>
                     {temPreco ? formatadorMoeda.format(totalGeral) : "—"}
                   </td>
                 </tr>
@@ -163,12 +168,24 @@ export function ReciboLinha({
           </table>
         </div>
 
+        {temPreco && (
+          <div className="relative mt-8 pt-6 print:mt-4 print:pt-3">
+            <div className="absolute inset-x-0 top-0 border-t border-dashed border-muted-foreground/50" />
+            <div className="flex items-baseline justify-between">
+              <p className="font-mono text-xs font-bold tracking-widest uppercase">
+                Total dos pedidos
+              </p>
+              <p className="text-xl font-bold">{formatadorMoeda.format(totalGeral)}</p>
+            </div>
+          </div>
+        )}
+
         {observacaoGeral && (
           <p className="mt-4 text-sm whitespace-pre-wrap text-muted-foreground">{observacaoGeral}</p>
         )}
       </div>
 
-      <div className="mt-10 flex justify-end print:break-inside-avoid">
+      <div className="mt-10 flex justify-end print:mt-6 print:break-inside-avoid">
         <div className="flex flex-col items-end gap-1">
           <div className="w-56 border-b border-foreground/40" />
           <p className="text-sm font-semibold">{representanteNome}</p>
@@ -180,7 +197,7 @@ export function ReciboLinha({
       </div>
 
       <div className="mt-auto">
-        <div className="relative my-8 print:my-6">
+        <div className="relative my-8 print:my-4">
           <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-muted-foreground/50" />
           <p className="relative mx-auto flex w-fit items-center gap-1.5 bg-background px-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
             <Scissors className="size-3" />

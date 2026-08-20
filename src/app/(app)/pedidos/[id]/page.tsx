@@ -28,7 +28,7 @@ const statusOrdemProducaoLabels = {
 
 const statusPedidoLabels = {
   EM_CARTEIRA: "Em carteira",
-  FATURADO: "Faturado",
+  FATURADO: "Pago",
 } as const;
 
 const badgeStatusPedidoClasses: Record<string, string> = {

@@ -54,7 +54,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
 
   const cartoes = [
     {
-      label: "Pedidos em carteira",
+      label: "Em carteira",
       valor: String(dadoSelecionado.pedidosEmCarteira),
       href: "/pedidos?status=EM_CARTEIRA",
       icon: ClipboardList,
@@ -62,7 +62,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
       iconColor: "#C9622B",
     },
     {
-      label: "Pedidos faturados",
+      label: "Pedidos Pagos",
       valor: String(dadoSelecionado.pedidosFaturados),
       href: "/pedidos?status=FATURADO",
       icon: CircleCheck,
@@ -78,7 +78,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
       iconColor: "#5B6560",
     },
     {
-      label: "Valor em carteira",
+      label: "Valor pendente",
       valor: formatadorMoedaCompleto.format(dadoSelecionado.valorEmCarteira),
       href: "/pedidos?status=EM_CARTEIRA",
       icon: Wallet,
@@ -121,7 +121,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
 
       <Card className="shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
         <CardHeader>
-          <p className="font-heading text-sm font-semibold">Faturamento (últimos 6 meses)</p>
+          <p className="font-heading text-sm font-semibold">Pagamentos (últimos 6 meses)</p>
         </CardHeader>
         <CardContent>
           <div className="h-64 w-full">
@@ -154,7 +154,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
                     fontSize: 12,
                   }}
                   labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
-                  formatter={(valor) => [formatadorMoedaCompleto.format(Number(valor)), "Faturado"]}
+                  formatter={(valor) => [formatadorMoedaCompleto.format(Number(valor)), "Pago"]}
                 />
                 <Bar
                   dataKey="faturamento"
@@ -183,7 +183,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
       <Card className="shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
         <CardHeader>
           <p className="font-heading text-sm font-semibold">
-            Faturamento em {dadoSelecionado.labelCompleto}
+            Pago em {dadoSelecionado.labelCompleto}
           </p>
         </CardHeader>
         <CardContent>
@@ -194,7 +194,7 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {dadoSelecionado.pedidosFaturados}{" "}
-                {dadoSelecionado.pedidosFaturados === 1 ? "pedido faturado" : "pedidos faturados"}
+                {dadoSelecionado.pedidosFaturados === 1 ? "pedido pago" : "pedidos pagos"}
               </p>
             </div>
             {variacao !== null && (

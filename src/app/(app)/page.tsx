@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { dataBr } from "@/lib/data";
 import { PainelInterativo } from "@/components/painel/painel-interativo";
 import { LinhaPedidoRecente } from "@/components/painel/linha-pedido-recente";
+import { ClientePopover } from "@/components/painel/cliente-popover";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -103,8 +104,14 @@ export default async function PainelPage() {
   const meses = ultimosMeses(6);
   const inicioJanela = dataBr(`${meses[0].ano}-${String(meses[0].mes).padStart(2, "0")}-01`);
 
-  const [pedidosRecentes, ordensAvulsasRecentes, pedidosCriadosNoPeriodo, faturadosNoPeriodo, avulsosNoPeriodo] =
-    await Promise.all([
+  const [
+    pedidosRecentes,
+    ordensAvulsasRecentes,
+    pedidosCriadosNoPeriodo,
+    faturadosNoPeriodo,
+    avulsosConcluidosNoPeriodo,
+    avulsosAguardandoNoPeriodo,
+  ] = await Promise.all([
       prisma.pedido.findMany({
         include: { cliente: true },
         orderBy: { createdAt: "desc" },
@@ -118,8 +125,8 @@ export default async function PainelPage() {
         orderBy: { createdAt: "desc" },
         take: 8,
       }),
-      // Base para "pedidos em carteira" e "clientes ativos" por mês —
-      // agrupados pela data de criação do pedido.
+      // Base para "Em carteira" e "clientes ativos" por mês — agrupados
+      // pela data de criação do pedido.
       prisma.pedido.findMany({
         where: { createdAt: { gte: inicioJanela } },
         select: { createdAt: true, clienteId: true, status: true, valorTotal: true },
@@ -132,13 +139,27 @@ export default async function PainelPage() {
         where: { status: "FATURADO", faturadoEm: { gte: inicioJanela } },
         select: { faturadoEm: true, valorTotal: true },
       }),
-      // OP avulsa concluída também conta como ganho da empresa — mesma
-      // convenção usada em "Faturamento por período" (ADR-033).
+      // OP avulsa concluída conta como paga — só a avulsa, nunca a OP
+      // formal (essa já é coberta pelo status do Pedido, contar as duas
+      // dobraria a receita — ver ADR-036).
       prisma.itemOrdemAvulsa.findMany({
         where: { status: "CONCLUIDO", updatedAt: { gte: inicioJanela } },
         select: { updatedAt: true, precoUnitario: true, quantidade: true },
       }),
+      // OP avulsa aguardando conta como pendente, mesmo racional acima.
+      prisma.itemOrdemAvulsa.findMany({
+        where: { status: "AGUARDANDO", createdAt: { gte: inicioJanela } },
+        select: { createdAt: true, precoUnitario: true, quantidade: true },
+      }),
     ]);
+
+  // Item sem preço (ou preço zerado) não entra em soma nem contagem —
+  // ver ADR-036.
+  function valorOuZero<T extends { precoUnitario: { toString(): string } | null; quantidade: number }>(
+    item: T,
+  ): number {
+    return item.precoUnitario ? Number(item.precoUnitario) * item.quantidade : 0;
+  }
 
   const clientesPorMes = new Map<string, Set<string>>();
   const carteiraPorMes = new Map<string, { pedidos: number; valor: number }>();
@@ -156,6 +177,15 @@ export default async function PainelPage() {
       carteiraPorMes.set(chave, atual);
     }
   }
+  for (const item of avulsosAguardandoNoPeriodo) {
+    const valor = valorOuZero(item);
+    if (valor <= 0) continue;
+    const chave = chaveMesBr(item.createdAt);
+    const atual = carteiraPorMes.get(chave) ?? { pedidos: 0, valor: 0 };
+    atual.pedidos += 1;
+    atual.valor += valor;
+    carteiraPorMes.set(chave, atual);
+  }
 
   const faturamentoPorMes = new Map<string, { pedidos: number; valor: number }>();
   for (const pedido of faturadosNoPeriodo) {
@@ -165,11 +195,13 @@ export default async function PainelPage() {
     atual.valor += Number(pedido.valorTotal);
     faturamentoPorMes.set(chave, atual);
   }
-  for (const item of avulsosNoPeriodo) {
+  for (const item of avulsosConcluidosNoPeriodo) {
+    const valor = valorOuZero(item);
+    if (valor <= 0) continue;
     const chave = chaveMesBr(item.updatedAt);
     const atual = faturamentoPorMes.get(chave) ?? { pedidos: 0, valor: 0 };
     atual.pedidos += 1;
-    atual.valor += item.precoUnitario ? Number(item.precoUnitario) * item.quantidade : 0;
+    atual.valor += valor;
     faturamentoPorMes.set(chave, atual);
   }
 
@@ -193,7 +225,11 @@ export default async function PainelPage() {
     id: string;
     href: string;
     numeroLabel: string;
-    clienteLabel: string;
+    clientePrincipal: string;
+    // Demais clientes distintos além do principal — vazio quando só tem
+    // um. Só acontece do lado avulso (uma OrdemAvulsa pode misturar
+    // clientes diferentes, ver ADR-034) — Pedido formal é sempre 1 só.
+    clientesExtras: string[];
     valor: number;
     status: { label: string; className: string };
     createdAt: Date;
@@ -203,14 +239,29 @@ export default async function PainelPage() {
     id: `pedido-${pedido.id}`,
     href: `/pedidos/${pedido.id}`,
     numeroLabel: `#${pedido.numero}`,
-    clienteLabel: pedido.cliente.nomeFantasia || pedido.cliente.razaoSocial,
+    clientePrincipal: pedido.cliente.nomeFantasia || pedido.cliente.razaoSocial,
+    clientesExtras: [],
     valor: Number(pedido.valorTotal),
     status:
       pedido.status === "FATURADO"
-        ? { label: "Faturado", className: "bg-positive-soft text-positive" }
+        ? { label: "Pago", className: "bg-positive-soft text-positive" }
         : { label: "Em carteira", className: "" },
     createdAt: pedido.createdAt,
   }));
+
+  // Status real da OP avulsa (nunca mais o badge fixo "Avulsa") — o
+  // "pior" status entre os itens manda: se algum ainda está aguardando,
+  // a OP inteira aparece como aguardando; só vira "Concluída" quando
+  // todos os itens já concluíram (ver ADR-036).
+  function statusOrdemAvulsa(itens: { status: string }[]): { label: string; className: string } {
+    if (itens.some((item) => item.status === "AGUARDANDO")) {
+      return { label: "Aguardando", className: "" };
+    }
+    if (itens.some((item) => item.status === "EM_PRODUCAO")) {
+      return { label: "Em produção", className: "" };
+    }
+    return { label: "Concluída", className: "bg-positive-soft text-positive" };
+  }
 
   const linhasAvulsas: LinhaRecente[] = ordensAvulsasRecentes
     .filter((ordem) => ordem.itens.length > 0)
@@ -224,9 +275,10 @@ export default async function PainelPage() {
         id: `avulsa-${ordem.id}`,
         href: `/producao/recibo/avulsa-grupo/${ordem.id}`,
         numeroLabel: `OP #${ordem.numero}`,
-        clienteLabel: clientesUnicos.join(" · "),
+        clientePrincipal: clientesUnicos[0] ?? "—",
+        clientesExtras: clientesUnicos.slice(1),
         valor,
-        status: { label: "Avulsa", className: "" },
+        status: statusOrdemAvulsa(ordem.itens),
         createdAt: ordem.createdAt,
       };
     });
@@ -264,7 +316,13 @@ export default async function PainelPage() {
               {atividadeRecente.map((linha) => (
                 <LinhaPedidoRecente key={linha.id} href={linha.href}>
                   <TableCell className="font-mono">{linha.numeroLabel}</TableCell>
-                  <TableCell className="font-medium">{linha.clienteLabel}</TableCell>
+                  <TableCell className="font-medium">
+                    {linha.clientesExtras.length > 0 ? (
+                      <ClientePopover principal={linha.clientePrincipal} extras={linha.clientesExtras} />
+                    ) : (
+                      linha.clientePrincipal
+                    )}
+                  </TableCell>
                   <TableCell>{formatadorMoeda.format(linha.valor)}</TableCell>
                   <TableCell>
                     {linha.status.className ? (

@@ -205,7 +205,7 @@ export default async function RelatorioClientesPage({ searchParams }: PageProps)
                   <TableCell>{formatadorMoeda.format(pedido.valorTotal)}</TableCell>
                   <TableCell>
                     {pedido.status === "FATURADO" ? (
-                      <Badge className="bg-positive-soft text-positive">Faturado</Badge>
+                      <Badge className="bg-positive-soft text-positive">Pago</Badge>
                     ) : (
                       <Badge variant="secondary">Em carteira</Badge>
                     )}

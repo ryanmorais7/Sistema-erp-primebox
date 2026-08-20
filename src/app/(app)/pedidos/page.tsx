@@ -24,7 +24,7 @@ const formatadorData = new Intl.DateTimeFormat("pt-BR");
 const abas: { label: string; status?: StatusPedido }[] = [
   { label: "Todos" },
   { label: "Em carteira", status: "EM_CARTEIRA" },
-  { label: "Faturados", status: "FATURADO" },
+  { label: "Pagos", status: "FATURADO" },
 ];
 
 function BadgeProducao({ geradas, total }: { geradas: number; total: number }) {
@@ -136,7 +136,7 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                   <TableCell>{formatadorMoeda.format(Number(pedido.valorTotal))}</TableCell>
                   <TableCell>
                     {pedido.status === "FATURADO" ? (
-                      <Badge className="bg-positive-soft text-positive">Faturado</Badge>
+                      <Badge className="bg-positive-soft text-positive">Pago</Badge>
                     ) : (
                       <Badge variant="secondary">Em carteira</Badge>
                     )}
@@ -218,7 +218,7 @@ export default async function PedidosPage({ searchParams }: PageProps) {
                           className="bg-[#C9622B] text-white hover:bg-[#C9622B]/90"
                         >
                           <Check />
-                          Faturar
+                          Marcar como pago
                         </Button>
                       </form>
                     )}
