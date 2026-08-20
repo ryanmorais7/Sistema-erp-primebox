@@ -11,6 +11,7 @@ import {
   tipoProdutoLabels,
   TIPOS_PRODUTO,
   precoParaNumero,
+  normalizarPrecoDigitado,
   type ProdutoFormValues,
 } from "@/lib/validations/produto";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
     register,
     control,
     handleSubmit,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<ProdutoFormValues>({
@@ -175,7 +177,17 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
               Custo de produção (R$)
               <CampoObrigatorio />
             </Label>
-            <Input id="custo" placeholder="0,00" {...register("custo")} />
+            <Input
+              id="custo"
+              placeholder="0,00"
+              inputMode="decimal"
+              {...register("custo", {
+                onBlur: (e) => {
+                  const normalizado = normalizarPrecoDigitado(e.target.value);
+                  if (normalizado !== null) setValue("custo", normalizado);
+                },
+              })}
+            />
             {errors.custo && <p className="text-sm text-destructive">{errors.custo.message}</p>}
           </div>
 
@@ -184,7 +196,17 @@ export function ProdutoForm({ produtoId, medidas, valoresIniciais }: ProdutoForm
               Preço de venda (R$)
               <CampoObrigatorio />
             </Label>
-            <Input id="preco" placeholder="0,00" {...register("preco")} />
+            <Input
+              id="preco"
+              placeholder="0,00"
+              inputMode="decimal"
+              {...register("preco", {
+                onBlur: (e) => {
+                  const normalizado = normalizarPrecoDigitado(e.target.value);
+                  if (normalizado !== null) setValue("preco", normalizado);
+                },
+              })}
+            />
             {errors.preco && <p className="text-sm text-destructive">{errors.preco.message}</p>}
           </div>
 

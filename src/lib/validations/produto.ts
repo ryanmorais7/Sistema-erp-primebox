@@ -21,4 +21,4 @@ export const produtoSchema = z.object({
 
 export type ProdutoFormValues = z.infer<typeof produtoSchema>;
 
-export { precoParaNumero, formatarPrecoBr } from "./moeda";
+export { precoParaNumero, formatarPrecoBr, normalizarPrecoDigitado } from "./moeda";

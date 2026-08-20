@@ -12,6 +12,7 @@ import {
   precoMateriaPrimaSchema,
   type PrecoMateriaPrimaFormValues,
 } from "@/lib/validations/fornecedor";
+import { normalizarPrecoDigitado } from "@/lib/validations/moeda";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ export function PrecosMateriaPrima({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<PrecoMateriaPrimaFormValues>({
     resolver: zodResolver(precoMateriaPrimaSchema),
@@ -173,7 +175,16 @@ export function PrecosMateriaPrima({
 
             <div className="flex flex-col gap-2">
               <Label>Valor por {unidade} (R$)</Label>
-              <Input placeholder="0,00" {...register("valor")} />
+              <Input
+                placeholder="0,00"
+                inputMode="decimal"
+                {...register("valor", {
+                  onBlur: (e) => {
+                    const normalizado = normalizarPrecoDigitado(e.target.value);
+                    if (normalizado !== null) setValue("valor", normalizado);
+                  },
+                })}
+              />
               {errors.valor && <p className="text-sm text-destructive">{errors.valor.message}</p>}
             </div>
 

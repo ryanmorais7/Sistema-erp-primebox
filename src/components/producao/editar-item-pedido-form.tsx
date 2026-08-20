@@ -11,7 +11,7 @@ import {
   editarItemPedidoSchema,
   type EditarItemPedidoValues,
 } from "@/lib/validations/pedido";
-import { mascararMoeda } from "@/lib/mascaras";
+import { normalizarPrecoDigitado } from "@/lib/validations/moeda";
 import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -131,10 +131,14 @@ export function EditarItemPedidoForm({
                 render={({ field: precoField }) => (
                   <Input
                     placeholder="0,00"
-                    inputMode="numeric"
+                    inputMode="decimal"
                     value={precoField.value ?? ""}
-                    onChange={(e) => precoField.onChange(mascararMoeda(e.target.value))}
-                    onBlur={precoField.onBlur}
+                    onChange={(e) => precoField.onChange(e.target.value)}
+                    onBlur={(e) => {
+                      precoField.onBlur();
+                      const normalizado = normalizarPrecoDigitado(e.target.value);
+                      if (normalizado !== null) precoField.onChange(normalizado);
+                    }}
                   />
                 )}
               />
@@ -154,10 +158,14 @@ export function EditarItemPedidoForm({
                 render={({ field: custoField }) => (
                   <Input
                     placeholder="0,00"
-                    inputMode="numeric"
+                    inputMode="decimal"
                     value={custoField.value ?? ""}
-                    onChange={(e) => custoField.onChange(mascararMoeda(e.target.value))}
-                    onBlur={custoField.onBlur}
+                    onChange={(e) => custoField.onChange(e.target.value)}
+                    onBlur={(e) => {
+                      custoField.onBlur();
+                      const normalizado = normalizarPrecoDigitado(e.target.value);
+                      if (normalizado !== null) custoField.onChange(normalizado);
+                    }}
                   />
                 )}
               />

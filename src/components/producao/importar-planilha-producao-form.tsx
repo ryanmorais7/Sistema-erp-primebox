@@ -16,6 +16,7 @@ import {
   type ConfirmarImportacaoProducaoValues,
 } from "@/lib/validations/importarPlanilhaProducao";
 import { TIPOS_PRODUTO, tipoProdutoLabels } from "@/lib/validations/produto";
+import { normalizarPrecoDigitado } from "@/lib/validations/moeda";
 import { mascararTelefone } from "@/lib/mascaras";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,6 +67,7 @@ export function ImportarPlanilhaProducaoForm({ medidas }: { medidas: Medida[] })
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ConfirmarImportacaoProducaoValues>({
     resolver: zodResolver(confirmarImportacaoProducaoSchema),
@@ -364,11 +366,33 @@ export function ImportarPlanilhaProducaoForm({ medidas }: { medidas: Medida[] })
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label>Preço (R$)</Label>
-                  <Input placeholder="0,00" {...register(`produtosNovos.${index}.preco`)} />
+                  <Input
+                    placeholder="0,00"
+                    inputMode="decimal"
+                    {...register(`produtosNovos.${index}.preco`, {
+                      onBlur: (e) => {
+                        const normalizado = normalizarPrecoDigitado(e.target.value);
+                        if (normalizado !== null) {
+                          setValue(`produtosNovos.${index}.preco`, normalizado);
+                        }
+                      },
+                    })}
+                  />
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label>Custo (R$)</Label>
-                  <Input placeholder="0,00" {...register(`produtosNovos.${index}.custo`)} />
+                  <Input
+                    placeholder="0,00"
+                    inputMode="decimal"
+                    {...register(`produtosNovos.${index}.custo`, {
+                      onBlur: (e) => {
+                        const normalizado = normalizarPrecoDigitado(e.target.value);
+                        if (normalizado !== null) {
+                          setValue(`produtosNovos.${index}.custo`, normalizado);
+                        }
+                      },
+                    })}
+                  />
                 </div>
               </div>
             ))}

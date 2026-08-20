@@ -11,7 +11,7 @@ import {
   editarGrupoAvulsaSchema,
   type EditarGrupoAvulsaValues,
 } from "@/lib/validations/ordemAvulsa";
-import { mascararMoeda } from "@/lib/mascaras";
+import { normalizarPrecoDigitado } from "@/lib/validations/moeda";
 import { ClienteTextoField } from "@/components/producao/cliente-texto-field";
 import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
 import { Button } from "@/components/ui/button";
@@ -160,10 +160,14 @@ export function EditarGrupoAvulsaForm({
                   render={({ field: precoField }) => (
                     <Input
                       placeholder="0,00"
-                      inputMode="numeric"
+                      inputMode="decimal"
                       value={precoField.value ?? ""}
-                      onChange={(e) => precoField.onChange(mascararMoeda(e.target.value))}
-                      onBlur={precoField.onBlur}
+                      onChange={(e) => precoField.onChange(e.target.value)}
+                      onBlur={(e) => {
+                        precoField.onBlur();
+                        const normalizado = normalizarPrecoDigitado(e.target.value);
+                        if (normalizado !== null) precoField.onChange(normalizado);
+                      }}
                     />
                   )}
                 />

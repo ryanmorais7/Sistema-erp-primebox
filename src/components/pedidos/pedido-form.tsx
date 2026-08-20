@@ -8,7 +8,7 @@ import { Plus, Trash2 } from "lucide-react";
 
 import { atualizarPedido, criarPedido } from "@/app/(app)/pedidos/actions";
 import { pedidoSchema, type PedidoFormValues } from "@/lib/validations/pedido";
-import { precoParaNumero } from "@/lib/validations/moeda";
+import { precoParaNumero, normalizarPrecoDigitado } from "@/lib/validations/moeda";
 import { ProdutoTextoField } from "@/components/producao/produto-texto-field";
 import { FormaPagamentoField } from "@/components/pedidos/forma-pagamento-field";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,7 @@ export function PedidoForm({
     register,
     control,
     handleSubmit,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<PedidoFormValues>({
@@ -252,7 +253,18 @@ export function PedidoForm({
                       Preço unit.
                       <CampoObrigatorio />
                     </Label>
-                    <Input placeholder="0,00" {...register(`itens.${index}.precoUnitario`)} />
+                    <Input
+                      placeholder="0,00"
+                      inputMode="decimal"
+                      {...register(`itens.${index}.precoUnitario`, {
+                        onBlur: (e) => {
+                          const normalizado = normalizarPrecoDigitado(e.target.value);
+                          if (normalizado !== null) {
+                            setValue(`itens.${index}.precoUnitario`, normalizado);
+                          }
+                        },
+                      })}
+                    />
                     {errors.itens?.[index]?.precoUnitario && (
                       <p className="text-sm text-destructive">
                         {errors.itens[index]?.precoUnitario?.message}
@@ -265,7 +277,18 @@ export function PedidoForm({
                       Custo unit.
                       <CampoObrigatorio />
                     </Label>
-                    <Input placeholder="0,00" {...register(`itens.${index}.custoUnitario`)} />
+                    <Input
+                      placeholder="0,00"
+                      inputMode="decimal"
+                      {...register(`itens.${index}.custoUnitario`, {
+                        onBlur: (e) => {
+                          const normalizado = normalizarPrecoDigitado(e.target.value);
+                          if (normalizado !== null) {
+                            setValue(`itens.${index}.custoUnitario`, normalizado);
+                          }
+                        },
+                      })}
+                    />
                     {errors.itens?.[index]?.custoUnitario && (
                       <p className="text-sm text-destructive">
                         {errors.itens[index]?.custoUnitario?.message}

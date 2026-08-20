@@ -11,7 +11,7 @@ import {
   pedidoEstoqueSchema,
   type PedidoEstoqueFormValues,
 } from "@/lib/validations/pedidoEstoque";
-import { precoParaNumero, formatarPrecoBr } from "@/lib/validations/moeda";
+import { precoParaNumero, formatarPrecoBr, normalizarPrecoDigitado } from "@/lib/validations/moeda";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,6 +52,7 @@ export function CriarPedidoEstoqueForm({
     control,
     register,
     handleSubmit,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<PedidoEstoqueFormValues>({
@@ -161,7 +162,17 @@ export function CriarPedidoEstoqueForm({
                 Preço unit. (R$)
                 <CampoObrigatorio />
               </Label>
-              <Input id="precoUnitario" placeholder="0,00" {...register("precoUnitario")} />
+              <Input
+                id="precoUnitario"
+                placeholder="0,00"
+                inputMode="decimal"
+                {...register("precoUnitario", {
+                  onBlur: (e) => {
+                    const normalizado = normalizarPrecoDigitado(e.target.value);
+                    if (normalizado !== null) setValue("precoUnitario", normalizado);
+                  },
+                })}
+              />
               {errors.precoUnitario && (
                 <p className="text-sm text-destructive">{errors.precoUnitario.message}</p>
               )}
