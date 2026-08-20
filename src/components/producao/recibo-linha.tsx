@@ -54,11 +54,15 @@ export function ReciboLinha({
     (total, item) => total + (item.precoUnitario ?? 0) * item.quantidade,
     0,
   );
-  // Com muitos itens (planilhas grandes lançadas de uma vez), aperta o
-  // espaçamento das linhas pra caber até ~15 itens numa folha só, sem
-  // empurrar o canhoto pra uma segunda página.
+  // Com muitos itens (planilhas grandes lançadas de uma vez), aperta só
+  // o espaçamento vertical das linhas pra caber até ~15 itens numa
+  // folha só sem empurrar o canhoto pra uma segunda página — a fonte
+  // NUNCA diminui (continua text-sm/14px, a mesma de sempre), só o
+  // padding das células. Testado com 15 itens gerando o PDF de verdade
+  // (Chromium print, não só a tela): py-2 já estoura pra 2 páginas,
+  // py-1.5 é o maior padding que ainda cabe numa página só.
   const compacto = itens.length > 8;
-  const paddingCelula = compacto ? "px-3 py-0.5" : "p-3";
+  const paddingCelula = compacto ? "px-3 py-1.5" : "p-3";
   return (
     <div className="flex flex-col gap-6 print:gap-4">
       <AutoImprimir ativo={autoImprimir} />
@@ -121,7 +125,7 @@ export function ReciboLinha({
         )}
 
         <div className={`overflow-hidden rounded-lg border ${compacto ? "mt-4" : "mt-6"}`}>
-          <table className={`w-full ${compacto ? "text-xs" : "text-sm"}`}>
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
                 <th className={`${paddingCelula} text-left font-bold`}>Produto</th>

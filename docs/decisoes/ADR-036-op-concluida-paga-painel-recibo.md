@@ -146,3 +146,31 @@ pra mesma coisa).
   real da OP na lista, o botão "Marcar como pago" e a cor do badge
   "Pago"; recibo com 15 itens renderizado e medido em modo impressão
   pra confirmar que cabe numa folha só com o canhoto visível.
+
+## Atualização 2026-08-20 — recibo: fonte nunca diminui, só o espaçamento
+
+Ryan testou o recibo denso (15 itens) e achou a fonte pequena demais
+pra ler confortavelmente — a primeira versão desta ADR reduzia fonte
+(`text-sm` → `text-xs`, 14px → 12px) **e** padding ao mesmo tempo assim
+que passava de 8 itens. Pediu pra inverter a prioridade: nunca diminuir
+a fonte da tabela, ajustar primeiro o espaçamento vertical, só cair a
+fonte como último recurso (com um piso de ~10px).
+
+- `src/components/producao/recibo-linha.tsx`: a tabela agora fica
+  **sempre em `text-sm` (14px)**, tenha 1 ou 15 itens — a condicional
+  de fonte foi removida por completo. Só o padding vertical das
+  células (`paddingCelula`) continua variando por quantidade de itens.
+- **Testado empiricamente, gerando o PDF de verdade** (não só medindo
+  a tela) com exatamente 15 itens, subindo o padding gradualmente até
+  achar o maior valor que ainda cabe numa página: `py-0.5` → `py-1` →
+  `py-1.5` (ainda cabe, 1 página) → `py-2` (estoura pra 2 páginas).
+  Ficou em **`py-1.5`** — o maior espaçamento possível com a fonte
+  cheia, sem estourar. Não precisou chegar no piso de 10px em nenhum
+  momento — `text-sm` (14px) já é suficiente pra 15 itens com esse
+  padding.
+- Item ≤ 8: nada muda, continua `p-3` (padding original) + `text-sm`,
+  exatamente como sempre foi.
+- Confirmado de novo com poucos itens (2) que o canhoto continua
+  colado no rodapé, sem subir pro meio da folha — o mecanismo (`flex
+  flex-col` + `min-h-[277mm]` + `mt-auto` no canhoto) não foi tocado
+  nesta atualização, só o padding das linhas da tabela.
