@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -77,6 +77,29 @@ export function PedidoForm({
 
   const { fields, append, remove } = useFieldArray({ control, name: "itens" });
   const itensObservados = useWatch({ control, name: "itens" });
+
+  // Ao adicionar item (botão ou Tab saindo do Custo da última linha), o
+  // foco vai direto pro Produto da linha nova — sem isso, o cursor fica
+  // parado ou pula pro campo de valor errado (mesmo padrão já usado em
+  // ordem-avulsa-form.tsx).
+  const produtoRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const proximoFocoRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (proximoFocoRef.current !== null) {
+      produtoRefs.current[proximoFocoRef.current]?.focus();
+      proximoFocoRef.current = null;
+    }
+  }, [fields.length]);
+  function adicionarItemEFocar() {
+    proximoFocoRef.current = fields.length;
+    append({
+      produtoTexto: "",
+      produtoId: "",
+      quantidade: undefined as unknown as number,
+      precoUnitario: "",
+      custoUnitario: "0",
+    });
+  }
 
   const clienteOptions: ClienteOption[] = clientes.map((cliente) => ({
     value: cliente.id,
@@ -172,6 +195,21 @@ export function PedidoForm({
 
       <Card>
         <CardHeader>
+          <CardTitle>Forma de pagamento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Controller
+            control={control}
+            name="formaPagamento"
+            render={({ field }) => (
+              <FormaPagamentoField value={field.value ?? ""} onChange={field.onChange} />
+            )}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Itens</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -199,6 +237,10 @@ export function PedidoForm({
                       name={`itens.${index}.produtoTexto`}
                       render={({ field: textoField }) => (
                         <ProdutoTextoField
+                          ref={(el) => {
+                            textoField.ref(el);
+                            produtoRefs.current[index] = el;
+                          }}
                           texto={textoField.value ?? ""}
                           onChange={textoField.onChange}
                         />
@@ -238,6 +280,7 @@ export function PedidoForm({
                     type="button"
                     variant="outline"
                     size="icon-sm"
+                    tabIndex={-1}
                     disabled={fields.length === 1}
                     onClick={() => remove(index)}
                     aria-label="Remover item"
@@ -288,6 +331,12 @@ export function PedidoForm({
                           }
                         },
                       })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Tab" && !e.shiftKey && index === fields.length - 1) {
+                          e.preventDefault();
+                          adicionarItemEFocar();
+                        }
+                      }}
                     />
                     {errors.itens?.[index]?.custoUnitario && (
                       <p className="text-sm text-destructive">
@@ -314,31 +363,12 @@ export function PedidoForm({
             );
           })}
 
-          <div className="flex flex-col gap-2">
-            <Label>Forma de pagamento</Label>
-            <Controller
-              control={control}
-              name="formaPagamento"
-              render={({ field }) => (
-                <FormaPagamentoField value={field.value ?? ""} onChange={field.onChange} />
-              )}
-            />
-          </div>
-
           <Button
             type="button"
             variant="outline"
             size="sm"
             className="self-start"
-            onClick={() =>
-              append({
-                produtoTexto: "",
-                produtoId: "",
-                quantidade: undefined as unknown as number,
-                precoUnitario: "",
-                custoUnitario: "0",
-              })
-            }
+            onClick={adicionarItemEFocar}
           >
             <Plus />
             Adicionar item

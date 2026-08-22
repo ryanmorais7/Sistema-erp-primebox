@@ -105,3 +105,34 @@ ter sido faturado de novo.
   relatórios — risco conhecido, mesma classe de problema que este
   aviso descrevia, deixado para uma próxima rodada se incomodar o
   Pedro na prática.
+
+## Atualização 2026-08-22 — Forma de pagamento reposicionada e ordem de foco (Tab) corrigida
+
+Mais um ajuste de fluxo de digitação em `/pedidos/novo` (Pedro
+preenchendo em sequência, mesmo motivador desta ADR):
+
+- **Bloco "Forma de pagamento" saiu de dentro do card "Itens"** (onde
+  ficava depois de Preço/Custo/Subtotal/Margem, antes do botão
+  "Adicionar item") **e virou seu próprio card**, posicionado logo
+  abaixo de "Cliente" e antes de "Itens". Comportamento do campo
+  (digitação livre + sugestões clicáveis Pix/Cartão de Crédito/Boleto/
+  Cheque) não mudou, só a posição — `src/components/pedidos/pedido-form.tsx`.
+- **Ordem de tabulação dentro de cada linha de item corrigida.** O
+  botão de remover linha (ícone de lixeira) ficava entre "Qtd." e
+  "Preço unit." na ordem do DOM, então dar Tab depois de Qtd. focava
+  o botão em vez de Preço unit. — resolvido com `tabIndex={-1}` no
+  botão (continua clicável, só sai da sequência de Tab). Sequência
+  agora é sempre Produto → Qtd. → Preço unit. → Custo para produzir.
+- **Adicionar linha (botão "+ Adicionar item" ou Tab saindo do Custo
+  da última linha) foca automaticamente o campo Produto da linha
+  nova** — mesmo padrão de `produtoRefs`/`proximoFocoRef` já usado em
+  `ordem-avulsa-form.tsx` para o Enter na última linha. `ProdutoTextoField`
+  (`src/components/producao/produto-texto-field.tsx`) passou a aceitar
+  `ref` (React 19 permite `ref` como prop normal em componente função,
+  sem precisar de `forwardRef`) pra viabilizar esse foco.
+- Testado via Playwright: ordem visual dos cards confirmada (Cliente,
+  Forma de pagamento, Itens, Observações); Tab saindo do Custo da
+  última linha cria uma linha nova e foca o Produto dela vazio; clicar
+  em "Adicionar item" faz o mesmo; clique numa sugestão de forma de
+  pagamento (ex: "Pix") continua preenchendo o campo normalmente na
+  nova posição.
