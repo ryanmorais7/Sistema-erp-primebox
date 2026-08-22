@@ -174,3 +174,35 @@ fonte como último recurso (com um piso de ~10px).
   colado no rodapé, sem subir pro meio da folha — o mecanismo (`flex
   flex-col` + `min-h-[277mm]` + `mt-auto` no canhoto) não foi tocado
   nesta atualização, só o padding das linhas da tabela.
+
+## Atualização 2026-08-21 — assinatura, corte e canhoto viram um bloco só de rodapé
+
+Ryan reportou um vão vazio entre a assinatura do representante e o
+canhoto, principalmente com poucos itens. Causa raiz: só o wrapper do
+canhoto tinha `mt-auto` (empurra ele pro fim da coluna flex); a
+assinatura estava dentro do `flex-1` de cima, só com uma margem fixa
+(`mt-10`) em relação ao card principal — como `flex-1` não é ele mesmo
+um container flex que distribui espaço entre filhos, a assinatura
+ficava colada no fim do card principal, e toda a folga vertical
+sobrava *entre* a assinatura e o canhoto (que sim ia pro fundo da
+página via `mt-auto`), em vez de ficar acima dos dois.
+
+- `src/components/producao/recibo-linha.tsx`: assinatura do
+  representante, linha "Cortar aqui" e canhoto agora vivem dentro de
+  **um único container** (`&lt;div className="mt-auto
+  print:break-inside-avoid"&gt;`), segundo filho direto da coluna flex
+  da página (o primeiro é o `flex-1` só com o card principal). Só esse
+  container tem `mt-auto` — a assinatura perdeu sua margem própria
+  (`mt-10`/`print:mt-6`), a linha de corte perdeu o `my-8` e ganhou
+  `mt-5 mb-8` (`print:mt-4 print:mb-4`) — margem fixa, não flex nem
+  auto-margin, deliberadamente dentro da faixa pedida (16-24px) só no
+  espaço entre a assinatura e a linha de corte.
+- **Testado gerando o PDF de verdade** com 1 item e com 15 itens,
+  medindo a posição de cada peça: gap entre assinatura e linha de
+  corte idêntico nos dois casos (16px), e o fundo do canhoto cai
+  exatamente na mesma posição (1046,9px, o limite de 277mm) nos dois —
+  o bloco inteiro sobe/desce junto conforme o conteúdo acima, sempre
+  com a mesma distância interna. Continua cabendo numa página só com
+  15 itens.
+- Nada antes da tabela (cabeçalho, Cliente, Forma de pagamento) foi
+  tocado — só a estrutura do bloco de rodapé.

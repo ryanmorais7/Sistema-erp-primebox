@@ -188,20 +188,28 @@ export function ReciboLinha({
           <p className="mt-4 text-sm whitespace-pre-wrap text-muted-foreground">{observacaoGeral}</p>
         )}
       </div>
+      </div>
 
-      <div className="mt-10 flex justify-end print:mt-6 print:break-inside-avoid">
-        <div className="flex flex-col items-end gap-1">
-          <div className="w-56 border-b border-foreground/40" />
-          <p className="text-sm font-semibold">{representanteNome}</p>
-          <p className="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-            Representante
-          </p>
+      {/* Bloco único de rodapé: assinatura do representante + linha de
+          corte + canhoto sempre juntos, com margin-top:auto só aqui —
+          nunca em cada parte separada, senão cada peça se empurra pro
+          rodapé por conta própria e sobra um vão vazio entre elas.
+          Espaçamento entre a assinatura e a linha de corte é fixo
+          (mt-5/print:mt-4 abaixo, ~16-20px), não flex nem auto-margin
+          interno — a mesma distância sempre, com 1 ou 15 itens na
+          tabela acima. */}
+      <div className="mt-auto print:break-inside-avoid">
+        <div className="flex justify-end">
+          <div className="flex flex-col items-end gap-1">
+            <div className="w-56 border-b border-foreground/40" />
+            <p className="text-sm font-semibold">{representanteNome}</p>
+            <p className="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
+              Representante
+            </p>
+          </div>
         </div>
-      </div>
-      </div>
 
-      <div className="mt-auto">
-        <div className="relative my-8 print:my-4">
+        <div className="relative mt-5 mb-8 print:mt-4 print:mb-4">
           <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-muted-foreground/50" />
           <p className="relative mx-auto flex w-fit items-center gap-1.5 bg-background px-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
             <Scissors className="size-3" />
