@@ -274,7 +274,7 @@ export function PedidoForm({
 
                   <div className="flex flex-col gap-2">
                     <Label>
-                      Custo unit.
+                      Custo para produzir
                       <CampoObrigatorio />
                     </Label>
                     <Input

@@ -204,7 +204,7 @@ export default async function VisualizarPedidoPage({ params, searchParams }: Pag
                 <TableHead>Produto</TableHead>
                 <TableHead className="text-right">Qtd.</TableHead>
                 <TableHead className="text-right">Preço unit.</TableHead>
-                <TableHead className="text-right print:hidden">Custo unit.</TableHead>
+                <TableHead className="text-right print:hidden">Custo para produzir</TableHead>
                 <TableHead className="text-right">Subtotal</TableHead>
                 <TableHead className="text-right print:hidden">Margem/Lucro</TableHead>
                 <TableHead className="text-right print:hidden">Produção</TableHead>

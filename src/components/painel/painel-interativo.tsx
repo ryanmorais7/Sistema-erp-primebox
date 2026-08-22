@@ -52,6 +52,10 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
       ? ((dadoSelecionado.faturamento - dadoMesAnterior.faturamento) / dadoMesAnterior.faturamento) * 100
       : null;
 
+  // "Valor pendente" saiu desta lista — desceu pra virar o card largo
+  // abaixo do gráfico, no lugar de "Pago em {mês}" (que subiu pra linha
+  // de cima, ver ajuste 2026-08-21). Continua com o mesmo visual de
+  // ícone/rótulo/valor de sempre, só que sozinho fora da grade.
   const cartoes = [
     {
       label: "Em carteira",
@@ -77,15 +81,16 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
       bg: "#E4DFD4",
       iconColor: "#5B6560",
     },
-    {
-      label: "Valor pendente",
-      valor: formatadorMoedaCompleto.format(dadoSelecionado.valorEmCarteira),
-      href: "/pedidos?status=EM_CARTEIRA",
-      icon: Wallet,
-      bg: "#F4E2D6",
-      iconColor: "#C9622B",
-    },
   ];
+
+  const cartaoValorPendente = {
+    label: "Valor pendente",
+    valor: formatadorMoedaCompleto.format(dadoSelecionado.valorEmCarteira),
+    href: "/pedidos?status=EM_CARTEIRA",
+    icon: Wallet,
+    bg: "#F4E2D6",
+    iconColor: "#C9622B",
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -116,6 +121,41 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
               </Card>
             </Link>
           ))}
+
+          {/* "Pago em {mês}" subiu pra essa linha, no lugar que era do
+              "Valor pendente" (ver ajuste 2026-08-21) — mantém o visual
+              próprio (valor grande + variação), não o padrão
+              ícone/rótulo/valor dos outros 3 cards desta linha. */}
+          <Card className="shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
+            <CardHeader>
+              <p className="font-heading text-sm font-semibold">
+                Pago em {dadoSelecionado.labelCompleto}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="text-3xl font-semibold tracking-tight">
+                    {formatadorMoedaCompleto.format(dadoSelecionado.faturamento)}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {dadoSelecionado.pedidosFaturados}{" "}
+                    {dadoSelecionado.pedidosFaturados === 1 ? "pedido pago" : "pedidos pagos"}
+                  </p>
+                </div>
+                {variacao !== null && (
+                  <div
+                    className={`flex items-center gap-1 text-sm font-medium ${
+                      variacao >= 0 ? "text-positive" : "text-destructive"
+                    }`}
+                  >
+                    {variacao >= 0 ? <ArrowUp className="size-4" /> : <ArrowDown className="size-4" />}
+                    {Math.abs(variacao).toFixed(1)}% vs {dadoMesAnterior?.label}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -180,36 +220,28 @@ export function PainelInterativo({ dadosPorMes }: { dadosPorMes: DadoMes[] }) {
         </CardContent>
       </Card>
 
-      <Card className="shadow-[0_2px_8px_rgba(28,35,33,0.06)]">
-        <CardHeader>
-          <p className="font-heading text-sm font-semibold">
-            Pago em {dadoSelecionado.labelCompleto}
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-3xl font-semibold tracking-tight">
-                {formatadorMoedaCompleto.format(dadoSelecionado.faturamento)}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {dadoSelecionado.pedidosFaturados}{" "}
-                {dadoSelecionado.pedidosFaturados === 1 ? "pedido pago" : "pedidos pagos"}
-              </p>
+      {/* "Valor pendente" desceu pra essa posição, no lugar que era do
+          "Pago em {mês}" (ver ajuste 2026-08-21) — mesmo visual de
+          ícone/rótulo/valor que tinha na linha de cima, só que sozinho
+          fora da grade de 4 colunas. */}
+      <Link href={cartaoValorPendente.href}>
+        <Card className="shadow-[0_2px_8px_rgba(28,35,33,0.06)] transition-colors hover:bg-accent/40">
+          <CardHeader>
+            <div
+              className="flex size-8 items-center justify-center rounded-md"
+              style={{ background: cartaoValorPendente.bg }}
+            >
+              <cartaoValorPendente.icon className="size-4" style={{ color: cartaoValorPendente.iconColor }} />
             </div>
-            {variacao !== null && (
-              <div
-                className={`flex items-center gap-1 text-sm font-medium ${
-                  variacao >= 0 ? "text-positive" : "text-destructive"
-                }`}
-              >
-                {variacao >= 0 ? <ArrowUp className="size-4" /> : <ArrowDown className="size-4" />}
-                {Math.abs(variacao).toFixed(1)}% vs {dadoMesAnterior?.label}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            <p className="mt-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+              {cartaoValorPendente.label}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-semibold tracking-tight">{cartaoValorPendente.valor}</p>
+          </CardContent>
+        </Card>
+      </Link>
     </div>
   );
 }

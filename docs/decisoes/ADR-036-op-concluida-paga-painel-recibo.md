@@ -206,3 +206,22 @@ página via `mt-auto`), em vez de ficar acima dos dois.
   15 itens.
 - Nada antes da tabela (cabeçalho, Cliente, Forma de pagamento) foi
   tocado — só a estrutura do bloco de rodapé.
+
+## Atualização 2026-08-22 — "Pago em {mês}" e "Valor pendente" trocam de posição
+
+Pedido do Ryan: subir "Pago em {mês}" pra linha dos 4 cards do topo (no
+lugar de "Valor pendente") e descer "Valor pendente" pro lugar de card
+largo abaixo do gráfico. Cálculo de nenhum dos dois mudou, só onde
+cada um aparece.
+
+- `src/components/painel/painel-interativo.tsx`: `cartoes` (array
+  mapeado na grade do topo) ficou só com os 3 que não mudam de posição
+  (Em carteira, Pedidos Pagos, Clientes ativos). "Valor pendente"
+  virou um objeto solto (`cartaoValorPendente`), renderizado como card
+  largo depois do gráfico, com exatamente o mesmo JSX de
+  ícone/rótulo/valor que os outros 3 já usam (só que fora do `.map()`,
+  sozinho). O bloco JSX de "Pago em {mês}" (valor grande + variação)
+  foi movido pra dentro da grade do topo, como 4º item ao lado dos
+  `.map()` dos outros 3 — mantém o visual próprio dele (não virou um
+  card de ícone), só mudou de lugar.
+- Nenhum dos dois teve cor, ícone ou cálculo alterado — só a posição.
